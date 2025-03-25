@@ -1,5 +1,6 @@
 class AMP {
 
+    private static instance: AMP; // Singleton instance
     private API_BASE_URL: string = "https://amp.ftc.gg/API/";
     private readonly username: string = "";
     private readonly password: string = "";
@@ -9,13 +10,22 @@ class AMP {
     private rememberMeToken: string = "";
     private ID: string = "";
 
-    constructor(username: string, password: string, token: string, rememberMe: boolean) {
+    // Private constructor to prevent direct instantiation
+    private constructor() {}
 
+    // Static method to get the singleton instance
+    public static getInstance(): AMP {
+        if (!AMP.instance) {
+            AMP.instance = new AMP();
+        }
+        return AMP.instance;
+    }
+
+    public setCredentials(username: string, password: string, token: string, rememberMe: boolean): void {
         this.username = username;
         this.password = password;
         this.token = token;
         this.rememberMe = rememberMe;
-
     }
 
     async sendPostRequest(url: string, data: any) {
@@ -112,7 +122,9 @@ class AMP {
                 throw new Error("Invalid response format for GetInstances.");
             }
 
-            response[0].AvailableInstances.forEach((instance: any) => console.log(instance));
+            //response[0].AvailableInstances.forEach((instance: any) => console.log(instance));
+            //console.log(response[0].AvailableInstances);
+            return response[0].AvailableInstances;
 
         }catch(error){
             console.error("Error fetching instances:", error);
@@ -128,6 +140,8 @@ class AMP {
         const response = await this.sendPostRequest(`${this.API_BASE_URL}Core/GetAPISpec`, json);
         console.log(response);
     }
+
+    getSessionID(){}
 }
 
 export default AMP;

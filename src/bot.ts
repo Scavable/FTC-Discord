@@ -31,9 +31,10 @@ client.commands = new Collection();
         await client.login(config.DISCORD_TOKEN);
         console.log("Bot successfully logged in!");
 
-        const amp = new AMP(config.AMP_USERNAME, config.AMP_PASS, "", false);
+        const amp = AMP.getInstance();
+        amp.setCredentials(config.AMP_USERNAME, config.AMP_PASS, "", false);
         await amp.login();
-        await amp.getAPISpec();
+        await amp.getInstances();
 
     } catch (error) {
         console.error("Error during bot initialization:", error);
