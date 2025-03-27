@@ -34,7 +34,7 @@ client.commands = new Collection();
         const amp = AMP.getInstance();
         amp.setCredentials(config.AMP_USERNAME, config.AMP_PASS, "", false);
         await amp.login();
-        await amp.getInstances();
+        //console.log(await amp.getInstances());
 
     } catch (error) {
         console.error("Error during bot initialization:", error);

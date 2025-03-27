@@ -1,7 +1,7 @@
 class AMP {
 
     private static instance: AMP; // Singleton instance
-    private API_BASE_URL: string = "https://amp.ftc.gg/API/";
+    private API_BASE_URL: string = "https://amp.ftc.gg/";
     private readonly username: string = "";
     private readonly password: string = "";
     private readonly token: string = "";
@@ -9,6 +9,8 @@ class AMP {
     private SESSIONID: string = "";
     private rememberMeToken: string = "";
     private ID: string = "";
+
+    private instances = [];
 
     // Private constructor to prevent direct instantiation
     private constructor() {}
@@ -63,7 +65,7 @@ class AMP {
     }
 
     //Amp bot login
-    async login(): Promise<void> {
+    async login(instanceId?: string): Promise<void> {
         try {
             const json = {
                 username: this.username,
@@ -72,7 +74,13 @@ class AMP {
                 rememberMe: this.rememberMe
             };
 
-            const response = await this.sendPostRequest(`${this.API_BASE_URL}Core/Login`, json);
+            let response;
+            if(instanceId){
+                console.log("Instance Login");
+                response = await this.sendPostRequest(`${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/Login`, json);
+            }
+            else
+                response = await this.sendPostRequest(`${this.API_BASE_URL}API/Core/Login`, json);
 
             if (response["success"]) {
                 console.log("Login successful:", response);
@@ -116,14 +124,13 @@ class AMP {
                 SESSIONID: this.SESSIONID
             };
 
-            const response = await this.sendPostRequest(`${this.API_BASE_URL}ADSModule/GetInstances`, json);
+            const response = await this.sendPostRequest(`${this.API_BASE_URL}API/ADSModule/GetInstances`, json);
 
             if (!response || !Array.isArray(response) || !response[0]?.AvailableInstances) {
                 throw new Error("Invalid response format for GetInstances.");
             }
 
-            //response[0].AvailableInstances.forEach((instance: any) => console.log(instance));
-            //console.log(response[0].AvailableInstances);
+            this.instances = response[0]?.AvailableInstances;
             return response[0].AvailableInstances;
 
         }catch(error){
