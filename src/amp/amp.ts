@@ -117,7 +117,7 @@ class AMP {
         console.log(response);
     }
 
-    async getInstances(){
+    async getServers(){
         try {
             this.isValid();
             const json = {
