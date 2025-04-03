@@ -41,11 +41,11 @@ client.commands = new Collection();
     }
 })();
 
-async function syncGuildCommands() {
+async function syncGuildCommands(forceUpdate?: boolean) {
     try {
         const guildCommands = await rest.get(Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID));
 
-        if (isCommandUpdateNeeded(guildCommands, commandsCollection)) {
+        if (isCommandUpdateNeeded(guildCommands, commandsCollection) || forceUpdate) {
             console.log("Updating guild commands...");
             commandsCollection = new Collection();
 

@@ -1,7 +1,7 @@
 // Class to delete all messages in a given channel.
 
-const { SlashCommandBuilder } = require("discord.js");
-const { ChannelType } = require("discord-api-types/v10");
+import {ChannelType, SlashCommandBuilder} from "discord.js";
+
 
 module.exports = class DeleteAllMessages {
     static commandName = "discord_delete_all_messages";
