@@ -1,9 +1,13 @@
 import { REST, Routes } from "discord.js";
 import { config } from "../config";
 import CommandLoader from "./commandLoader";
+import CustomClient from "../CustomClient"; // Import the custom client
 
 export default class CommandSync {
-    constructor(client) {
+    client: CustomClient; // Use the custom client
+    rest: REST;
+
+    constructor(client: CustomClient) {
         this.client = client;
         this.rest = new REST().setToken(config.DISCORD_TOKEN);
     }
@@ -16,7 +20,6 @@ export default class CommandSync {
                 console.log("Updating guild commands...");
                 this.client.commands.clear();
                 await new CommandLoader(this.client, this.client.commands).loadCommands();
-
                 await this.rest.put(Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID), {
                     body: Array.from(this.client.commands.values()),
                 });
@@ -30,9 +33,9 @@ export default class CommandSync {
         }
     }
 
-    isCommandUpdateNeeded(guildCommands) {
+    isCommandUpdateNeeded(guildCommands: any) {
         if (guildCommands.length !== this.client.commands.size) return true;
-        return guildCommands.some(guildCommand => {
+        return guildCommands.some((guildCommand: any) => {
             const localCommand = this.client.commands.get(guildCommand.name);
             return !localCommand || guildCommand.name !== localCommand.name;
         });

@@ -22,7 +22,7 @@ module.exports = class ServersPanel {
     CreateCommandFunctionality() {
         return async function execute(interaction: any) {
             const guild = interaction.guild;
-            let channel = guild.channels.cache.find(ch => ch.type === ChannelType.GuildText && ch.name === "server-status");
+            let channel = guild.channels.cache.find((ch: any) => ch.type === ChannelType.GuildText && ch.name === "server-status");
 
             if (!channel) {
                 channel = await guild.channels.create({ name: "server-status", type: ChannelType.GuildText });

@@ -1,36 +1,36 @@
 class AMP {
-
-    private static instance: AMP; // Singleton instance
-    private API_BASE_URL: string = "https://amp.ftc.gg/";
-    private readonly username: string = "";
-    private readonly password: string = "";
-    private readonly token: string = "";
-    private readonly rememberMe: boolean = false;
+    private static instance: AMP | null = null;
+    private readonly API_BASE_URL: string = "https://amp.ftc.gg/";
+    private readonly username: string;
+    private readonly password: string;
+    private readonly token: string;
+    private readonly rememberMe: boolean;
     private SESSIONID: string = "";
     private rememberMeToken: string = "";
     private ID: string = "";
 
     private instances = [];
 
-    // Private constructor to prevent direct instantiation
-    private constructor() {}
-
-    // Static method to get the singleton instance
-    public static getInstance(): AMP {
-        if (!AMP.instance) {
-            AMP.instance = new AMP();
-        }
-        return AMP.instance;
-    }
-
-    public setCredentials(username: string, password: string, token: string, rememberMe: boolean): void {
+    // Private constructor to enforce singleton pattern
+    private constructor(username: string, password: string, token: string = "", rememberMe: boolean = false) {
         this.username = username;
         this.password = password;
         this.token = token;
         this.rememberMe = rememberMe;
     }
 
-    async sendPostRequest(url: string, data: any) {
+    // Singleton accessor with required parameters
+    public static getInstance(username?: string, password?: string, token: string = "", rememberMe: boolean = false): AMP {
+        if (!AMP.instance) {
+            if (!username || !password) {
+                throw new Error("AMP instance not initialized. Credentials required.");
+            }
+            AMP.instance = new AMP(username, password, token, rememberMe);
+        }
+        return AMP.instance;
+    }
+
+    private async sendPostRequest(url: string, data: any) {
         try {
             const response = await fetch(url, {
                 method: "POST",
@@ -41,12 +41,10 @@ class AMP {
                 body: JSON.stringify(data)
             });
 
-            // Ensure the request was successful
             if (!response.ok) {
                 throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
             }
 
-            // Check if the response has JSON content
             const contentType = response.headers.get("content-type");
             if (contentType?.includes("application/json")) {
                 return await response.json();
@@ -57,14 +55,14 @@ class AMP {
             throw new Error(`Request to ${url} failed: ${error}`);
         }
     }
-    
-    private isValid(): void{
+
+    private isValid(): void {
         if (!this.SESSIONID) {
             throw new Error("Not authenticated. Please login first.");
         }
     }
 
-    //Amp bot login
+    // AMP bot login
     async login(instanceId?: string): Promise<void> {
         try {
             const json = {
@@ -74,56 +72,44 @@ class AMP {
                 rememberMe: this.rememberMe
             };
 
-            let response;
-            if(instanceId){
-                console.log("Instance Login");
-                response = await this.sendPostRequest(`${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/Login`, json);
-            }
-            else
-                response = await this.sendPostRequest(`${this.API_BASE_URL}API/Core/Login`, json);
+            const response = await this.sendPostRequest(
+                instanceId
+                    ? `${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/Login`
+                    : `${this.API_BASE_URL}API/Core/Login`,
+                json
+            );
 
             if (response["success"]) {
                 console.log("Login successful:", response);
                 this.SESSIONID = response["sessionID"];
                 this.rememberMeToken = response["rememberMeToken"];
                 this.ID = response["userInfo"]["ID"];
-                console.log(this.ID);
             } else {
                 console.error("Login failed:", response);
             }
-        }catch(error) {
+        } catch (error) {
             console.error("Login request failed:", error);
         }
     }
 
-    //Amp bot logout
     async logout(): Promise<void> {
         this.isValid();
-        const json = {
-            SESSIONID: this.SESSIONID
-        };
-
+        const json = { SESSIONID: this.SESSIONID };
         const response = await this.sendPostRequest(`${this.API_BASE_URL}Core/Logout`, json);
         console.log(response);
     }
 
-    async endUserSession(){
+    async endUserSession(): Promise<void> {
         this.isValid();
-        const json = {
-            ID: this.ID,
-            SESSIONID: this.SESSIONID
-        };
+        const json = { ID: this.ID, SESSIONID: this.SESSIONID };
         const response = await this.sendPostRequest(`${this.API_BASE_URL}Core/EndUserSession`, json);
         console.log(response);
     }
 
-    async getServers(){
+    async getServers() {
         try {
             this.isValid();
-            const json = {
-                SESSIONID: this.SESSIONID
-            };
-
+            const json = { SESSIONID: this.SESSIONID };
             const response = await this.sendPostRequest(`${this.API_BASE_URL}API/ADSModule/GetInstances`, json);
 
             if (!response || !Array.isArray(response) || !response[0]?.AvailableInstances) {
@@ -131,24 +117,22 @@ class AMP {
             }
 
             this.instances = response[0]?.AvailableInstances;
-            return response[0].AvailableInstances;
-
-        }catch(error){
+            return this.instances;
+        } catch (error) {
             console.error("Error fetching instances:", error);
         }
     }
 
-    async getAPISpec(){
+    async getAPISpec(): Promise<void> {
         this.isValid();
-        const json = {
-            SESSIONID: this.SESSIONID
-        };
-
+        const json = { SESSIONID: this.SESSIONID };
         const response = await this.sendPostRequest(`${this.API_BASE_URL}Core/GetAPISpec`, json);
         console.log(response);
     }
 
-    getSessionID(){}
+    public getSessionID(): string {
+        return this.SESSIONID;
+    }
 }
 
 export default AMP;

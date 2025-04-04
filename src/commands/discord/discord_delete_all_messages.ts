@@ -57,6 +57,7 @@ module.exports = class DeleteAllMessages {
                             await message.delete();
                             deletedCount++;
                         } catch (error) {
+                            // @ts-ignore
                             console.warn(`Skipping message deletion due to error: ${error.message}`);
                         }
                     });
@@ -65,6 +66,7 @@ module.exports = class DeleteAllMessages {
 
                 await interaction.followUp(`✅ Successfully deleted ${deletedCount} messages.`);
             } catch (error) {
+                // @ts-ignore
                 console.error(`Error deleting messages: ${error.message}`);
                 await interaction.followUp("❌ Failed to delete messages.");
             }
