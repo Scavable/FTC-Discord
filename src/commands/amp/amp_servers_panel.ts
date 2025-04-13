@@ -117,7 +117,7 @@ export default class ServersPanel {
         };
     }
 
-    async CreateObject() {
+    async createObject() {
         return {
             data: await this.createSlashCommand(),
             execute: this.createCommandFunctionality()

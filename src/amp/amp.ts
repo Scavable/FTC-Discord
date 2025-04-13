@@ -1,6 +1,29 @@
 import Instance from "./Instance";
 
+/**
+ * AMP Class
+ *
+ * This class handles interactions with the AMP (Application Management Platform) API.
+ * It follows the Singleton design pattern, ensuring only one instance of AMP can exist.
+ * The class provides methods to log in, log out, fetch server instances, and interact with various backend services.
+ *
+ * Key Features:
+ * - Singleton pattern to manage the AMP instance.
+ * - Authentication and session management with the AMP API.
+ * - Fetches and manages server instances from the API.
+ * - Handles user sessions and API interactions for both login/logout and fetching server data.
+ * - Provides a mechanism for sending POST requests to the AMP API and handling the responses.
+ *
+ * Usage:
+ * - `getInstance(username, password)` - Get the singleton instance, initializing with user credentials.
+ * - `login()` - Logs into the AMP API with provided credentials.
+ * - `logout()` - Logs out the current session.
+ * - `getServers()` - Retrieves available server instances.
+ * - `endUserSession()` - Ends the user's current session.
+ */
+
 class AMP {
+    // Attributes with Types
     private static instance: AMP | null = null;
     private readonly API_BASE_URL: string = "https://amp.feedthecraft.com/";
     private readonly username: string;
@@ -32,6 +55,7 @@ class AMP {
         return AMP.instance;
     }
 
+    // Sends data to API and returns the response
     private async sendPostRequest(url: string, data: any) {
         try {
             const response = await fetch(url, {
@@ -58,6 +82,7 @@ class AMP {
         }
     }
 
+    // Checks if connection is connected to backend.
     private isValid(): void {
         if (!this.SESSIONID) {
             throw new Error("Not authenticated. Please login first.");

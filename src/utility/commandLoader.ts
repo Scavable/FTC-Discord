@@ -24,7 +24,7 @@ class CommandLoader {
                 const filePath = path.join(commandsPath, file);
                 const commandModule = await import(pathToFileURL(filePath).href);
                 const commandInstance = new commandModule.default();
-                commandPromises.push(commandInstance.CreateObject());
+                commandPromises.push(commandInstance.createObject());
             }
         }
 

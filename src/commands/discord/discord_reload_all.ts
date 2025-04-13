@@ -4,13 +4,13 @@ export default class ReloadAll {
     static commandName = 'discord_reload_all';
     static description = 'Reloads all commands';
 
-    async CreateSlashCommand() {
+    async createSlashCommand() {
         return new SlashCommandBuilder()
             .setName(ReloadAll.commandName)
             .setDescription(ReloadAll.description);
     }
 
-    CreateCommandFunctionality() {
+    createCommandFunctionality() {
         return async function execute(interaction: any) {
             try {
                 await interaction.deferReply();
@@ -57,10 +57,10 @@ export default class ReloadAll {
         };
     }
 
-    async CreateObject() {
+    async createObject() {
         return {
-            data: await this.CreateSlashCommand(),
-            execute: this.CreateCommandFunctionality(),
+            data: await this.createSlashCommand(),
+            execute: this.createCommandFunctionality(),
         };
     }
 }

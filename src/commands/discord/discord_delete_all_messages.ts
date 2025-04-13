@@ -6,7 +6,7 @@ export default class DeleteAllMessages {
     static subName = 'channel';
     static subDescription = 'Channel to delete messages from';
 
-    CreateSlashCommand() {
+    createSlashCommand() {
         return new SlashCommandBuilder()
             .setName(DeleteAllMessages.commandName)
             .setDescription(DeleteAllMessages.description)
@@ -17,7 +17,7 @@ export default class DeleteAllMessages {
                     .setRequired(true));
     }
 
-    CreateCommandFunctionality() {
+    createCommandFunctionality() {
         return async function execute(interaction: any) {
             try {
                 await interaction.reply('🗑️ Deleting all messages...');
@@ -63,10 +63,10 @@ export default class DeleteAllMessages {
         };
     }
 
-    async CreateObject() {
+    async createObject() {
         return {
-            data: this.CreateSlashCommand(),
-            execute: this.CreateCommandFunctionality(),
+            data: this.createSlashCommand(),
+            execute: this.createCommandFunctionality(),
         };
     }
 }
