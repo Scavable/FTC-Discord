@@ -1,29 +1,29 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Client, Collection } from "discord.js";
+import CustomClient from "../CustomClient";
+import {pathToFileURL} from "node:url";
 
 class CommandLoader {
-    private client: Client;
-    private commandsCollection: Collection<String, any>;
+    private client: CustomClient;
 
-    constructor(client: Client, commandsCollection: Collection<String, any>) {
+    constructor(client: CustomClient, ) {
         this.client = client;
-        this.commandsCollection = commandsCollection;
     }
 
     async loadCommands() {
-        const foldersPath = path.join(__dirname, "../commands");
+        const __dirname = path.dirname(import.meta.dirname);
+        const foldersPath = path.join(__dirname, "/commands");
         const commandFolders = fs.readdirSync(foldersPath);
-        const commandPromises = [];
+        const commandPromises: Promise<any>[] = [];
 
         for (const folder of commandFolders) {
             const commandsPath = path.join(foldersPath, folder);
-            const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".ts"));
+            const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".ts") || file.endsWith(".js"));
 
             for (const file of commandFiles) {
                 const filePath = path.join(commandsPath, file);
-                const commandModule = require(filePath);
-                const commandInstance = new commandModule();
+                const commandModule = await import(pathToFileURL(filePath).href); // Use pathToFileURL here
+                const commandInstance = new commandModule.default();
                 commandPromises.push(commandInstance.CreateObject());
             }
         }
@@ -33,7 +33,6 @@ class CommandLoader {
         for (const commandObject of commandObjects) {
             if ("data" in commandObject && "execute" in commandObject) {
                 this.client.commands.set(commandObject.data.name, commandObject);
-                this.commandsCollection.set(commandObject.data.name, commandObject.data.toJSON());
             } else {
                 console.warn(`[WARNING] Command is missing required properties.`);
             }

@@ -3,89 +3,124 @@ import {
     Colors,
     EmbedBuilder,
     PermissionFlagsBits,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    TextChannel,
+    ChatInputCommandInteraction
 } from "discord.js";
 import { setTimeout } from "timers/promises";
-import AMP from "../../amp/amp";
+import AMP from "../../amp/amp.js";
+import Instance from "../../amp/Instance";
 
-module.exports = class ServersPanel {
+export default class ServersPanel {
     static commandName = "amp_servers_panel";
     static commandDescription = "Display AMP server information";
 
-    async CreateSlashCommand() {
+    async createSlashCommand() {
         return new SlashCommandBuilder()
             .setName(ServersPanel.commandName)
             .setDescription(ServersPanel.commandDescription)
-            .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild); // Restrict command to users with Manage Guild permission;
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
     }
 
-    CreateCommandFunctionality() {
-        return async function execute(interaction: any) {
+    createCommandFunctionality() {
+        return async function execute(interaction: ChatInputCommandInteraction) {
             const guild = interaction.guild;
-            let channel = guild.channels.cache.find((ch: any) => ch.type === ChannelType.GuildText && ch.name === "server-status");
+            if (!guild) return await interaction.reply("❌ Guild not found.");
+
+            let channel = guild.channels.cache.find(
+                ch => ch.type === ChannelType.GuildText && ch.name === "server-status"
+            ) as TextChannel;
 
             if (!channel) {
-                channel = await guild.channels.create({ name: "server-status", type: ChannelType.GuildText });
+                channel = await guild.channels.create({
+                    name: "server-status",
+                    type: ChannelType.GuildText
+                }) as TextChannel;
             }
 
             await interaction.deferReply();
-            let count = 0;
-            let previousMessages = await channel.messages.fetch({ limit: 100 });
+            let hasReplied = false;
+            let messageCache: Map<string, any> = new Map();
 
-            while (true) {
-                const amp = AMP.getInstance();
-                const servers = await amp.getServers();
-                const embeds = servers
-                    .filter((info: any) => !info.FriendlyName.includes("ADS") && info.AppState !== -1)
-                    .map((info: any) => {
-                        let color = info.AppState === 20 ? Colors.Green : Colors.Red;
-                        let status = info.AppState === 20 ? "```diff\n+ Online\n```" : "```diff\n- Offline\n```";
-                        let currentPlayers = info.Metrics["Active Users"]?.RawValue || 0;
-                        let maxPlayers = info.Metrics["Active Users"]?.MaxValue || 0;
-                        return new EmbedBuilder()
-                            .setColor(color)
-                            .setTitle(info.FriendlyName)
-                            .setDescription("Server Info")
-                            .addFields(
-                                { name: "Status", value: status },
-                                { name: "Players", value: `**\`There are ${currentPlayers} of ${maxPlayers} online\`**` }
-                            )
-                            .setTimestamp();
-                    });
+            const updateServerStatus = async () => {
+                try {
+                    const amp = AMP.getInstance();
+                    const servers = await amp.getServers();
+                    if (!servers) return;
 
-                const embedChunks = []; // Split embeds into chunks of 10
-                for (let i = 0; i < embeds.length; i += 10) {
-                    embedChunks.push(embeds.slice(i, i + 10));
-                }
+                    const embeds = servers
+                        .filter((info: Instance) => !info.FriendlyName.includes("ADS") && info.AppState !== -1)
+                        .map((info: Instance) => {
+                            const color = info.AppState === 20 ? Colors.Green : Colors.Red;
+                            const status = info.AppState === 20
+                                ? "+ Online"
+                                : "- Offline";
+                            const currentPlayers = info.Metrics["Active Users"]?.RawValue || 0;
+                            const maxPlayers = info.Metrics["Active Users"]?.MaxValue || 0;
 
-                let messagesArray = [...previousMessages.values()];
-                for (let i = 0; i < embedChunks.length; i++) {
-                    if (messagesArray[i]) {
-                        await messagesArray[i].edit({ embeds: embedChunks[i] });
-                    } else {
-                        await channel.send({ embeds: embedChunks[i] });
+                            return new EmbedBuilder()
+                                .setColor(color)
+                                .setTitle(info.FriendlyName)
+                                .addFields({
+                                    name: "Status",
+                                    value: `\u0060\u0060\u0060diff\n${status}\n\u0060\u0060\u0060`
+                                }, {
+                                    name: "Players",
+                                    value: `\u0060\u0060\u0060\n${currentPlayers} of ${maxPlayers} online\n\u0060\u0060\u0060`
+                                })
+                                .setTimestamp();
+                        });
+
+                    const embedChunks: EmbedBuilder[][] = [];
+                    for (let i = 0; i < embeds.length; i += 10) {
+                        embedChunks.push(embeds.slice(i, i + 10));
                     }
-                }
 
-                // Delete excess messages if there are more messages than needed
-                for (let i = embedChunks.length; i < messagesArray.length; i++) {
-                    await messagesArray[i].delete();
-                }
+                    const previousMessages = await channel.messages.fetch({ limit: 100 });
+                    const existingMessages = [...previousMessages.values()];
 
-                previousMessages = await channel.messages.fetch({ limit: 100 });
-                if (count < 1) {
-                    await interaction.editReply("Command executed successfully.");
-                    count = 1;
+                    for (let i = 0; i < embedChunks.length; i++) {
+                        const newContent = JSON.stringify(embedChunks[i].map(embed => embed.toJSON()));
+
+                        if (existingMessages[i]) {
+                            const messageId = existingMessages[i].id;
+                            if (messageCache.get(messageId) !== newContent) {
+                                await existingMessages[i].edit({ embeds: embedChunks[i] });
+                                messageCache.set(messageId, newContent);
+                            }
+                        } else {
+                            const sentMessage = await channel.send({ embeds: embedChunks[i] });
+                            messageCache.set(sentMessage.id, newContent);
+                        }
+                    }
+
+                    // Delete all extra messages
+                    for (let i = embedChunks.length; i < existingMessages.length; i++) {
+                        await existingMessages[i].delete();
+                        messageCache.delete(existingMessages[i].id);
+                    }
+
+                    if (!hasReplied) {
+                        await interaction.editReply("✅ Server status panel started.");
+                        hasReplied = true;
+                    }
+
+                    await setTimeout(30000);
+                    await updateServerStatus();
+                } catch (error) {
+                    console.error("Error updating server status:", error);
+                    await interaction.followUp("❌ Failed to update server status.");
                 }
-                await setTimeout(30000);
-            }
+            };
+
+            await updateServerStatus();
         };
     }
 
     async CreateObject() {
         return {
-            data: await this.CreateSlashCommand(),
-            execute: this.CreateCommandFunctionality()
+            data: await this.createSlashCommand(),
+            execute: this.createCommandFunctionality()
         };
     }
-};
+}

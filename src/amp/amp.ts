@@ -1,6 +1,8 @@
+import Instance from "./Instance";
+
 class AMP {
     private static instance: AMP | null = null;
-    private readonly API_BASE_URL: string = "https://amp.ftc.gg/";
+    private readonly API_BASE_URL: string = "https://amp.feedthecraft.com/";
     private readonly username: string;
     private readonly password: string;
     private readonly token: string;
@@ -106,7 +108,7 @@ class AMP {
         console.log(response);
     }
 
-    async getServers() {
+    async getServers() : Promise<Instance[]> {
         try {
             this.isValid();
             const json = { SESSIONID: this.SESSIONID };

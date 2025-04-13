@@ -4,7 +4,8 @@ import EventLoader from "./utility/eventLoader";
 import CommandLoader from "./utility/commandLoader";
 import CommandSync from "./utility/commandSync";
 import AMP from "./amp/amp";
-import CustomClient from "./CustomClient"; // Import the new class
+import CustomClient from "./CustomClient";
+import Instance from "./amp/Instance"; // Import the new class
 
 const client = new CustomClient(); // Use CustomClient instead of Client
 const rest = new REST().setToken(config.DISCORD_TOKEN);
@@ -13,8 +14,8 @@ const rest = new REST().setToken(config.DISCORD_TOKEN);
     try {
         console.log("Starting bot...");
 
-        new EventLoader(client).loadEvents();
-        const commandLoader = new CommandLoader(client, client.commands);
+        await new EventLoader(client).loadEvents();
+        const commandLoader = new CommandLoader(client);
         await commandLoader.loadCommands();
 
         const commandSync = new CommandSync(client);
@@ -25,6 +26,10 @@ const rest = new REST().setToken(config.DISCORD_TOKEN);
 
         const amp = AMP.getInstance(config.AMP_USERNAME, config.AMP_PASS, "", false);
         await amp.login();
+
+        const values: Array<Instance> = await amp.getServers();
+        console.log(values[1].Metrics);
+
     } catch (error) {
         console.error("Error during bot initialization:", error);
     }

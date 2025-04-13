@@ -19,9 +19,21 @@ export default class CommandSync {
             if (this.isCommandUpdateNeeded(guildCommands) || forceUpdate) {
                 console.log("Updating guild commands...");
                 this.client.commands.clear();
-                await new CommandLoader(this.client, this.client.commands).loadCommands();
+                await new CommandLoader(this.client).loadCommands();
+
+                let commandArray = [];
+                for(const temp of this.client.commands) {
+                    commandArray.push(temp[1].data.toJSON());
+                }
+
+                // Logging the command names or other useful information
+                commandArray.forEach(command => {
+                    console.log(`Command: ${command.name}`);
+                });
+
+                // Sync the commands to the Discord API
                 await this.rest.put(Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID), {
-                    body: Array.from(this.client.commands.values()),
+                    body: commandArray,
                 });
 
                 console.log(`Successfully registered ${this.client.commands.size} commands.`);
@@ -35,9 +47,11 @@ export default class CommandSync {
 
     isCommandUpdateNeeded(guildCommands: any) {
         if (guildCommands.length !== this.client.commands.size) return true;
-        return guildCommands.some((guildCommand: any) => {
-            const localCommand = this.client.commands.get(guildCommand.name);
-            return !localCommand || guildCommand.name !== localCommand.name;
-        });
+        for(const guildCommand of guildCommands) {
+            if(!this.client.commands.has(guildCommand.name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

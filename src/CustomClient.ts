@@ -5,6 +5,6 @@ export default class CustomClient extends Client {
 
     constructor() {
         super({ intents: [GatewayIntentBits.Guilds] });
-        this.commands = new Collection();
+        this.commands = new Collection<string, any>();
     }
 }

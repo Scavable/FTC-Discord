@@ -15,4 +15,3 @@ export const config = {
     AMP_USERNAME,
     AMP_PASS,
 };
-
