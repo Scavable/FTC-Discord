@@ -27,7 +27,7 @@ const rest = new REST().setToken(config.DISCORD_TOKEN);
         const amp = AMP.getInstance(config.AMP_USERNAME, config.AMP_PASS, "", false);
         await amp.login();
 
-        const values: Array<Instance> = await amp.getServers();
+        const values: Instance[] = await amp.getServers();
         console.log(values[1].Metrics);
 
     } catch (error) {

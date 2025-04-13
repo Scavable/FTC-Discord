@@ -1,12 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import CustomClient from "../CustomClient";
-import {pathToFileURL} from "node:url";
+import { pathToFileURL } from "node:url";
 
 class CommandLoader {
     private client: CustomClient;
 
-    constructor(client: CustomClient, ) {
+    constructor(client: CustomClient) {
         this.client = client;
     }
 
@@ -22,7 +22,7 @@ class CommandLoader {
 
             for (const file of commandFiles) {
                 const filePath = path.join(commandsPath, file);
-                const commandModule = await import(pathToFileURL(filePath).href); // Use pathToFileURL here
+                const commandModule = await import(pathToFileURL(filePath).href);
                 const commandInstance = new commandModule.default();
                 commandPromises.push(commandInstance.CreateObject());
             }

@@ -11,7 +11,7 @@ class AMP {
     private rememberMeToken: string = "";
     private ID: string = "";
 
-    private instances = [];
+    private instances: Instance[] = [];
 
     // Private constructor to enforce singleton pattern
     private constructor(username: string, password: string, token: string = "", rememberMe: boolean = false) {
@@ -118,10 +118,11 @@ class AMP {
                 throw new Error("Invalid response format for GetInstances.");
             }
 
-            this.instances = response[0]?.AvailableInstances;
+            this.instances = response[0]?.AvailableInstances as Instance[];
             return this.instances;
         } catch (error) {
             console.error("Error fetching instances:", error);
+            return [];
         }
     }
 
