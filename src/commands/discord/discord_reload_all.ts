@@ -34,7 +34,7 @@ export default class ReloadAll {
                     try {
                         const { default: NewCommand } = await import(commandPath + `?update=${Date.now()}`);
                         const newCommandInstance = new NewCommand();
-                        const newCommandObject = await newCommandInstance.CreateObject();
+                        const newCommandObject = await newCommandInstance.createObject();
 
                         if (!newCommandObject?.data?.name || !newCommandObject?.execute) {
                             throw new Error(`Invalid command structure: ${commandName}`);

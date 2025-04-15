@@ -1,4 +1,4 @@
-import Instance from "./Instance";
+import Instance from "../types/Instance";
 
 /**
  * AMP Class

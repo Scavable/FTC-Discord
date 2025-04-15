@@ -9,7 +9,7 @@ import {
 } from "discord.js";
 import { setTimeout } from "timers/promises";
 import AMP from "../../amp/amp.js";
-import Instance from "../../amp/Instance";
+import Instance from "../../types/Instance";
 
 export default class ServersPanel {
     static commandName = "amp_servers_panel";

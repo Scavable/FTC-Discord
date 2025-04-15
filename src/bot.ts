@@ -5,7 +5,7 @@ import CommandLoader from "./utility/commandLoader";
 import CommandSync from "./utility/commandSync";
 import AMP from "./amp/amp";
 import CustomClient from "./CustomClient";
-import Instance from "./amp/Instance"; // Import the new class
+import RoleMapper from "./utility/RoleMapper";
 
 const client = new CustomClient(); // Use CustomClient instead of Client
 const rest = new REST().setToken(config.DISCORD_TOKEN);
@@ -24,10 +24,13 @@ const rest = new REST().setToken(config.DISCORD_TOKEN);
         await client.login(config.DISCORD_TOKEN);
         console.log("Bot successfully logged in!");
 
+        const guild = await client.guilds.fetch(config.GUILD_ID);
+        const roleMapper = new RoleMapper(guild);
+        await roleMapper.initialize();
+        console.log(roleMapper.getAllRoles()[0]);
+
         const amp = AMP.getInstance(config.AMP_USERNAME, config.AMP_PASS, "", false);
         await amp.login();
-
-
 
     } catch (error) {
         console.error("Error during bot initialization:", error);
