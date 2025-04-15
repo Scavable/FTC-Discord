@@ -78,7 +78,6 @@ export default class CreateCategoryCommand {
                                 PermissionFlagsBits.MuteMembers,
                                 PermissionFlagsBits.DeafenMembers,
                                 PermissionFlagsBits.MoveMembers,
-                                PermissionFlagsBits.
                                 PermissionFlagsBits.UseApplicationCommands,
                                 PermissionFlagsBits.UseEmbeddedActivities,
                                 PermissionFlagsBits.UseExternalApps,
