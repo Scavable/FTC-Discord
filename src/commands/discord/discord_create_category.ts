@@ -1,5 +1,4 @@
 import {ChannelType, PermissionFlagsBits, Role, SlashCommandBuilder} from "discord.js";
-import { CategoryChannel} from "discord.js";
 
 export default class CreateCategoryCommand {
     static commandName = "discord_create_category";
@@ -96,7 +95,7 @@ export default class CreateCategoryCommand {
                 const voiceChannelName = `${categoryName} Voice Channel`;
 
                 // Create the announcement channel
-                const announcementsChannel = await guild.channels.create({
+                await guild.channels.create({
                     name: announcementName,
                     type: ChannelType.GuildAnnouncement,
                     parent: category.id,
@@ -129,15 +128,11 @@ export default class CreateCategoryCommand {
                                 PermissionFlagsBits.UseExternalApps,
                             ] // Deny all common permissions for @everyone
                         }
-                        // {
-                        //     id: guild.roles.cache.find((role: Role) => role.name === 'Rules')?.id || '', // Find the Rules role
-                        //     allow: [PermissionFlagsBits.AddReactions], // Allow add reactions permission for Rules role
-                        // },
                     ]
                 });
 
                 // Create two text channels
-                const generalChannel = await guild.channels.create({
+                await guild.channels.create({
                     name: generalChatName,
                     type: ChannelType.GuildText,
                     parent: category.id,
