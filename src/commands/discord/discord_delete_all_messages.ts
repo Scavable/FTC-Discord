@@ -1,4 +1,4 @@
-import { ChannelType, SlashCommandBuilder } from 'discord.js';
+import {ChannelType, ChatInputCommandInteraction, Message, SlashCommandBuilder} from 'discord.js';
 
 export default class DeleteAllMessages {
     static commandName = 'discord_delete_all_messages';
@@ -18,7 +18,7 @@ export default class DeleteAllMessages {
     }
 
     createCommandFunctionality() {
-        return async function execute(interaction: any) {
+        return async function execute(interaction: ChatInputCommandInteraction) {
             try {
                 await interaction.reply('🗑️ Deleting all messages...');
                 const targetChannel = interaction.options.getChannel(DeleteAllMessages.subName);
@@ -31,7 +31,7 @@ export default class DeleteAllMessages {
                 let messages;
                 do {
                     messages = await targetChannel.messages.fetch({ limit: 100 });
-                    const recentMessages = messages.filter((message: any) =>
+                    const recentMessages = messages.filter((message: Message) =>
                         Date.now() - message.createdTimestamp < 14 * 24 * 60 * 60 * 1000
                     );
 
