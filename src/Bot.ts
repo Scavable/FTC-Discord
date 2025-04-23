@@ -1,4 +1,4 @@
-import { config } from "./config";
+import { config } from "./Config";
 import { REST, Routes } from "discord.js";
 import EventLoader from "./utility/EventLoader";
 import CommandLoader from "./utility/CommandLoader";
