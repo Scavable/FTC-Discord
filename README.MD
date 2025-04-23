@@ -83,7 +83,7 @@ To get started with this project, follow these steps:
 The project follows a clean structure to ensure maintainability and scalability:
 
 /src <br>
-&emsp;├── amp/ # AMP functions <br>
+&emsp;├── amp/ # Amp functions <br>
 &emsp;├── commands/ # Command files go here <br>
 &emsp;├── events/ # Event handling files <br>
 &emsp;├── types/ # Types <br>

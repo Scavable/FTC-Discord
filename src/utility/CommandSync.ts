@@ -1,6 +1,6 @@
 import { REST, Routes } from "discord.js";
 import { config } from "../config";
-import CommandLoader from "./commandLoader";
+import CommandLoader from "./CommandLoader";
 import CustomClient from "../CustomClient"; // Import the custom client
 
 export default class CommandSync {
