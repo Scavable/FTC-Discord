@@ -33,6 +33,8 @@ export default class ReloadAll {
                     } else continue;
 
                     try {
+                        // Dynamically import the command file and create a new instance of the command.
+                        // This is done to prevent the command from being cached.
                         const { default: NewCommand } = await import(commandPath + `?update=${Date.now()}`);
                         const newCommandInstance = new NewCommand();
                         const newCommandObject = await newCommandInstance.createObject();
