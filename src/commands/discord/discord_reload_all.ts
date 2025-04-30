@@ -1,5 +1,7 @@
-import { SlashCommandBuilder } from 'discord.js';
+import {SlashCommandBuilder} from 'discord.js';
 import logger from "../../utility/Logger";
+import {fileURLToPath} from "node:url";
+import path from "node:path";
 
 export default class ReloadAll {
     static commandName = 'discord_reload_all';
@@ -16,20 +18,26 @@ export default class ReloadAll {
             try {
                 await interaction.deferReply();
                 let reloadCount = 0;
-                const commandArray = interaction.client.commands;
+                const commandArray:any[] = Array.from(interaction.client.commands.values())
 
                 for (const command of commandArray) {
                     if (command.data.name === 'discord_reload_all') continue;
 
                     const commandName = command.data.name;
-                    let commandPath = '';
 
+                    // Node.js platform independent file handling
+                    const __fileName = fileURLToPath(import.meta.url).replace(`discord_reload_all.ts`, ``);
+                    const __dirname = path.dirname(__fileName);
+                    let commandPath = ``;
+
+                    // Determine paths of command files
                     if (commandName.startsWith('amp')) {
-                        commandPath = `../amp/${commandName}.ts`;
+                        commandPath = path.join(__dirname, `amp/${commandName}.ts`);
+                        console.log(commandPath);
                     } else if (commandName.startsWith('discord')) {
-                        commandPath = `../discord/${commandName}.ts`;
+                        commandPath = path.join(__dirname, `discord/${commandName}.ts`);
                     } else if (commandName.startsWith('minecraft')) {
-                        commandPath = `../minecraft/${commandName}.ts`;
+                        commandPath = path.join(__dirname, `minecraft/${commandName}.ts`);
                     } else continue;
 
                     try {
@@ -46,7 +54,7 @@ export default class ReloadAll {
                         await interaction.client.commands.set(newCommandObject.data.name, newCommandObject);
                         logger.info(`✅ Reloaded command: ${newCommandObject.data.name}`);
                         reloadCount++;
-                    } catch (error) {
+                    } catch (error:any) {
                         console.error(`❌ Error reloading command ${commandName}:`, error);
                         await interaction.followUp(`❌ Failed to reload \`${commandName}\`: ${error.message}`);
                     }
