@@ -1,9 +1,12 @@
 import { Events } from 'discord.js';
+import CustomClient from "../CustomClient";
+import logger from "../utility/Logger";
 
 export default {
     name: Events.ClientReady,
     once: true,
-    execute(client: { user: { tag: any } }) {
-        console.log(`Ready! Logged in as ${client.user.tag}`);
+    execute(client: CustomClient) {
+        logger.info(client.isReady() ? "Bot is ready!" : "Bot is not ready yet...");
+        logger.info(`Signed is as user: ${client.user.tag}`);
     },
 };

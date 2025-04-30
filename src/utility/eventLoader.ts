@@ -34,7 +34,6 @@ class EventLoader {
 
         for (const file of eventFiles) {
             const filePath = path.join(eventsPath, file);
-            console.log(filePath)
 
             // Dynamically import the event file
             const event: EventModule = (await import(pathToFileURL(filePath).href)).default;

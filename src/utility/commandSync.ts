@@ -1,7 +1,8 @@
 import { REST, Routes } from "discord.js";
 import { config } from "../config";
 import CommandLoader from "./commandLoader";
-import CustomClient from "../CustomClient"; // Import the custom client
+import CustomClient from "../CustomClient";
+import logger from "./Logger"; // Import the custom client
 
 export default class CommandSync {
     client: CustomClient; // Use the custom client
@@ -17,7 +18,7 @@ export default class CommandSync {
             const guildCommands = await this.rest.get(Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID));
 
             if (this.isCommandUpdateNeeded(guildCommands) || forceUpdate) {
-                console.log("Updating guild commands...");
+                logger.info("Updating guild commands...");
                 this.client.commands.clear();
                 await new CommandLoader(this.client).loadCommands();
 
@@ -28,7 +29,7 @@ export default class CommandSync {
 
                 // Logging the command names or other useful information
                 commandArray.forEach(command => {
-                    console.log(`Command: ${command.name}`);
+                    logger.info(`Command: ${command.name}`);
                 });
 
                 // Sync the commands to the Discord API
@@ -36,12 +37,12 @@ export default class CommandSync {
                     body: commandArray,
                 });
 
-                console.log(`Successfully registered ${this.client.commands.size} commands.`);
+                logger.info(`Successfully registered ${this.client.commands.size} commands.`);
             } else {
-                console.log("No command updates required.");
+                logger.info("No command updates required.");
             }
         } catch (error) {
-            console.error("Error syncing guild commands:", error);
+            logger.error(`Error syncing guild commands: ${error}`);
         }
     }
 

@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
+import logger from "../../utility/Logger";
 
 export default class ReloadAll {
     static commandName = 'discord_reload_all';
@@ -41,7 +42,7 @@ export default class ReloadAll {
                         }
 
                         await interaction.client.commands.set(newCommandObject.data.name, newCommandObject);
-                        console.log(`✅ Reloaded command: ${newCommandObject.data.name}`);
+                        logger.info(`✅ Reloaded command: ${newCommandObject.data.name}`);
                         reloadCount++;
                     } catch (error) {
                         console.error(`❌ Error reloading command ${commandName}:`, error);

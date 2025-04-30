@@ -1,4 +1,5 @@
 import Instance from "../types/Instance";
+import logger from "../utility/Logger";
 
 class AMP {
     private static instance: AMP | null = null;
@@ -78,7 +79,7 @@ class AMP {
             const response = await this.sendPostRequest(endpoint, json);
 
             if (response.success) {
-                console.log("Login successful:", response);
+                logger.info(`Login successful: ${response}`);
                 this.SESSIONID = response.sessionID;
                 this.rememberMeToken = response.rememberMeToken;
                 this.ID = response.userInfo.ID;

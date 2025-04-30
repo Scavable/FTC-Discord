@@ -7,22 +7,23 @@ import AMP from "./amp/amp";
 import CustomClient from "./CustomClient";
 import RoleMapper from "./utility/RoleMapper";
 
+import logger from './utility/Logger'
+
 const client = new CustomClient(); // Use CustomClient instead of Client
 const rest = new REST().setToken(config.DISCORD_TOKEN);
 
 (async () => {
     try {
-        console.log("Starting bot...");
+        logger.info("Starting bot...");
 
+        //Backbone Classes
         await new EventLoader(client).loadEvents();
-        const commandLoader = new CommandLoader(client);
-        await commandLoader.loadCommands();
+        await new CommandLoader(client).loadCommands();
+        await new CommandSync(client).syncGuildCommands(false);
 
-        const commandSync = new CommandSync(client);
-        await commandSync.syncGuildCommands();
-
+        // Discord Bot Login (Console message located in, ready.ts)
         await client.login(config.DISCORD_TOKEN);
-        console.log("Bot successfully logged in!");
+
 
         const guild = await client.guilds.fetch(config.GUILD_ID);
         const roleMapper = new RoleMapper(guild);

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import CustomClient from "../CustomClient";
 import {fileURLToPath, pathToFileURL} from "node:url";
+import logger from "./Logger";
 
 class CommandLoader {
     private client: CustomClient;
@@ -49,7 +50,7 @@ class CommandLoader {
                     const commandObject = result.value;
                     if ("data" in commandObject && "execute" in commandObject) {
                         this.client.commands.set(commandObject.data.name, commandObject);
-                        console.log(`Loaded command: ${commandObject.data.name}`);
+                        logger.info(`Loaded command: ${commandObject.data.name}`);
                     } else {
                         console.warn(`[WARNING] Command is missing required properties.`);
                     }
