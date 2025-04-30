@@ -1,11 +1,29 @@
-// <llm-snippet-file>src/utility/Logger.ts</llm-snippet-file>
-import { createLogger, format, transports, Logger as WinstonLogger } from "winston";
+import { createLogger, format, transports, Logger as WinstonLogger, addColors } from "winston";
+
+const customLevels = {
+    levels: {
+        error: 0,
+        warn: 1,
+        debug: 2,
+        commands: 3, // Adding a custom 'success' level
+        info: 4,
+    },
+    colors: {
+        error: "red",
+        warn: "yellow",
+        info: "green",
+        commands: "blue", // Adding a color for the 'success' level
+    },
+};
+
+addColors(customLevels.colors); // Register custom colors for levels
 
 class Logger {
     private logger: WinstonLogger;
 
     constructor() {
         this.logger = createLogger({
+            levels: customLevels.levels, // Use custom levels
             level: "info", // Default logging level
             format: format.combine(
                 format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), // Add timestamp to logs
@@ -14,11 +32,11 @@ class Logger {
                 )
             ),
             transports: [
-                // Log messages to the console with better formatting
+                // Log messages to the console with colorization
                 new transports.Console({
                     format: format.combine(
                         format.colorize({
-                            all: true, // Colors the entire log line
+                            all: true, // Enable colorization for all levels
                         }),
                         format.timestamp({
                             format: "YYYY-MM-DD HH:mm:ss",
@@ -52,6 +70,11 @@ class Logger {
     // Log a debug message
     public debug(message: string): void {
         this.logger.debug(message);
+    }
+
+    // Log a success message (our custom level)
+    public commands(message: string): void {
+        this.logger.log("commands", message); // Use the custom 'success' level
     }
 }
 

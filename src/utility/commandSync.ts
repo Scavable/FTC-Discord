@@ -37,9 +37,9 @@ export default class CommandSync {
                     body: commandArray,
                 });
 
-                logger.info(`Successfully registered ${this.client.commands.size} commands.`);
+                logger.commands(`Successfully registered ${this.client.commands.size} commands.`);
             } else {
-                logger.info("No command updates required.");
+                logger.commands("No command updates required.");
             }
         } catch (error) {
             logger.error(`Error syncing guild commands: ${error}`);

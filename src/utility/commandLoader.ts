@@ -50,7 +50,7 @@ class CommandLoader {
                     const commandObject = result.value;
                     if ("data" in commandObject && "execute" in commandObject) {
                         this.client.commands.set(commandObject.data.name, commandObject);
-                        logger.info(`Loaded command: ${commandObject.data.name}`);
+                        logger.commands(`Loaded command: ${commandObject.data.name}`);
                     } else {
                         console.warn(`[WARNING] Command is missing required properties.`);
                     }

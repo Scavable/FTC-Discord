@@ -16,7 +16,7 @@ export default class ReloadAll {
             try {
                 await interaction.deferReply();
                 let reloadCount = 0;
-                const commandArray = Array.from(interaction.client.commands.values());
+                const commandArray = interaction.client.commands;
 
                 for (const command of commandArray) {
                     if (command.data.name === 'discord_reload_all') continue;
