@@ -27,7 +27,6 @@ const rest = new REST().setToken(config.DISCORD_TOKEN);
         const guild = await client.guilds.fetch(config.GUILD_ID);
         const roleMapper = new RoleMapper(guild);
         await roleMapper.initialize();
-        console.log(roleMapper.getAllRoles()[0]);
 
         const amp = AMP.getInstance(config.AMP_USERNAME, config.AMP_PASS, "", false);
         await amp.login();

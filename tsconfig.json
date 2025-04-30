@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
+    "target": "ES2024",
+    "module": "ES2024",
     "moduleResolution": "Bundler",
+    "lib": ["ES2024", "DOM"],
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

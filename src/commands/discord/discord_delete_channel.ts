@@ -1,5 +1,13 @@
-import {ChannelType, PermissionFlagsBits, Role, SlashCommandBuilder} from "discord.js";
-import {CategoryChannel, GuildChannel} from "discord.js";
+import {
+    ChannelType,
+    PermissionFlagsBits,
+    Role,
+    SlashCommandBuilder,
+    CategoryChannel,
+    GuildChannel,
+    ChatInputCommandInteraction,
+    GuildBasedChannel
+} from "discord.js";
 
 export default class DeleteChannelCommand {
     static commandName = "discord_delete_channel";
@@ -13,26 +21,41 @@ export default class DeleteChannelCommand {
                 option.setName("channel")
                     .setDescription("The channel or category to delete")
                     .setRequired(true))
-            .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels); // Restrict command to users with Manage Channels permission
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
     }
 
     createCommandFunctionality() {
-        return async (interaction: any) => {
+        return async (interaction: ChatInputCommandInteraction) => {
             const guild = interaction.guild;
             if (!guild) {
                 return await interaction.reply("❌ Guild not found.");
             }
 
             const member = interaction.member;
-            const targetChannel = interaction.options.getChannel("channel");
+            const targetChannel = interaction.options.getChannel("channel") as GuildBasedChannel;
 
-            // Restrict command to users with the "staff" role
-            if (!member?.roles.cache.some((role: Role) => role.name === 'staff')) {
-                return await interaction.reply("❌ You do not have the required role to run this command.");
+            // Check if member exists and has the staff role
+            if (!member || !('roles' in member) || !member.roles.cache.some((role: Role) => role.name === 'staff')) {
+                return await interaction.reply({
+                    content: "❌ You do not have the required role to run this command.",
+                    ephemeral: true
+                });
             }
 
             if (!targetChannel) {
-                return await interaction.reply("❌ You must provide a valid channel or category.");
+                return await interaction.reply({
+                    content: "❌ You must provide a valid channel or category.",
+                    ephemeral: true
+                });
+            }
+
+            // Check bot permissions
+            const botMember = guild.members.cache.get(interaction.client.user.id);
+            if (!botMember?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+                return await interaction.reply({
+                    content: "❌ I don't have permission to manage channels.",
+                    ephemeral: true
+                });
             }
 
             await interaction.deferReply();
@@ -44,22 +67,36 @@ export default class DeleteChannelCommand {
                     const childChannels = guild.channels.cache.filter(c => c.parentId === category.id);
 
                     // Delete all child channels first
-                    for (const [_, channel] of childChannels) {
-                        await channel.delete(`Deleted by ${interaction.user.tag}`);
+                    for (const channel of childChannels.values()) {
+                        if (channel.deletable) {
+                            await channel.delete(`Deleted by ${interaction.user.tag}`);
+                        } else {
+                            await interaction.editReply(`⚠️ Cannot delete channel ${channel.name} due to permissions.`);
+                            return;
+                        }
                     }
 
                     // Then delete the category itself
-                    await category.delete(`Deleted by ${interaction.user.tag}`);
-
-                    await interaction.editReply(`✅ Category **${targetChannel.name}** and all its channels have been deleted.`);
-                } else {
+                    if (category.deletable) {
+                        await category.delete(`Deleted by ${interaction.user.tag}`);
+                        await interaction.editReply(`✅ Category **${targetChannel.name}** and all its channels have been deleted.`);
+                    } else {
+                        await interaction.editReply(`❌ Cannot delete category ${category.name} due to permissions.`);
+                    }
+                } else if ('deletable' in targetChannel) {
                     // Delete a single channel
-                    await targetChannel.delete(`Deleted by ${interaction.user.tag}`);
-                    await interaction.editReply(`✅ Channel **${targetChannel.name}** has been deleted.`);
+                    if (targetChannel.deletable) {
+                        await targetChannel.delete(`Deleted by ${interaction.user.tag}`);
+                        await interaction.editReply(`✅ Channel **${targetChannel.name}** has been deleted.`);
+                    } else {
+                        await interaction.editReply(`❌ Cannot delete channel ${targetChannel.name} due to permissions.`);
+                    }
+                } else {
+                    await interaction.editReply("❌ This type of channel cannot be deleted.");
                 }
             } catch (error) {
                 console.error("Error deleting channel(s):", error);
-                await interaction.editReply("❌ There was an error deleting the channel(s).");
+                await interaction.editReply(`❌ Error while deleting: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         };
     }

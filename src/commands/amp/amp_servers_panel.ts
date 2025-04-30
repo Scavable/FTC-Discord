@@ -57,7 +57,7 @@ export default class ServersPanel {
                 embedChunks.push(embeds.slice(i, i + 10));
             }
 
-            const existingMessages = [...(await channel.messages.fetch({ limit: 100 })).values()];
+            const existingMessages = Array.from((await channel.messages.fetch({ limit: 100 })).values());
 
             for (let i = 0; i < embedChunks.length; i++) {
                 const newContent = JSON.stringify(embedChunks[i].map(embed => embed.toJSON()));
@@ -100,6 +100,7 @@ export default class ServersPanel {
             }
 
             await interaction.deferReply();
+            await interaction.editReply("✅ Server status panel started.");
 
             const amp = AMP.getInstance();
             const messageCache = new Map<string, any>();
@@ -111,7 +112,7 @@ export default class ServersPanel {
             };
 
             await updateLoop();
-            await interaction.editReply("✅ Server status panel started.");
+
         };
     }
 

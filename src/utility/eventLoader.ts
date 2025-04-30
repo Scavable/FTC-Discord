@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
 import { Client, ClientEvents } from "discord.js";
 
@@ -18,9 +19,10 @@ class EventLoader {
     }
 
     async loadEvents() {
-        // Resolving the base directory using __dirname in ESM environment
-        const __dirname = path.dirname(import.meta.dirname);
-        const eventsPath = path.join(__dirname, "/events");
+        // Correctly resolve the directory path in ESM
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const eventsPath = path.join(__dirname, "../events");
 
         // Ensure the events directory exists
         if (!fs.existsSync(eventsPath)) {
@@ -32,6 +34,7 @@ class EventLoader {
 
         for (const file of eventFiles) {
             const filePath = path.join(eventsPath, file);
+            console.log(filePath)
 
             // Dynamically import the event file
             const event: EventModule = (await import(pathToFileURL(filePath).href)).default;

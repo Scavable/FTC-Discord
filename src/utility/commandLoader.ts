@@ -1,7 +1,8 @@
+
 import fs from "node:fs";
 import path from "node:path";
 import CustomClient from "../CustomClient";
-import { pathToFileURL } from "node:url";
+import {fileURLToPath, pathToFileURL} from "node:url";
 
 class CommandLoader {
     private client: CustomClient;
@@ -11,31 +12,54 @@ class CommandLoader {
     }
 
     async loadCommands() {
-        const __dirname = path.dirname(import.meta.dirname);
-        const foldersPath = path.join(__dirname, "/commands");
-        const commandFolders = fs.readdirSync(foldersPath);
-        const commandPromises: Promise<any>[] = [];
+        // Correctly resolve the directory path in ESM
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const commandsPath = path.join(__dirname, "../commands");
 
-        for (const folder of commandFolders) {
-            const commandsPath = path.join(foldersPath, folder);
-            const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".ts") || file.endsWith(".js"));
+        try {
+            const commandPromises = [];
 
-            for (const file of commandFiles) {
-                const filePath = path.join(commandsPath, file);
-                const commandModule = await import(pathToFileURL(filePath).href);
-                const commandInstance = new commandModule.default();
-                commandPromises.push(commandInstance.createObject());
+            // Use async directory reading
+            const folders = await fs.promises.readdir(commandsPath, { withFileTypes: true });
+
+            for (const folder of folders) {
+                if (!folder.isDirectory()) continue;
+
+                const folderPath = path.join(commandsPath, folder.name);
+                const files = await fs.promises.readdir(folderPath);
+                const commandFiles = files.filter(file => file.endsWith(".ts") || file.endsWith(".js"));
+
+                for (const file of commandFiles) {
+                    const filePath = path.join(folderPath, file);
+                    try {
+                        const commandModule = await import(pathToFileURL(filePath).href);
+                        const commandInstance = new commandModule.default();
+                        commandPromises.push(commandInstance.createObject());
+                    } catch (error) {
+                        console.error(`Error loading command from ${file}:`, error);
+                    }
+                }
             }
-        }
 
-        const commandObjects = await Promise.all(commandPromises);
+            const commandObjects = await Promise.allSettled(commandPromises);
 
-        for (const commandObject of commandObjects) {
-            if ("data" in commandObject && "execute" in commandObject) {
-                this.client.commands.set(commandObject.data.name, commandObject);
-            } else {
-                console.warn(`[WARNING] Command is missing required properties.`);
+            for (const result of commandObjects) {
+                if (result.status === 'fulfilled') {
+                    const commandObject = result.value;
+                    if ("data" in commandObject && "execute" in commandObject) {
+                        this.client.commands.set(commandObject.data.name, commandObject);
+                        console.log(`Loaded command: ${commandObject.data.name}`);
+                    } else {
+                        console.warn(`[WARNING] Command is missing required properties.`);
+                    }
+                } else {
+                    console.error('[ERROR] Failed to load command:', result.reason);
+                }
             }
+        } catch (error) {
+            console.error('[ERROR] Failed to load commands:', error);
+            throw error;
         }
     }
 }

@@ -28,12 +28,18 @@ To get started with this project, follow these steps:
 
    ```bash
    npm install
+   npm install discord.js
+   npm install dotenv
    ```
 
 3. Create a `.env` file in the project directory and add your Discord bot token:
 
    ```
    DISCORD_TOKEN=your-discord-bot-token-here
+   CLIENT_ID=your-cllient-id-here
+   GUILD_ID=your-guild-id-here
+   AMP_USERNAME=amp-bot-username-here
+   AMP_PASS=amp-bot-password-here
    ```
 
 4. Compile the TypeScript codebase (optional during development):
