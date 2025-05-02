@@ -8,12 +8,12 @@ import {
     ChatInputCommandInteraction
 } from "discord.js";
 import { setTimeout } from "timers/promises";
-import AMP from "../../amp/amp.js";
+import Amp from "../../amp/Amp";
 import Instance from "../../types/Instance";
 
 export default class ServersPanel {
     static commandName = "amp_servers_panel";
-    static commandDescription = "Display AMP server information";
+    static commandDescription = "Display Amp server information";
 
     async createSlashCommand() {
         return new SlashCommandBuilder()
@@ -23,7 +23,7 @@ export default class ServersPanel {
     }
 
     private async updateServerStatus(
-        amp: AMP,
+        amp: Amp,
         channel: TextChannel,
         messageCache: Map<string, string>
     ) {
@@ -102,7 +102,7 @@ export default class ServersPanel {
             await interaction.deferReply();
             await interaction.editReply("✅ Server status panel started.");
 
-            const amp = AMP.getInstance();
+            const amp = Amp.getInstance();
             const messageCache = new Map<string, any>();
 
             const updateLoop = async () => {

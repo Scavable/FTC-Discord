@@ -1,6 +1,6 @@
 import { REST, Routes } from "discord.js";
-import { config } from "../config";
-import CommandLoader from "./commandLoader";
+import { config } from "../Config";
+import CommandLoader from "./CommandLoader";
 import CustomClient from "../CustomClient";
 import logger from "./Logger"; // Import the custom client
 

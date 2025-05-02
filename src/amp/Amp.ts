@@ -1,8 +1,8 @@
 import Instance from "../types/Instance";
 import logger from "../utility/Logger";
 
-class AMP {
-    private static instance: AMP | null = null;
+class Amp {
+    private static instance: Amp | null = null;
     private readonly API_BASE_URL: string = process.env.AMP_API_BASE_URL || "https://amp.feedthecraft.com/";
     private readonly username: string;
     private readonly password: string;
@@ -21,14 +21,14 @@ class AMP {
         this.rememberMe = rememberMe;
     }
 
-    public static getInstance(username?: string, password?: string, token = "", rememberMe = false): AMP {
-        if (!AMP.instance) {
+    public static getInstance(username?: string, password?: string, token = "", rememberMe = false): Amp {
+        if (!Amp.instance) {
             if (!username || !password) {
-                throw new Error("AMP instance not initialized. Credentials required.");
+                throw new Error("Amp instance not initialized. Credentials required.");
             }
-            AMP.instance = new AMP(username, password, token, rememberMe);
+            Amp.instance = new Amp(username, password, token, rememberMe);
         }
-        return AMP.instance;
+        return Amp.instance;
     }
 
     private async sendPostRequest(url: string, data: any) {
@@ -79,7 +79,7 @@ class AMP {
             const response = await this.sendPostRequest(endpoint, json);
 
             if (response.success) {
-                logger.info(`Login successful: ${response}`);
+                logger.info(`Login successful: ${JSON.stringify(response)}`);
                 this.SESSIONID = response.sessionID;
                 this.rememberMeToken = response.rememberMeToken;
                 this.ID = response.userInfo.ID;
@@ -109,6 +109,7 @@ class AMP {
             return [];
         }
     }
+
 }
 
-export default AMP;
+export default Amp;

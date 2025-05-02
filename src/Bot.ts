@@ -1,9 +1,9 @@
-import { config } from "./config";
+import { config } from "./Config";
 import { REST, Routes } from "discord.js";
-import EventLoader from "./utility/eventLoader";
-import CommandLoader from "./utility/commandLoader";
-import CommandSync from "./utility/commandSync";
-import AMP from "./amp/amp";
+import EventLoader from "./utility/EventLoader";
+import CommandLoader from "./utility/CommandLoader";
+import CommandSync from "./utility/CommandSync";
+import Amp from "./amp/Amp";
 import CustomClient from "./CustomClient";
 import RoleMapper from "./utility/RoleMapper";
 
@@ -21,7 +21,7 @@ const rest = new REST().setToken(config.DISCORD_TOKEN);
         await new CommandLoader(client).loadCommands();
         await new CommandSync(client).syncGuildCommands(false);
 
-        // Discord Bot Login (Console message located in, ready.ts)
+        // Discord Bot Login (Console message located in, Ready.ts)
         await client.login(config.DISCORD_TOKEN);
 
 
@@ -29,7 +29,7 @@ const rest = new REST().setToken(config.DISCORD_TOKEN);
         const roleMapper = new RoleMapper(guild);
         await roleMapper.initialize();
 
-        const amp = AMP.getInstance(config.AMP_USERNAME, config.AMP_PASS, "", false);
+        const amp = Amp.getInstance(config.AMP_USERNAME, config.AMP_PASS, "", false);
         await amp.login();
 
     } catch (error) {
