@@ -21,7 +21,7 @@ To get started with this project, follow these steps:
 
    ```bash
    git clone https://github.com/Scavable/FTC-Discord.git
-   cd discord-bot
+   cd "FTC Discord"
    ```
 
 2. Install dependencies via npm:
