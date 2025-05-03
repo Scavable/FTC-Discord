@@ -95,7 +95,8 @@ The project follows a clean structure to ensure maintainability and scalability:
 &emsp;├── types/ # Types <br>
 &emsp;├── utility/ # Utility functions and tools <br>
 &emsp;├── Bot.ts # Main entry point of the bot <br>
-&emsp;.env # Environment variables package.json <br>
+&emsp;.env # Environment variables <br> 
+package.json <br>
 &emsp;tsconfig.json # TypeScript configuration
 
 ---
