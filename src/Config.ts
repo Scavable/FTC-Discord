@@ -2,9 +2,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID, AMP_USERNAME, AMP_PASS } = process.env;
+const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID, AMP_USERNAME, AMP_PASS, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB } = process.env;
 
-if (!DISCORD_TOKEN || !CLIENT_ID || !GUILD_ID || !AMP_USERNAME || !AMP_PASS) {
+if (!DISCORD_TOKEN || !CLIENT_ID || !GUILD_ID || !AMP_USERNAME || !AMP_PASS
+    || !POSTGRES_USER || !POSTGRES_PASSWORD || !POSTGRES_HOST || !POSTGRES_PORT || !POSTGRES_DB) {
     throw new Error("Missing environment variables");
 }
 
@@ -14,4 +15,9 @@ export const config = {
     GUILD_ID,
     AMP_USERNAME,
     AMP_PASS,
+    POSTGRES_USER,
+    POSTGRES_PASSWORD,
+    POSTGRES_HOST,
+    POSTGRES_PORT,
+    POSTGRES_DB
 };

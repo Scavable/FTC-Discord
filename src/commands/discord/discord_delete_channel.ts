@@ -21,7 +21,7 @@ export default class DeleteChannelCommand {
                 option.setName("channel")
                     .setDescription("The channel or category to delete")
                     .setRequired(true))
-            .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels | PermissionFlagsBits.ManageMessages);
     }
 
     createCommandFunctionality() {
@@ -34,7 +34,7 @@ export default class DeleteChannelCommand {
             const member = interaction.member;
             const targetChannel = interaction.options.getChannel("channel") as GuildBasedChannel;
 
-            // Check if member exists and has the staff role
+            // Check if a member exists and has the staff role
             if (!member || !('roles' in member) || !member.roles.cache.some((role: Role) => role.name === 'staff')) {
                 return await interaction.reply({
                     content: "❌ You do not have the required role to run this command.",

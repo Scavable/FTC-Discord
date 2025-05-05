@@ -1,6 +1,6 @@
 import {SlashCommandBuilder} from 'discord.js';
 import logger from "../../utility/Logger";
-import {fileURLToPath} from "node:url";
+import {fileURLToPath, pathToFileURL} from "node:url";
 import path from "node:path";
 
 export default class ReloadAll {
@@ -26,24 +26,23 @@ export default class ReloadAll {
                     const commandName = command.data.name;
 
                     // Node.js platform independent file handling
-                    const __fileName = fileURLToPath(import.meta.url).replace(`discord_reload_all.ts`, ``);
+                    const __fileName = import.meta.url.replace(`discord_reload_all.ts`, ``);
                     const __dirname = path.dirname(__fileName);
                     let commandPath = ``;
 
                     // Determine paths of command files
                     if (commandName.startsWith('amp')) {
-                        commandPath = path.join(__dirname, `amp/${commandName}.ts`);
-                        console.log(commandPath);
+                        commandPath = path.join(__dirname, `amp/${commandName}.ts`).replace(".\\", "");
                     } else if (commandName.startsWith('discord')) {
-                        commandPath = path.join(__dirname, `discord/${commandName}.ts`);
+                        commandPath = path.join(__dirname, `discord/${commandName}.ts`).replace(".\\", "");
                     } else if (commandName.startsWith('minecraft')) {
-                        commandPath = path.join(__dirname, `minecraft/${commandName}.ts`);
+                        commandPath = path.join(__dirname, `minecraft/${commandName}.ts`).replace(".\\", "");
                     } else continue;
 
                     try {
                         // Dynamically import the command file and create a new instance of the command.
                         // This is done to prevent the command from being cached.
-                        const { default: NewCommand } = await import(commandPath + `?update=${Date.now()}`);
+                        const { default: NewCommand } = await import(commandPath);
                         const newCommandInstance = new NewCommand();
                         const newCommandObject = await newCommandInstance.createObject();
 

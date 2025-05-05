@@ -8,15 +8,20 @@ import CustomClient from "./CustomClient";
 import RoleMapper from "./utility/RoleMapper";
 
 import logger from './utility/Logger'
+import database from "./database/database";
 
 const client = new CustomClient(); // Use CustomClient instead of Client
-const rest = new REST().setToken(config.DISCORD_TOKEN);
+//const rest = new REST().setToken(config.DISCORD_TOKEN);
 
 (async () => {
     try {
+        // Database
+        //logger.info("Connecting to database");
+        //await database.createUserTable();
+
         logger.info("Starting bot...");
 
-        //Backbone Classes
+        // Backbone Classes
         await new EventLoader(client).loadEvents();
         await new CommandLoader(client).loadCommands();
         await new CommandSync(client).syncGuildCommands(false);
