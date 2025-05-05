@@ -7,6 +7,7 @@ export default {
     once: true,
     execute(client: CustomClient) {
         logger.info(client.isReady() ? "Bot is ready!" : "Bot is not ready yet...");
-        logger.info(`Signed is as user: ${client.user.tag}`);
+        if(!!client.user)
+            logger.info(`Logged in as ${client.user.tag}`);
     },
 };

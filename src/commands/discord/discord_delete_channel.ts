@@ -6,12 +6,12 @@ import {
     CategoryChannel,
     GuildChannel,
     ChatInputCommandInteraction,
-    GuildBasedChannel
+    GuildBasedChannel, Collection, GuildMember
 } from "discord.js";
 
 export default class DeleteChannelCommand {
-    static commandName = "discord_delete_channel";
-    static commandDescription = "Delete a category with child channels or a single channel";
+    static commandName: string = "discord_delete_channel";
+    static commandDescription: string = "Delete a category with child channels or a single channel";
 
     async createSlashCommand() {
         return new SlashCommandBuilder()
@@ -31,7 +31,7 @@ export default class DeleteChannelCommand {
                 return await interaction.reply("❌ Guild not found.");
             }
 
-            const member = interaction.member;
+            const member = interaction.member as GuildMember;
             const targetChannel = interaction.options.getChannel("channel") as GuildBasedChannel;
 
             // Check if a member exists and has the staff role
@@ -50,7 +50,7 @@ export default class DeleteChannelCommand {
             }
 
             // Check bot permissions
-            const botMember = guild.members.cache.get(interaction.client.user.id);
+            const botMember: GuildMember | undefined = guild.members.cache.get(interaction.client.user.id);
             if (!botMember?.permissions.has(PermissionFlagsBits.ManageChannels)) {
                 return await interaction.reply({
                     content: "❌ I don't have permission to manage channels.",
@@ -64,7 +64,7 @@ export default class DeleteChannelCommand {
                 // Check if the target is a category
                 if (targetChannel.type === ChannelType.GuildCategory) {
                     const category = targetChannel as CategoryChannel;
-                    const childChannels = guild.channels.cache.filter(c => c.parentId === category.id);
+                    const childChannels = guild.channels.cache.filter(c => c.parentId === category.id && 'deletable' in c) as Collection<string, GuildChannel>;
 
                     // Delete all child channels first
                     for (const channel of childChannels.values()) {

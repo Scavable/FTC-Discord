@@ -32,11 +32,11 @@ export default class ReloadAll {
 
                     // Determine paths of command files
                     if (commandName.startsWith('amp')) {
-                        commandPath = path.join(__dirname, `amp/${commandName}.ts`).replace(".\\", "");
+                        commandPath = path.join(__dirname, `../amp/${commandName}.js`).replace(".\\", "");
                     } else if (commandName.startsWith('discord')) {
-                        commandPath = path.join(__dirname, `discord/${commandName}.ts`).replace(".\\", "");
+                        commandPath = path.join(__dirname, `../discord/${commandName}.js`).replace(".\\", "");
                     } else if (commandName.startsWith('minecraft')) {
-                        commandPath = path.join(__dirname, `minecraft/${commandName}.ts`).replace(".\\", "");
+                        commandPath = path.join(__dirname, `../minecraft/${commandName}.js`).replace(".\\", "");
                     } else continue;
 
                     try {

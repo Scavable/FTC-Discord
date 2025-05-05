@@ -31,7 +31,7 @@ export default class Database {
   static async query<T>(text: string, params?: any[]): Promise<T[]> {
     const client: PoolClient = await pool.connect();
     try {
-      const result = await client.query<T>(text, params);
+      const result = await client.query(text, params);
       return result.rows;
     } finally {
       client.release(); // Always release the client

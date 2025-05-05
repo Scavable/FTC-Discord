@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Multipurpose discord bot for FTC.",
-  "main": "dist/bot.js",
+  "main": "dist/Bot.js",
   "scripts": {
     "dev": "tsx watch src/Bot.ts",
-    "start": "node dist/bot.js",
-    "build": "tsup src/Bot.ts --minify --format esm",
+    "start": "node dist/Bot.js",
+    "build": "tsup src --out-dir dist --format esm --target esnext",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Scavable",
@@ -24,4 +24,5 @@
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }
+
 }
