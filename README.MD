@@ -35,11 +35,18 @@ To get started with this project, follow these steps:
 3. Create a `.env` file in the project directory and add your Discord bot token:
 
    ```
-   DISCORD_TOKEN=your-discord-bot-token-here
-   CLIENT_ID=your-cllient-id-here
-   GUILD_ID=your-guild-id-here
-   AMP_USERNAME=amp-bot-username-here
-   AMP_PASS=amp-bot-password-here
+   # Discord Bot Creds
+   DISCORD_TOKEN=
+   CLIENT_ID=
+   GUILD_ID=
+   AMP_USERNAME=
+   AMP_PASS=
+   # Database Creds
+   POSTGRES_USER=
+   POSTGRES_PASSWORD=
+   POSTGRES_HOST=
+   POSTGRES_PORT=
+   POSTGRES_DB=
    ```
 
 4. Compile the TypeScript codebase (optional during development):
