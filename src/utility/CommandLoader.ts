@@ -16,7 +16,9 @@ class CommandLoader {
         // Node.js platform independent file handling
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = path.dirname(__filename);
-        const commandsPath = path.join(__dirname, "/commands");
+        const __root = __dirname.includes("src") ? path.resolve(__dirname, "../") : __dirname;
+        const commandsPath = path.join(__root, "/commands");
+
 
         try {
             const commandPromises = [];

@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/Bot.ts",
     "start": "node dist/Bot.js",
-    "build": "tsup src --out-dir dist --format esm --target esnext",
+    "build": "tsup src --out-dir dist --format esm --target esnext --minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Scavable",
