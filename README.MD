@@ -81,6 +81,7 @@ To get started with this project, follow these steps:
 - [dotenv](https://www.npmjs.com/package/dotenv) (v16.4.7): For environment variable management.
 - [tsx](https://github.com/esbuild-kit/tsx) (v4.19.3): For TypeScript runtime and execution.
 - [tsup](https://www.npmjs.com/package/tsup) (v8.4.0): For bundling and building the application.
+- [winston](https://www.npmjs.com/package/winston) (v3.17.0): A simple and universal logging library with support for multiple transports.
 
 ---
 
