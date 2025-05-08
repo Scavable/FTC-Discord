@@ -1,4 +1,4 @@
-# Discord Bot - TypeScript Project
+# Discord Bot - TypeScript Project (README.MD Needs Updating)
 
 Welcome to the **Discord Bot** repository! This project is built using **TypeScript** and leverages the **Discord.js** library to interact with Discord's API. This bot is designed to enhance user interactions and provide various functionalities on Discord servers.
 
