@@ -91,13 +91,17 @@ The project follows a clean structure to ensure maintainability and scalability:
 /src <br>
 &emsp;├── amp/ # Amp functions <br>
 &emsp;├── commands/ # Command files go here <br>
-&emsp;├── events/ # Event handling files <br>
+&emsp;├── database/ # Database handling <br>
+&emsp;├── events/ # Event handling <br>
 &emsp;├── types/ # Types <br>
 &emsp;├── utility/ # Utility functions and tools <br>
 &emsp;├── Bot.ts # Main entry point of the bot <br>
 .env # Environment variables <br> 
+.envTemplate # Gives all currently used variables without values; Rename to .env <br>
+LicenseAgreement.md # License <br>
 package.json <br>
-tsconfig.json # TypeScript configuration
+README.MD # Readme file for GitHub <br>
+tsconfig.json # TypeScript configuration <br>
 
 ---
 
