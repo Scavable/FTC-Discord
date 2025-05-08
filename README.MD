@@ -103,7 +103,7 @@ tsconfig.json # TypeScript configuration
 
 ## License
 
-This project is licensed under the MIT License. You can find more details in the [LICENSE](./LICENSE) file.
+This project is licensed under the ISC License. You can find more details in the [LICENSE](./LicenseAgreement.md) file.
 
 ---
 
