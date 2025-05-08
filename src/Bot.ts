@@ -1,5 +1,4 @@
 import { config } from "./Config";
-import { REST, Routes } from "discord.js";
 import EventLoader from "./utility/EventLoader";
 import CommandLoader from "./utility/CommandLoader";
 import CommandSync from "./utility/CommandSync";
@@ -7,14 +6,20 @@ import Amp from "./amp/Amp";
 import CustomClient from "./CustomClient";
 import RoleMapper from "./utility/RoleMapper";
 
-import logger from './utility/Logger'
+import logger from './utility/Logger';
+import child_process from 'child_process';
 import database from "./database/database";
 
 const client = new CustomClient(); // Use CustomClient instead of Client
-//const rest = new REST().setToken(config.DISCORD_TOKEN);
 
 (async () => {
     try {
+        // Install dependencies
+        const dep_arr = ["discord.js", "dotenv", "winston", "pg", "prismarine-nbt"]
+        for(const dep of dep_arr) {
+            child_process.execSync('npm install ' + dep, {stdio:[0,1,2]});
+        }
+
         // Database
         //logger.info("Connecting to database");
         //await database.createUserTable();

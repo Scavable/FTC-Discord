@@ -13,16 +13,16 @@
   "author": "Scavable",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.18.0",
+    "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
     "pg": "^8.15.6",
+    "prismarine-nbt": "^2.7.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/pg": "^8.11.14",
     "tsup": "^8.4.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   }
-
 }
