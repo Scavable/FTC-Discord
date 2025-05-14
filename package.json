@@ -15,7 +15,7 @@
   "dependencies": {
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
-    "pg": "^8.15.6",
+    "pg": "^8.16.0",
     "prismarine-nbt": "^2.7.0",
     "winston": "^3.17.0"
   },

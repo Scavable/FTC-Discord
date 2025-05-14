@@ -14,10 +14,14 @@ const client = new CustomClient(); // Use CustomClient instead of Client
 
 (async () => {
     try {
-        // Install dependencies
-        const dep_arr = ["discord.js", "dotenv", "winston", "pg", "prismarine-nbt"]
+        // Check and Install dependencies if missing
+        const dep_arr: string[] = ["discord.js", "dotenv", "winston", "pg", "prismarine-nbt"];
         for(const dep of dep_arr) {
-            child_process.execSync('npm install ' + dep, {stdio:[0,1,2]});
+            try{
+                logger.info(child_process.execSync('npm ls ' + dep).toString());
+            }catch (e){
+                logger.warn(`Installing missing dependency: ` + child_process.execSync(`npm install ` + dep).toString());
+            }
         }
 
         // Database
@@ -34,11 +38,12 @@ const client = new CustomClient(); // Use CustomClient instead of Client
         // Discord Bot Login (Console message located in, Ready.ts)
         await client.login(config.DISCORD_TOKEN);
 
-
+        // Initialize Discord info
         const guild = await client.guilds.fetch(config.GUILD_ID);
         const roleMapper = new RoleMapper(guild);
         await roleMapper.initialize();
 
+        // Initialize AMP
         const amp = Amp.getInstance(config.AMP_USERNAME, config.AMP_PASS, "", false);
         await amp.login();
 
