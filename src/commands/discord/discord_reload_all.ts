@@ -26,17 +26,19 @@ export default class ReloadAll {
                     const commandName = command.data.name;
 
                     // Node.js platform independent file handling
-                    const __fileName = import.meta.url.replace(`discord_reload_all.ts`, ``);
+                    console.log(import.meta.url);
+                    const ext = import.meta.url.includes(".ts") ? "ts" : "js";
+                    const __fileName = import.meta.url.replace(`discord_reload_all`.concat(ext), ``);
                     const __dirname = path.dirname(__fileName);
                     let commandPath = ``;
 
                     // Determine paths of command files
                     if (commandName.startsWith('amp')) {
-                        commandPath = path.join(__dirname, `../amp/${commandName}.js`).replace(".\\", "");
+                        commandPath = path.join(__dirname, `../amp/${commandName}.`.concat(ext)).replace(".\\", "");
                     } else if (commandName.startsWith('discord')) {
-                        commandPath = path.join(__dirname, `../discord/${commandName}.js`).replace(".\\", "");
+                        commandPath = path.join(__dirname, `../discord/${commandName}.`.concat(ext)).replace(".\\", "");
                     } else if (commandName.startsWith('minecraft')) {
-                        commandPath = path.join(__dirname, `../minecraft/${commandName}.js`).replace(".\\", "");
+                        commandPath = path.join(__dirname, `../minecraft/${commandName}.`).concat(ext).replace(".\\", "");
                     } else continue;
 
                     try {
