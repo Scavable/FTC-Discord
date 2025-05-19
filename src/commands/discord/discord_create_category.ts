@@ -1,4 +1,5 @@
 import {ChannelType, PermissionFlagsBits, Role, SlashCommandBuilder} from "discord.js";
+import RoleMapper from "../../utility/RoleMapper";
 
 export default class CreateCategoryCommand {
     static commandName = "discord_create_category";
@@ -21,6 +22,8 @@ export default class CreateCategoryCommand {
             if (!guild) {
                 return await interaction.reply("❌ Guild not found.");
             }
+            const roleMapper = new RoleMapper(guild);
+            await roleMapper.initialize();
 
             const member = interaction.member;
             const categoryName = interaction.options.getString("category_name");
@@ -37,7 +40,7 @@ export default class CreateCategoryCommand {
             await interaction.deferReply();
 
             try {
-                // Create the category channel
+                // Create the category channel with permissions
                 const category = await guild.channels.create({
                     name: categoryName,
                     type: ChannelType.GuildCategory,
@@ -82,17 +85,54 @@ export default class CreateCategoryCommand {
                                 PermissionFlagsBits.UseExternalApps,
                                 PermissionFlagsBits.RequestToSpeak,
                                 PermissionFlagsBits.CreateEvents,
-                                PermissionFlagsBits.ManageEvents,
+                                PermissionFlagsBits.ManageEvents
+                            ]
+                        },
+                        {
+                            id: roleMapper.getRoleId("Staff"),
+                            allow: [
+                                PermissionFlagsBits.MentionEveryone,
+                                PermissionFlagsBits.ManageMessages,
+                                PermissionFlagsBits.ManageThreads,
+                                PermissionFlagsBits.SendPolls,
+                                PermissionFlagsBits.MuteMembers,
+                                PermissionFlagsBits.DeafenMembers,
+                                PermissionFlagsBits.MoveMembers,
+                                PermissionFlagsBits.CreateEvents,
+                                PermissionFlagsBits.ManageEvents
+                            ]
+                        },
+                        {
+                            id: roleMapper.getRoleId("Rules"),
+                            allow: [
+                                PermissionFlagsBits.ViewChannel,
+                                PermissionFlagsBits.SendMessages,
+                                PermissionFlagsBits.SendMessagesInThreads,
+                                PermissionFlagsBits.CreatePublicThreads,
+                                PermissionFlagsBits.CreatePrivateThreads,
+                                PermissionFlagsBits.EmbedLinks,
+                                PermissionFlagsBits.AttachFiles,
+                                PermissionFlagsBits.AddReactions,
+                                PermissionFlagsBits.UseExternalEmojis,
+                                PermissionFlagsBits.UseExternalStickers,
+                                PermissionFlagsBits.ReadMessageHistory,
+                                PermissionFlagsBits.UseEmbeddedActivities,
+                                PermissionFlagsBits.Connect,
+                                PermissionFlagsBits.Speak,
+                                PermissionFlagsBits.Stream,
+                                PermissionFlagsBits.UseSoundboard,
+                                PermissionFlagsBits.UseExternalSounds,
+                                PermissionFlagsBits.UseVAD
                             ]
                         }
                     ]
                 });
 
                 // Prepend the category name to the child channel names
-                const announcementName = `${categoryName} Announcements`;
-                const generalChatName = `${categoryName} General Chat`;
-                const supportChatName = `${categoryName} Support Chat`;
-                const voiceChannelName = `${categoryName} Voice Channel`;
+                const announcementName = `${categoryName}-announcements`;
+                const generalChatName = `${categoryName}-general-chat`;
+                const supportChatName = `${categoryName}-support-chat`;
+                const voiceChannelName = `${categoryName}-voice-channel`;
 
                 // Create the announcement channel
                 await guild.channels.create({
@@ -126,7 +166,16 @@ export default class CreateCategoryCommand {
                                 PermissionFlagsBits.UseApplicationCommands,
                                 PermissionFlagsBits.UseEmbeddedActivities,
                                 PermissionFlagsBits.UseExternalApps,
-                            ] // Deny all common permissions for @everyone
+                            ]
+                        },
+                        {
+                            id: roleMapper.getRoleId("Rules"),
+                            allow: [
+                                PermissionFlagsBits.ViewChannel,
+                                PermissionFlagsBits.AddReactions,
+                                PermissionFlagsBits.UseExternalEmojis,
+                                PermissionFlagsBits.ReadMessageHistory,
+                            ]
                         }
                     ]
                 });
