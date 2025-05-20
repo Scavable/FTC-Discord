@@ -1,7 +1,7 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import logger from '../../utility/Logger';
-import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
+import CustomClient from '../../CustomClient';
 
 export default class ReloadAll {
   static commandName = 'discord_reload_all';
@@ -14,12 +14,12 @@ export default class ReloadAll {
   }
 
   createCommandFunctionality() {
-    return async function execute(interaction: any) {
+    return async function execute(interaction: ChatInputCommandInteraction) {
       try {
         await interaction.deferReply();
         let reloadCount = 0;
         const commandArray: any[] = Array.from(
-          interaction.client.commands.values(),
+          (interaction.client as CustomClient).commands.values(),
         );
 
         for (const command of commandArray) {
@@ -28,7 +28,6 @@ export default class ReloadAll {
           const commandName = command.data.name;
 
           // Node.js platform independent file handling
-          console.log(import.meta.url);
           const ext = import.meta.url.includes('.ts') ? 'ts' : 'js';
           const __fileName = import.meta.url.replace(
             `discord_reload_all`.concat(ext),
@@ -64,10 +63,11 @@ export default class ReloadAll {
               throw new Error(`Invalid command structure: ${commandName}`);
             }
 
-            await interaction.client.commands.set(
+            (interaction.client as CustomClient).commands.set(
               newCommandObject.data.name,
               newCommandObject,
             );
+
             logger.info(`✅ Reloaded command: ${newCommandObject.data.name}`);
             reloadCount++;
           } catch (error: any) {

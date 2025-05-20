@@ -1,4 +1,4 @@
-import { ApplicationCommand, Collection, REST, Routes } from 'discord.js';
+import { ApplicationCommand, REST, Routes } from 'discord.js';
 import { config } from '../Config';
 import CommandLoader from './CommandLoader';
 import CustomClient from '../CustomClient';
@@ -18,8 +18,6 @@ export default class CommandSync {
       const guildCommands: Array<ApplicationCommand> = (await this.rest.get(
         Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID),
       )) as Array<ApplicationCommand>;
-
-      console.log(guildCommands.length);
 
       if (this.isCommandUpdateNeeded(guildCommands) || forceUpdate) {
         logger.info('Updating guild commands...');
@@ -55,7 +53,7 @@ export default class CommandSync {
     }
   }
 
-  isCommandUpdateNeeded(guildCommands: any) {
+  isCommandUpdateNeeded(guildCommands: Array<ApplicationCommand>) {
     if (guildCommands.length !== this.client.commands.size) return true;
     for (const guildCommand of guildCommands) {
       if (!this.client.commands.has(guildCommand.name)) {
