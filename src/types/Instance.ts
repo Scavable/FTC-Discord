@@ -72,7 +72,7 @@ type Instance = {
       ShortName: string;
     };
   };
-  ApplicationEndpoints: Object[];
+  ApplicationEndpoints: object[];
   DeploymentEndpoints: {
     'FileManagerPlugin.SFTP.SFTPIPBinding': string;
     'MinecraftModule.Minecraft.ServerIPBinding': string;
