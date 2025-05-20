@@ -1,5 +1,5 @@
-import { Pool, PoolClient } from "pg";
-import { config } from "../Config";
+import { Pool, PoolClient } from 'pg';
+import { config } from '../Config';
 
 // Create a connection pool
 const pool = new Pool({
@@ -11,15 +11,15 @@ const pool = new Pool({
 });
 
 export default class Database {
-
-  static async createUserTable(){
+  static async createUserTable() {
     const client: PoolClient = await pool.connect();
-    try{
-      const result = await client.query("Create Table If Not Exists users(discord_id BigInt PRIMARY KEY, discord_username Varchar(32), minecraft_uuid UUID, minecraft_username Varchar(16))");
-    }catch(error){
+    try {
+      const result = await client.query(
+        'Create Table If Not Exists users(discord_id BigInt PRIMARY KEY, discord_username Varchar(32), minecraft_uuid UUID, minecraft_username Varchar(16))',
+      );
+    } catch (error) {
       console.error(error);
-    }
-    finally{
+    } finally {
       client.release();
     }
     await pool.end();
@@ -62,9 +62,9 @@ export default class Database {
         )
       `);
 
-      console.log("Database tables initialized successfully!");
+      console.log('Database tables initialized successfully!');
     } catch (error) {
-      console.error("Error initializing database tables:", error);
+      console.error('Error initializing database tables:', error);
     }
   }
 }

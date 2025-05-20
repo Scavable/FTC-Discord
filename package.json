@@ -8,7 +8,9 @@
     "dev": "tsx watch src/Bot.ts",
     "start": "node dist/Bot.js",
     "build": "tsup src --out-dir dist --format esm --target esnext --minify",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write ."
   },
   "author": "Scavable",
   "license": "ISC",
@@ -20,9 +22,14 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.27.0",
     "@types/pg": "^8.11.14",
+    "eslint": "^9.27.0",
+    "globals": "^16.1.0",
+    "prettier": "^3.5.3",
     "tsup": "^8.4.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1"
   }
 }

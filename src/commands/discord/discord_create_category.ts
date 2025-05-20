@@ -1,220 +1,235 @@
-import {ChannelType, PermissionFlagsBits, Role, SlashCommandBuilder} from "discord.js";
-import RoleMapper from "../../utility/RoleMapper";
+import {
+  ChannelType,
+  PermissionFlagsBits,
+  Role,
+  SlashCommandBuilder,
+} from 'discord.js';
+import RoleMapper from '../../utility/RoleMapper';
 
 export default class CreateCategoryCommand {
-    static commandName = "discord_create_category";
-    static commandDescription = "Create a category with child channels";
+  static commandName = 'discord_create_category';
+  static commandDescription = 'Create a category with child channels';
 
-    async createSlashCommand() {
-        return new SlashCommandBuilder()
-            .setName(CreateCategoryCommand.commandName)
-            .setDescription(CreateCategoryCommand.commandDescription)
-            .addStringOption(option =>
-                option.setName("category_name")
-                    .setDescription("Name of the category to create")
-                    .setRequired(true))
-            .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels); // Restrict command to users with Manage Channels permission
-    }
+  async createSlashCommand() {
+    return new SlashCommandBuilder()
+      .setName(CreateCategoryCommand.commandName)
+      .setDescription(CreateCategoryCommand.commandDescription)
+      .addStringOption((option) =>
+        option
+          .setName('category_name')
+          .setDescription('Name of the category to create')
+          .setRequired(true),
+      )
+      .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels); // Restrict command to users with Manage Channels permission
+  }
 
-    createCommandFunctionality() {
-        return async (interaction: any) => {
-            const guild = interaction.guild;
-            if (!guild) {
-                return await interaction.reply("❌ Guild not found.");
-            }
-            const roleMapper = new RoleMapper(guild);
-            await roleMapper.initialize();
+  createCommandFunctionality() {
+    return async (interaction: any) => {
+      await interaction.deferReply();
 
-            const member = interaction.member;
-            const categoryName = interaction.options.getString("category_name");
+      const guild = interaction.guild;
+      if (!guild) {
+        return await interaction.editReply('❌ Guild not found.');
+      }
+      const roleMapper = new RoleMapper(guild);
+      await roleMapper.initialize();
 
-            // Restrict command to users with the "staff" role
-            if (!member?.roles.cache.some((role: Role) => role.name === 'staff')) {
-                return await interaction.reply("❌ You do not have the required role to run this command.");
-            }
+      const member = interaction.member;
+      const categoryName = interaction.options.getString('category_name');
 
-            if (!categoryName) {
-                return await interaction.reply("❌ You must provide a category name.");
-            }
+      // Restrict command to users with the "staff" role
+      if (!member?.roles.cache.some((role: Role) => role.name === 'Staff')) {
+        return await interaction.editReply(
+          '❌ You do not have the required role to run this command.',
+        );
+      }
 
-            await interaction.deferReply();
+      if (!categoryName) {
+        return await interaction.editReply(
+          '❌ You must provide a category name.',
+        );
+      }
 
-            try {
-                // Create the category channel with permissions
-                const category = await guild.channels.create({
-                    name: categoryName,
-                    type: ChannelType.GuildCategory,
-                    position: 0,
-                    permissionOverwrites: [
-                        {
-                            id: guild.id, // @everyone role ID
-                            deny: [
-                                PermissionFlagsBits.ViewChannel,
-                                PermissionFlagsBits.ManageChannels,
-                                PermissionFlagsBits.ManageRoles,
-                                PermissionFlagsBits.ManageWebhooks,
-                                PermissionFlagsBits.CreateInstantInvite,
-                                PermissionFlagsBits.SendMessages,
-                                PermissionFlagsBits.SendMessagesInThreads,
-                                PermissionFlagsBits.CreatePublicThreads,
-                                PermissionFlagsBits.CreatePrivateThreads,
-                                PermissionFlagsBits.EmbedLinks,
-                                PermissionFlagsBits.AttachFiles,
-                                PermissionFlagsBits.AddReactions,
-                                PermissionFlagsBits.UseExternalEmojis,
-                                PermissionFlagsBits.UseExternalStickers,
-                                PermissionFlagsBits.MentionEveryone,
-                                PermissionFlagsBits.ManageMessages,
-                                PermissionFlagsBits.ManageThreads,
-                                PermissionFlagsBits.ReadMessageHistory,
-                                PermissionFlagsBits.SendTTSMessages,
-                                PermissionFlagsBits.SendVoiceMessages,
-                                PermissionFlagsBits.SendPolls,
-                                PermissionFlagsBits.Connect,
-                                PermissionFlagsBits.Speak,
-                                PermissionFlagsBits.Stream,
-                                PermissionFlagsBits.UseSoundboard,
-                                PermissionFlagsBits.UseExternalSounds,
-                                PermissionFlagsBits.UseVAD,
-                                PermissionFlagsBits.PrioritySpeaker,
-                                PermissionFlagsBits.MuteMembers,
-                                PermissionFlagsBits.DeafenMembers,
-                                PermissionFlagsBits.MoveMembers,
-                                PermissionFlagsBits.UseApplicationCommands,
-                                PermissionFlagsBits.UseEmbeddedActivities,
-                                PermissionFlagsBits.UseExternalApps,
-                                PermissionFlagsBits.RequestToSpeak,
-                                PermissionFlagsBits.CreateEvents,
-                                PermissionFlagsBits.ManageEvents
-                            ]
-                        },
-                        {
-                            id: roleMapper.getRoleId("Staff"),
-                            allow: [
-                                PermissionFlagsBits.MentionEveryone,
-                                PermissionFlagsBits.ManageMessages,
-                                PermissionFlagsBits.ManageThreads,
-                                PermissionFlagsBits.SendPolls,
-                                PermissionFlagsBits.MuteMembers,
-                                PermissionFlagsBits.DeafenMembers,
-                                PermissionFlagsBits.MoveMembers,
-                                PermissionFlagsBits.CreateEvents,
-                                PermissionFlagsBits.ManageEvents
-                            ]
-                        },
-                        {
-                            id: roleMapper.getRoleId("Rules"),
-                            allow: [
-                                PermissionFlagsBits.ViewChannel,
-                                PermissionFlagsBits.SendMessages,
-                                PermissionFlagsBits.SendMessagesInThreads,
-                                PermissionFlagsBits.CreatePublicThreads,
-                                PermissionFlagsBits.CreatePrivateThreads,
-                                PermissionFlagsBits.EmbedLinks,
-                                PermissionFlagsBits.AttachFiles,
-                                PermissionFlagsBits.AddReactions,
-                                PermissionFlagsBits.UseExternalEmojis,
-                                PermissionFlagsBits.UseExternalStickers,
-                                PermissionFlagsBits.ReadMessageHistory,
-                                PermissionFlagsBits.UseEmbeddedActivities,
-                                PermissionFlagsBits.Connect,
-                                PermissionFlagsBits.Speak,
-                                PermissionFlagsBits.Stream,
-                                PermissionFlagsBits.UseSoundboard,
-                                PermissionFlagsBits.UseExternalSounds,
-                                PermissionFlagsBits.UseVAD
-                            ]
-                        }
-                    ]
-                });
+      try {
+        // Create the category channel with permissions
+        const category = await guild.channels.create({
+          name: categoryName,
+          type: ChannelType.GuildCategory,
+          position: 0,
+          permissionOverwrites: [
+            {
+              id: guild.id, // @everyone role ID
+              deny: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ManageChannels,
+                PermissionFlagsBits.ManageRoles,
+                PermissionFlagsBits.ManageWebhooks,
+                PermissionFlagsBits.CreateInstantInvite,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.CreatePrivateThreads,
+                PermissionFlagsBits.EmbedLinks,
+                PermissionFlagsBits.AttachFiles,
+                PermissionFlagsBits.AddReactions,
+                PermissionFlagsBits.UseExternalEmojis,
+                PermissionFlagsBits.UseExternalStickers,
+                PermissionFlagsBits.MentionEveryone,
+                PermissionFlagsBits.ManageMessages,
+                PermissionFlagsBits.ManageThreads,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendTTSMessages,
+                PermissionFlagsBits.SendVoiceMessages,
+                PermissionFlagsBits.SendPolls,
+                PermissionFlagsBits.Connect,
+                PermissionFlagsBits.Speak,
+                PermissionFlagsBits.Stream,
+                PermissionFlagsBits.UseSoundboard,
+                PermissionFlagsBits.UseExternalSounds,
+                PermissionFlagsBits.UseVAD,
+                PermissionFlagsBits.PrioritySpeaker,
+                PermissionFlagsBits.MuteMembers,
+                PermissionFlagsBits.DeafenMembers,
+                PermissionFlagsBits.MoveMembers,
+                PermissionFlagsBits.UseApplicationCommands,
+                PermissionFlagsBits.UseEmbeddedActivities,
+                PermissionFlagsBits.UseExternalApps,
+                PermissionFlagsBits.RequestToSpeak,
+                PermissionFlagsBits.CreateEvents,
+                PermissionFlagsBits.ManageEvents,
+              ],
+            },
+            {
+              id: roleMapper.getRoleId('Staff'),
+              allow: [
+                PermissionFlagsBits.MentionEveryone,
+                PermissionFlagsBits.ManageMessages,
+                PermissionFlagsBits.ManageThreads,
+                PermissionFlagsBits.SendPolls,
+                PermissionFlagsBits.MuteMembers,
+                PermissionFlagsBits.DeafenMembers,
+                PermissionFlagsBits.MoveMembers,
+                PermissionFlagsBits.CreateEvents,
+                PermissionFlagsBits.ManageEvents,
+              ],
+            },
+            {
+              id: roleMapper.getRoleId('Rules'),
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.CreatePrivateThreads,
+                PermissionFlagsBits.EmbedLinks,
+                PermissionFlagsBits.AttachFiles,
+                PermissionFlagsBits.AddReactions,
+                PermissionFlagsBits.UseExternalEmojis,
+                PermissionFlagsBits.UseExternalStickers,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.UseEmbeddedActivities,
+                PermissionFlagsBits.Connect,
+                PermissionFlagsBits.Speak,
+                PermissionFlagsBits.Stream,
+                PermissionFlagsBits.UseSoundboard,
+                PermissionFlagsBits.UseExternalSounds,
+                PermissionFlagsBits.UseVAD,
+              ],
+            },
+          ],
+        });
 
-                // Prepend the category name to the child channel names
-                const announcementName = `${categoryName}-announcements`;
-                const generalChatName = `${categoryName}-general-chat`;
-                const supportChatName = `${categoryName}-support-chat`;
-                const voiceChannelName = `${categoryName}-voice-channel`;
+        // Prepend the category name to the child channel names
+        const announcementName = `${categoryName}-announcements`;
+        const generalChatName = `${categoryName}-general-chat`;
+        const supportChatName = `${categoryName}-support-chat`;
+        const voiceChannelName = `${categoryName}-voice-channel`;
 
-                // Create the announcement channel
-                await guild.channels.create({
-                    name: announcementName,
-                    type: ChannelType.GuildAnnouncement,
-                    parent: category.id,
-                    permissionOverwrites: [
-                        {
-                            id: guild.id,
-                            deny: [
-                                PermissionFlagsBits.ViewChannel,
-                                PermissionFlagsBits.ManageChannels,
-                                PermissionFlagsBits.ManageRoles,
-                                PermissionFlagsBits.ManageWebhooks,
-                                PermissionFlagsBits.CreateInstantInvite,
-                                PermissionFlagsBits.SendMessages,
-                                PermissionFlagsBits.SendMessagesInThreads,
-                                PermissionFlagsBits.CreatePublicThreads,
-                                PermissionFlagsBits.EmbedLinks,
-                                PermissionFlagsBits.AttachFiles,
-                                PermissionFlagsBits.AddReactions,
-                                PermissionFlagsBits.UseExternalEmojis,
-                                PermissionFlagsBits.UseExternalStickers,
-                                PermissionFlagsBits.MentionEveryone,
-                                PermissionFlagsBits.ManageMessages,
-                                PermissionFlagsBits.ManageThreads,
-                                PermissionFlagsBits.ReadMessageHistory,
-                                PermissionFlagsBits.SendTTSMessages,
-                                PermissionFlagsBits.SendVoiceMessages,
-                                PermissionFlagsBits.SendPolls,
-                                PermissionFlagsBits.UseApplicationCommands,
-                                PermissionFlagsBits.UseEmbeddedActivities,
-                                PermissionFlagsBits.UseExternalApps,
-                            ]
-                        },
-                        {
-                            id: roleMapper.getRoleId("Rules"),
-                            allow: [
-                                PermissionFlagsBits.ViewChannel,
-                                PermissionFlagsBits.AddReactions,
-                                PermissionFlagsBits.UseExternalEmojis,
-                                PermissionFlagsBits.ReadMessageHistory,
-                            ]
-                        }
-                    ]
-                });
+        // Create the announcement channel
+        await guild.channels.create({
+          name: announcementName,
+          type: ChannelType.GuildAnnouncement,
+          parent: category.id,
+          permissionOverwrites: [
+            {
+              id: guild.id,
+              deny: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.ManageChannels,
+                PermissionFlagsBits.ManageRoles,
+                PermissionFlagsBits.ManageWebhooks,
+                PermissionFlagsBits.CreateInstantInvite,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.EmbedLinks,
+                PermissionFlagsBits.AttachFiles,
+                PermissionFlagsBits.AddReactions,
+                PermissionFlagsBits.UseExternalEmojis,
+                PermissionFlagsBits.UseExternalStickers,
+                PermissionFlagsBits.MentionEveryone,
+                PermissionFlagsBits.ManageMessages,
+                PermissionFlagsBits.ManageThreads,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendTTSMessages,
+                PermissionFlagsBits.SendVoiceMessages,
+                PermissionFlagsBits.SendPolls,
+                PermissionFlagsBits.UseApplicationCommands,
+                PermissionFlagsBits.UseEmbeddedActivities,
+                PermissionFlagsBits.UseExternalApps,
+              ],
+            },
+            {
+              id: roleMapper.getRoleId('Rules'),
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.AddReactions,
+                PermissionFlagsBits.UseExternalEmojis,
+                PermissionFlagsBits.ReadMessageHistory,
+              ],
+            },
+          ],
+        });
 
-                // Create two text channels
-                await guild.channels.create({
-                    name: generalChatName,
-                    type: ChannelType.GuildText,
-                    parent: category.id,
-                });
+        // Create two text channels
+        await guild.channels.create({
+          name: generalChatName,
+          type: ChannelType.GuildText,
+          parent: category.id,
+        });
 
-                await guild.channels.create({
-                    name: supportChatName,
-                    type: ChannelType.GuildText,
-                    parent: category.id,
-                });
+        await guild.channels.create({
+          name: supportChatName,
+          type: ChannelType.GuildText,
+          parent: category.id,
+        });
 
-                // Create a voice channel
-                await guild.channels.create({
-                    name: voiceChannelName,
-                    type: ChannelType.GuildVoice,
-                    parent: category.id,
-                    bitrate: 64000, // Default bitrate for voice channel
-                    userLimit: 10, // Limit the number of users in the voice channel
-                });
+        // Create a voice channel
+        await guild.channels.create({
+          name: voiceChannelName,
+          type: ChannelType.GuildVoice,
+          parent: category.id,
+          //bitrate: 64000, // Default bitrate for voice channel
+          //userLimit: 10, // Limit the number of users in the voice channel
+        });
 
-                // Respond with success message
-                await interaction.editReply(`✅ Category **${categoryName}** created successfully with child channels!`);
-            } catch (error) {
-                console.error("Error creating category or channels:", error);
-                await interaction.editReply("❌ There was an error creating the category and channels.");
-            }
-        };
-    }
+        // Respond with success message
+        await interaction.editReply(
+          `✅ Category **${categoryName}** created successfully with child channels!`,
+        );
+      } catch (error) {
+        console.error('Error creating category or channels:', error);
+        await interaction.editReply(
+          '❌ There was an error creating the category and channels.',
+        );
+      }
+    };
+  }
 
-    async createObject() {
-        return {
-            data: await this.createSlashCommand(),
-            execute: this.createCommandFunctionality(),
-        };
-    }
+  async createObject() {
+    return {
+      data: await this.createSlashCommand(),
+      execute: this.createCommandFunctionality(),
+    };
+  }
 }
