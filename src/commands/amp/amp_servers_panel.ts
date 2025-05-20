@@ -22,6 +22,40 @@ export default class ServersPanel {
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
   }
 
+  createCommandFunctionality() {
+    return async (interaction: ChatInputCommandInteraction) => {
+      await interaction.deferReply();
+
+      const guild = interaction.guild;
+      if (!guild) return await interaction.reply('❌ Guild not found.');
+
+      let channel = guild.channels.cache.find(
+        (ch) =>
+          ch.type === ChannelType.GuildText && ch.name === 'server-status',
+      ) as TextChannel;
+
+      if (!channel) {
+        channel = (await guild.channels.create({
+          name: 'server-status',
+          type: ChannelType.GuildText,
+        })) as TextChannel;
+      }
+
+      await interaction.editReply('✅ Server status panel started.');
+
+      const amp = Amp.getInstance();
+      const messageCache = new Map<string, any>();
+
+      const updateLoop = async () => {
+        await this.updateServerStatus(amp, channel, messageCache);
+        await setTimeout(30000);
+        await updateLoop();
+      };
+
+      await updateLoop();
+    };
+  }
+
   private async updateServerStatus(
     amp: Amp,
     channel: TextChannel,
@@ -31,10 +65,36 @@ export default class ServersPanel {
       const servers = await amp.getServers();
       if (!servers) return;
 
+      // Overview of pack and player count
+      let summary = new EmbedBuilder().setTitle('Server Status');
+      let field: string = ``;
+
+      for (const server of servers) {
+        if (
+          server.FriendlyName.includes('ADS') ||
+          server.FriendlyName.includes(`Bot`) ||
+          server.FriendlyName.includes(`Scheduler`) ||
+          server.Suspended
+        )
+          continue;
+
+        const currentPlayers = server.Metrics?.['Active Users']?.RawValue || 0;
+        const serverName = server.FriendlyName.replace(/\d\d\s/, '');
+        field = field.concat(
+          `${serverName}: ${currentPlayers} players online\n`,
+        );
+      }
+      summary.setColor(Colors.Blue);
+      summary.setDescription(field).setTimestamp();
+
+      // Individual embeds
       const embeds = servers
         .filter(
           (info: Instance) =>
-            !info.FriendlyName.includes('ADS') && info.AppState !== -1,
+            !info.FriendlyName.includes('ADS') &&
+            !info.FriendlyName.includes(`Scheduler`) &&
+            !info.FriendlyName.includes(`Bot`) &&
+            !info.Suspended,
         )
         .map((info: Instance) => {
           const color = info.AppState === 20 ? Colors.Green : Colors.Red;
@@ -57,6 +117,8 @@ export default class ServersPanel {
             )
             .setTimestamp();
         });
+
+      embeds.unshift(summary);
 
       const embedChunks: EmbedBuilder[][] = [];
       for (let i = 0; i < embeds.length; i += 10) {
@@ -91,39 +153,6 @@ export default class ServersPanel {
     } catch (error) {
       console.error('Error updating server status:', error);
     }
-  }
-
-  createCommandFunctionality() {
-    return async (interaction: ChatInputCommandInteraction) => {
-      const guild = interaction.guild;
-      if (!guild) return await interaction.reply('❌ Guild not found.');
-
-      let channel = guild.channels.cache.find(
-        (ch) =>
-          ch.type === ChannelType.GuildText && ch.name === 'server-status',
-      ) as TextChannel;
-
-      if (!channel) {
-        channel = (await guild.channels.create({
-          name: 'server-status',
-          type: ChannelType.GuildText,
-        })) as TextChannel;
-      }
-
-      await interaction.deferReply();
-      await interaction.editReply('✅ Server status panel started.');
-
-      const amp = Amp.getInstance();
-      const messageCache = new Map<string, any>();
-
-      const updateLoop = async () => {
-        await this.updateServerStatus(amp, channel, messageCache);
-        await setTimeout(30000);
-        await updateLoop();
-      };
-
-      await updateLoop();
-    };
   }
 
   async createObject() {
