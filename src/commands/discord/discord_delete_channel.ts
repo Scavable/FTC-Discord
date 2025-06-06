@@ -12,6 +12,7 @@ import {
 } from 'discord.js';
 
 export default class DeleteChannelCommand {
+  static enabled: boolean = false;
   static commandName: string = 'discord_delete_channel';
   static commandDescription: string =
     'Delete a category with child channels or a single channel';

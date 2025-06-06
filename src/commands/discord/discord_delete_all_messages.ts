@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 
 export default class DeleteAllMessages {
+  static enabled = false;
   static commandName = 'discord_delete_all_messages';
   static description = 'Delete all messages in a specified channel.';
   static subName = 'channel';

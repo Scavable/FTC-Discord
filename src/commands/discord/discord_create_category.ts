@@ -7,6 +7,7 @@ import {
 import RoleMapper from '../../utility/RoleMapper';
 
 export default class CreateCategoryCommand {
+  static enabled = false;
   static commandName = 'discord_create_category';
   static commandDescription = 'Create a category with child channels';
 

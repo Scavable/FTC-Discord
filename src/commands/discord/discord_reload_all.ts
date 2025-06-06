@@ -4,6 +4,7 @@ import path from 'node:path';
 import CustomClient from '../../CustomClient';
 
 export default class ReloadAll {
+  static enabled = false;
   static commandName = 'discord_reload_all';
   static description = 'Reloads all commands';
 
