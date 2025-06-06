@@ -41,7 +41,9 @@ class CommandLoader {
           const filePath = path.join(folderPath, file);
           try {
             const commandModule = await import(pathToFileURL(filePath).href);
+            if(commandModule.default?.enabled === false) continue;
             const commandInstance = new commandModule.default();
+
             commandPromises.push(commandInstance.createObject());
           } catch (error) {
             console.error(`Error loading command from ${file}:`, error);
