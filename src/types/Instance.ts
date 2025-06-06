@@ -83,6 +83,8 @@ type Instance = {
   CustomMountBinds: {};
   ExtraContainerPackages: string[];
   DisplayImageSource: string;
+  FTCIP: string;
+  FTCVersion: string;
 };
 
 export default Instance;
