@@ -10,16 +10,18 @@ import {
 import { setTimeout } from 'timers/promises';
 import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
+import fs from 'node:fs';
 
 export default class ServersPanel {
+  static enabled = true;
   static commandName = 'amp_servers_panel';
-  static commandDescription = 'Display Amp server information';
+  static commandDescription = 'Display AMP server information';
 
   async createSlashCommand() {
     return new SlashCommandBuilder()
       .setName(ServersPanel.commandName)
       .setDescription(ServersPanel.commandDescription)
-      .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+      .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
   }
 
   createCommandFunctionality() {
@@ -62,16 +64,21 @@ export default class ServersPanel {
     messageCache: Map<string, string>,
   ) {
     try {
-      const servers = await amp.getServers();
+      await amp.readFile(await amp.getInstances());
+      const servers = JSON.parse(
+        fs.readFileSync('servers.json').toString(),
+      ) as Instance[];
+      //const servers = await amp.getServers();
       if (!servers) return;
 
       // Overview of pack and player count
       let summary = new EmbedBuilder().setTitle('Server Status');
       let field: string = ``;
+      let color = true;
 
       for (const server of servers) {
         if (
-          server.FriendlyName.includes('ADS') ||
+          server.FriendlyName.includes(`ADS`) ||
           server.FriendlyName.includes(`Bot`) ||
           server.FriendlyName.includes(`Scheduler`) ||
           server.Suspended
@@ -80,9 +87,18 @@ export default class ServersPanel {
 
         const currentPlayers = server.Metrics?.['Active Users']?.RawValue || 0;
         const serverName = server.FriendlyName.replace(/\d\d\s/, '');
-        field = field.concat(
-          `${serverName}: ${currentPlayers} players online\n`,
-        );
+
+        if (color) {
+          field = field.concat(
+            `\`\`\`ansi\n [32m${serverName}: ${currentPlayers} players online[0m\n\`\`\``,
+          );
+          color = false;
+        } else {
+          field = field.concat(
+            `\`\`\`ansi\n [36m${serverName}: ${currentPlayers} players online[0m\n\`\`\``,
+          );
+          color = true;
+        }
       }
       summary.setColor(Colors.Blue);
       summary.setDescription(field).setTimestamp();
@@ -101,11 +117,27 @@ export default class ServersPanel {
           const status = info.AppState === 20 ? '+ Online' : '- Offline';
           const currentPlayers = info.Metrics?.['Active Users']?.RawValue || 0;
           const maxPlayers = info.Metrics?.['Active Users']?.MaxValue || 0;
+          console.log(info.FTCIP);
+          console.log(info.FTCVersion);
+          const version = info.FTCVersion ? info.FTCVersion : 'N/A';
+          const ip = info.FTCIP ? info.FTCIP : 'N/A';
 
           return new EmbedBuilder()
             .setColor(color)
-            .setTitle(info.FriendlyName)
+            .setTitle(info.FriendlyName.replace(/\d\d\s/, ''))
             .addFields(
+              {
+                name: `Version`,
+                value: `${version}`,
+              },
+              {
+                name: `IP`,
+                value: `${ip}`,
+              },
+              {
+                name: `Whitelist`,
+                value: `Yes`,
+              },
               {
                 name: 'Status',
                 value: `\`\`\`diff\n${status}\n\`\`\``,
