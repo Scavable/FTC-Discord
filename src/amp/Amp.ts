@@ -1,5 +1,6 @@
 import Instance from '../types/Instance';
 import logger from '../utility/Logger';
+import fs from 'node:fs';
 
 class Amp {
   private static instance: Amp | null = null;
@@ -10,7 +11,8 @@ class Amp {
   private readonly token: string;
   private readonly rememberMe: boolean;
 
-  private SESSIONID: string = '';
+  private baseSessionId: string = '';
+  private instanceSessionId: string = '';
   private rememberMeToken: string = '';
   private ID: string = '';
   private instances: Instance[] = [];
@@ -71,7 +73,7 @@ class Amp {
   }
 
   private ensureAuthenticated(): void {
-    if (!this.SESSIONID) {
+    if (!this.baseSessionId) {
       throw new Error('Not authenticated. Please login first.');
     }
   }
@@ -92,8 +94,11 @@ class Amp {
       const response = await this.sendPostRequest(endpoint, json);
 
       if (response.success) {
-        logger.info(`Login successful: ${JSON.stringify(response)}`);
-        this.SESSIONID = response.sessionID;
+        logger.info(`AMP logged in successfully.`);
+
+        if (instanceId) this.instanceSessionId = response.sessionID;
+        else this.baseSessionId = response.sessionID;
+
         this.rememberMeToken = response.rememberMeToken;
         this.ID = response.userInfo.ID;
       } else {
@@ -102,11 +107,19 @@ class Amp {
     } catch (error) {
       console.error('Login request failed:', error);
     }
+
+    if(instanceId){
+      const json = { SettingNode: "Game",
+        SESSIONID: this.instanceSessionId,
+      node: "MinecraftModule.Game.Whitelist"};
+      const result = await this.sendPostRequest(`${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/GetConfig`, json);
+      console.log(JSON.parse(JSON.stringify(result)).CurrentValue);
+    }
   }
 
-  async getServers(): Promise<Instance[]> {
+  async getInstances(): Promise<Instance[]> {
     this.ensureAuthenticated();
-    const json = { SESSIONID: this.SESSIONID };
+    const json = { SESSIONID: this.baseSessionId };
 
     try {
       const response = await this.sendPostRequest(
@@ -119,6 +132,7 @@ class Amp {
         !Array.isArray(response) ||
         !response[0]?.AvailableInstances
       ) {
+        console.log(response);
         throw new Error('Invalid response format for GetInstances.');
       }
 
@@ -128,6 +142,50 @@ class Amp {
       console.error('Error fetching instances:', error);
       return [];
     }
+  }
+
+  async getModuleInfo(){
+    this.ensureAuthenticated();
+    const json = { SESSIONID: this.baseSessionId };
+    const result = await this.sendPostRequest(`${this.API_BASE_URL}API/Core/GetModuleInfo`, json);
+    console.log(result);
+  }
+
+  async readFile(servers: Instance[]): Promise<Instance[]> {
+    this.ensureAuthenticated();
+
+    for (const server of servers) {
+      if (
+        server.FriendlyName.includes(`Schedule`) ||
+        server.FriendlyName.includes(`Bot`) ||
+        server.FriendlyName.includes(`ADS`) ||
+        server.Suspended
+      )
+        continue;
+
+      await this.login(server.InstanceID);
+      const json = {
+        Filename: `packInfo.json`,
+        offset: 0,
+        SESSIONID: this.instanceSessionId,
+      };
+      const response = await this.sendPostRequest(
+        `${this.API_BASE_URL}API/ADSModule/Servers/${server.InstanceID}/API/FileManagerPlugin/ReadFileChunk`,
+        json,
+      );
+
+      if (response.Result !== null && response.Result !== undefined) {
+        const temp = JSON.parse(atob(response.Result));
+        server.FTCIP = temp.IP;
+        server.FTCVersion = temp.Version;
+      }
+    }
+
+    fs.writeFileSync(
+      process.cwd() + '/servers.json',
+      JSON.stringify(servers, null, 2),
+    );
+    return servers;
   }
 }
 
