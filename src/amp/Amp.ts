@@ -1,6 +1,6 @@
 import Instance from '../types/Instance';
 import logger from '../utility/Logger';
-import fs from 'node:fs';
+import ServersFile from '../utility/ServersFile';
 
 class Amp {
   private static instance: Amp | null = null;
@@ -107,14 +107,6 @@ class Amp {
     } catch (error) {
       console.error('Login request failed:', error);
     }
-
-    if(instanceId){
-      const json = { SettingNode: "Game",
-        SESSIONID: this.instanceSessionId,
-      node: "MinecraftModule.Game.Whitelist"};
-      const result = await this.sendPostRequest(`${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/GetConfig`, json);
-      console.log(JSON.parse(JSON.stringify(result)).CurrentValue);
-    }
   }
 
   async getInstances(): Promise<Instance[]> {
@@ -132,7 +124,6 @@ class Amp {
         !Array.isArray(response) ||
         !response[0]?.AvailableInstances
       ) {
-        console.log(response);
         throw new Error('Invalid response format for GetInstances.');
       }
 
@@ -144,11 +135,21 @@ class Amp {
     }
   }
 
-  async getModuleInfo(){
+  async getConfig(server: Instance): Promise<boolean> {
     this.ensureAuthenticated();
-    const json = { SESSIONID: this.baseSessionId };
-    const result = await this.sendPostRequest(`${this.API_BASE_URL}API/Core/GetModuleInfo`, json);
-    console.log(result);
+    const json = {
+      // @ts-ignore
+      SettingNode: 'Game',
+      SESSIONID: this.instanceSessionId,
+      node: 'MinecraftModule.Game.Whitelist',
+    };
+
+    const response = await this.sendPostRequest(
+      `${this.API_BASE_URL}API/ADSModule/Servers/${server.InstanceID}/API/Core/GetConfig`,
+      json,
+    );
+
+    return JSON.parse(JSON.stringify(response)).CurrentValue;
   }
 
   async readFile(servers: Instance[]): Promise<Instance[]> {
@@ -164,6 +165,7 @@ class Amp {
         continue;
 
       await this.login(server.InstanceID);
+
       const json = {
         Filename: `packInfo.json`,
         offset: 0,
@@ -179,12 +181,14 @@ class Amp {
         server.FTCIP = temp.IP;
         server.FTCVersion = temp.Version;
       }
+
+      server.Whitelisted = await this.getConfig(server);
     }
 
-    fs.writeFileSync(
-      process.cwd() + '/servers.json',
-      JSON.stringify(servers, null, 2),
-    );
+    const file = process.cwd() + '/servers.json';
+    const json = JSON.stringify(servers, null, 2);
+    ServersFile.writeFile(file, json);
+
     return servers;
   }
 }
