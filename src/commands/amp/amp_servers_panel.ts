@@ -6,11 +6,15 @@ import {
   SlashCommandBuilder,
   TextChannel,
   ChatInputCommandInteraction,
+  GuildBasedChannel,
+  Guild,
 } from 'discord.js';
 import { setTimeout } from 'timers/promises';
 import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
 import fs from 'node:fs';
+import ColorText from '../../utility/ColorText';
+import ServersFile from '../../utility/ServersFile';
 
 export default class ServersPanel {
   static enabled = true;
@@ -28,11 +32,11 @@ export default class ServersPanel {
     return async (interaction: ChatInputCommandInteraction) => {
       await interaction.deferReply();
 
-      const guild = interaction.guild;
+      const guild: Guild = interaction.guild as Guild;
       if (!guild) return await interaction.reply('❌ Guild not found.');
 
-      let channel = guild.channels.cache.find(
-        (ch) =>
+      let channel: TextChannel = guild.channels.cache.find(
+        (ch: GuildBasedChannel) =>
           ch.type === ChannelType.GuildText && ch.name === 'server-status',
       ) as TextChannel;
 
@@ -50,7 +54,7 @@ export default class ServersPanel {
 
       const updateLoop = async () => {
         await this.updateServerStatus(amp, channel, messageCache);
-        await setTimeout(30000);
+        await setTimeout(60000);
         await updateLoop();
       };
 
@@ -65,9 +69,7 @@ export default class ServersPanel {
   ) {
     try {
       await amp.readFile(await amp.getInstances());
-      const servers = JSON.parse(
-        fs.readFileSync('servers.json').toString(),
-      ) as Instance[];
+      const servers = JSON.parse(ServersFile.readFile(`servers.json`)) as Instance[];
       //const servers = await amp.getServers();
       if (!servers) return;
 
@@ -81,6 +83,7 @@ export default class ServersPanel {
           server.FriendlyName.includes(`ADS`) ||
           server.FriendlyName.includes(`Bot`) ||
           server.FriendlyName.includes(`Scheduler`) ||
+          !server.Running ||
           server.Suspended
         )
           continue;
@@ -110,37 +113,52 @@ export default class ServersPanel {
             !info.FriendlyName.includes('ADS') &&
             !info.FriendlyName.includes(`Scheduler`) &&
             !info.FriendlyName.includes(`Bot`) &&
+            info.Running &&
             !info.Suspended,
         )
         .map((info: Instance) => {
-          const color = info.AppState === 20 ? Colors.Green : Colors.Red;
-          const status = info.AppState === 20 ? '+ Online' : '- Offline';
+          const embedColor = info.AppState === 20 ? Colors.Green : Colors.Red;
+          const status = info.AppState === 20 ? 'Online' : 'Offline';
           const currentPlayers = info.Metrics?.['Active Users']?.RawValue || 0;
           const maxPlayers = info.Metrics?.['Active Users']?.MaxValue || 0;
-          console.log(info.FTCIP);
-          console.log(info.FTCVersion);
           const version = info.FTCVersion ? info.FTCVersion : 'N/A';
           const ip = info.FTCIP ? info.FTCIP : 'N/A';
 
+          let statusMessage;
+          if (status === 'Offline')
+            statusMessage = ColorText.colorText(
+              status,
+              undefined,
+              undefined,
+              ColorText.enums.foreground.red,
+            );
+          else
+            statusMessage = ColorText.colorText(
+              status,
+              undefined,
+              undefined,
+              ColorText.enums.foreground.green,
+            );
+
           return new EmbedBuilder()
-            .setColor(color)
+            .setColor(embedColor)
             .setTitle(info.FriendlyName.replace(/\d\d\s/, ''))
             .addFields(
               {
                 name: `Version`,
-                value: `${version}`,
+                value: `\`\`\`${version}\`\`\``,
               },
               {
                 name: `IP`,
-                value: `${ip}`,
+                value: `\`\`\`${ip}\`\`\``,
               },
               {
                 name: `Whitelist`,
-                value: `Yes`,
+                value: `${info.Whitelisted}`,
               },
               {
                 name: 'Status',
-                value: `\`\`\`diff\n${status}\n\`\`\``,
+                value: `\`\`\`${statusMessage}\`\`\``,
               },
               {
                 name: 'Players',
