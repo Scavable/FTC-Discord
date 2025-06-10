@@ -60,6 +60,7 @@ const client = new CustomClient(); // Use CustomClient instead of Client
       false,
     );
     await amp.login();
+    //await amp.getModuleInfo();
   } catch (error) {
     console.error('Error during bot initialization:', error);
   }
