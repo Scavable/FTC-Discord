@@ -85,6 +85,7 @@ type Instance = {
   DisplayImageSource: string;
   FTCIP: string;
   FTCVersion: string;
+  Whitelisted: boolean;
 };
 
 export default Instance;
