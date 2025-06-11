@@ -8,7 +8,7 @@
     "dev": "tsx watch src/Bot.ts",
     "start": "node dist/Bot.js",
     "build": "tsup src --out-dir dist --format esm --target esnext --minify",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write ."
   },
@@ -16,18 +16,21 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.19.3",
-    "dotenv": "^16.5.0",
     "pg": "^8.16.0",
     "prismarine-nbt": "^2.7.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
+    "@types/jest": "^29.5.14",
     "@types/pg": "^8.11.14",
+    "dotenv": "^16.5.0",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "globals": "^16.1.0",
+    "jest": "^29.7.0",
     "prettier": "^3.5.3",
+    "ts-jest": "^29.3.4",
     "tsup": "^8.4.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
