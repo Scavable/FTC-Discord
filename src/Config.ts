@@ -20,12 +20,7 @@ if (
   !CLIENT_ID ||
   !GUILD_ID ||
   !AMP_USERNAME ||
-  !AMP_PASS ||
-  !POSTGRES_USER ||
-  !POSTGRES_PASSWORD ||
-  !POSTGRES_HOST ||
-  !POSTGRES_PORT ||
-  !POSTGRES_DB
+  !AMP_PASS
 ) {
   throw new Error('Missing environment variables');
 }
@@ -35,10 +30,5 @@ export const config = {
   CLIENT_ID,
   GUILD_ID,
   AMP_USERNAME,
-  AMP_PASS,
-  POSTGRES_USER,
-  POSTGRES_PASSWORD,
-  POSTGRES_HOST,
-  POSTGRES_PORT,
-  POSTGRES_DB,
+  AMP_PASS
 };
