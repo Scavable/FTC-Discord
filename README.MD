@@ -41,12 +41,6 @@ To get started with this project, follow these steps:
    GUILD_ID=
    AMP_USERNAME=
    AMP_PASS=
-   # Database Creds
-   POSTGRES_USER=
-   POSTGRES_PASSWORD=
-   POSTGRES_HOST=
-   POSTGRES_PORT=
-   POSTGRES_DB=
    ```
 
 4. Compile the TypeScript codebase (optional during development):
