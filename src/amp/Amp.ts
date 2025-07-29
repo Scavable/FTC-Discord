@@ -12,7 +12,7 @@ class Amp {
   private readonly rememberMe: boolean;
 
   private baseSessionId: string = '';
-  private instanceSessionId: string = '';
+  private instanceSessionIds: Map<string, string> = new Map();
   private rememberMeToken: string = '';
   private ID: string = '';
   private instances: Instance[] = [];
@@ -29,6 +29,7 @@ class Amp {
     this.rememberMe = rememberMe;
   }
 
+  // Singleton AMP instance
   public static getInstance(
     username?: string,
     password?: string,
@@ -44,6 +45,7 @@ class Amp {
     return Amp.instance;
   }
 
+  // Sends POST requests to the AMP API
   private async sendPostRequest(url: string, data: any) {
     try {
       const response = await fetch(url, {
@@ -72,13 +74,24 @@ class Amp {
     }
   }
 
-  private ensureAuthenticated(): void {
-    if (!this.baseSessionId) {
-      throw new Error('Not authenticated. Please login first.');
+  // Checks for current login connection
+  private async ensureAuthenticated(instanceId?: string): Promise<void> {
+    if(!instanceId){
+      if (!this.baseSessionId) {
+        throw new Error('Not authenticated. Please login first.');
+      }
+      return;
     }
+
+    // Check for instance session
+    if (!this.instanceSessionIds.has(instanceId)) {
+      await this.login(instanceId); // Refresh instance session if not present
+    }
+
   }
 
-  async login(instanceId?: string): Promise<void> {
+  // Logs into the AMP container and instances.
+  public async login(instanceId?: string): Promise<void> {
     try {
       const json = {
         username: this.username,
@@ -96,8 +109,12 @@ class Amp {
       if (response.success) {
         logger.info(`AMP logged in successfully.`);
 
-        if (instanceId) this.instanceSessionId = response.sessionID;
-        else this.baseSessionId = response.sessionID;
+        if (instanceId) {
+          this.instanceSessionIds.set(instanceId, response.sessionID); // Cache instance session ID
+        } else {
+          this.baseSessionId = response.sessionID; // Cache base session ID
+        }
+
 
         this.rememberMeToken = response.rememberMeToken;
         this.ID = response.userInfo.ID;
@@ -109,8 +126,9 @@ class Amp {
     }
   }
 
+  // Returns all AMP instances including AMP container
   async getInstances(): Promise<Instance[]> {
-    this.ensureAuthenticated();
+    await this.ensureAuthenticated();
     const json = { SESSIONID: this.baseSessionId };
 
     try {
@@ -135,12 +153,13 @@ class Amp {
     }
   }
 
+  //
   async getConfig(server: Instance): Promise<boolean> {
-    this.ensureAuthenticated();
+    await this.ensureAuthenticated();
     const json = {
       // @ts-ignore
       SettingNode: 'Game',
-      SESSIONID: this.instanceSessionId,
+      SESSIONID: this.instanceSessionIds.get(server.InstanceID) || '',
       node: 'MinecraftModule.Game.Whitelist',
     };
 
@@ -152,8 +171,35 @@ class Amp {
     return JSON.parse(JSON.stringify(response)).CurrentValue;
   }
 
+  // Sends a string to a console
+  async sendConsoleMessage(instance: Instance, message: string): Promise<void> {
+    await this.ensureAuthenticated();
+    await this.login(instance.InstanceID);
+    const json = {
+      message: message,
+      SESSIONID: this.instanceSessionIds.get(instance.InstanceID) || '',
+    };
+    const response = await this.sendPostRequest(
+      `${this.API_BASE_URL}API/ADSModule/Servers/${instance.InstanceID}/API/Core/SendConsoleMessage`,
+      json,
+    );
+    logger.info(`Sent console message to ${instance.FriendlyName}: ${message}`);
+  }
+
+  // Gets changes to the server status, in addition to any notifications or
+  // console output that have occurred since the last time GetUpdates() was
+  // called by the current session.
+  async getUpdates(instanceId: string):Promise<string> {
+    await this.ensureAuthenticated(instanceId);
+    const json = {
+      SESSIONID: this.instanceSessionIds.get(instanceId) || '',
+    };
+    const response = await this.sendPostRequest(`${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/GetUpdates`, json);
+    return JSON.stringify(response);
+  }
+
   async readFile(servers: Instance[]): Promise<Instance[]> {
-    this.ensureAuthenticated();
+    await this.ensureAuthenticated();
 
     for (const server of servers) {
       if (
@@ -169,7 +215,7 @@ class Amp {
       const json = {
         Filename: `packInfo.json`,
         offset: 0,
-        SESSIONID: this.instanceSessionId,
+        SESSIONID: this.instanceSessionIds.get(server.InstanceID) || '',
       };
       const response = await this.sendPostRequest(
         `${this.API_BASE_URL}API/ADSModule/Servers/${server.InstanceID}/API/FileManagerPlugin/ReadFileChunk`,
@@ -177,11 +223,14 @@ class Amp {
       );
 
       if (response.Result !== null && response.Result !== undefined) {
-        const temp = JSON.parse(atob(response.Result));
-        server.FTCIP = temp.IP;
-        server.FTCVersion = temp.Version;
+        try{
+          const temp = JSON.parse(atob(response.Result));
+          server.FTCIP = temp.IP;
+          server.FTCVersion = temp.Version;
+        }catch(error){
+          logger.error(error);
+        }
       }
-
       server.Whitelisted = await this.getConfig(server);
     }
 

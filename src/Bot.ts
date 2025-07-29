@@ -8,7 +8,8 @@ import RoleMapper from './utility/RoleMapper';
 
 import logger from './utility/Logger';
 import child_process from 'child_process';
-import database from './database/database';
+import ServersFile from './utility/ServersFile';
+import fs from 'node:fs';
 
 const client = new CustomClient(); // Use CustomClient instead of Client
 
@@ -16,11 +17,11 @@ const client = new CustomClient(); // Use CustomClient instead of Client
   try {
     // Check and Install dependencies if missing
     const dep_arr: string[] = [
-      'discord.js',
-      'dotenv',
-      'winston',
-      'pg',
-      'prismarine-nbt',
+      'discord.js@14.21.0',
+      'dotenv@17.0.1',
+      'winston@3.17.0',
+      'pg@8.16.3',
+      'prismarine-nbt@2.7.0',
     ];
     for (const dep of dep_arr) {
       try {
@@ -33,16 +34,15 @@ const client = new CustomClient(); // Use CustomClient instead of Client
       }
     }
 
-    // Database
-    //logger.info("Connecting to database");
-    //await database.createUserTable();
-
     logger.info('Starting bot...');
+
+    // Load servers.json file into cache (if exists)
+    if (fs.existsSync('servers.json')) { ServersFile.readFile('servers.json'); }
 
     // Backbone Classes
     await new EventLoader(client).loadEvents();
     await new CommandLoader(client).loadCommands();
-    await new CommandSync(client).syncGuildCommands(false);
+    await new CommandSync(client).syncGuildCommands(true);
 
     // Discord Bot Login (Console message located in, Ready.ts)
     await client.login(config.DISCORD_TOKEN);
@@ -60,7 +60,6 @@ const client = new CustomClient(); // Use CustomClient instead of Client
       false,
     );
     await amp.login();
-    //await amp.getModuleInfo();
   } catch (error) {
     console.error('Error during bot initialization:', error);
   }

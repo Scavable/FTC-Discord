@@ -83,8 +83,10 @@ type Instance = {
   CustomMountBinds: {};
   ExtraContainerPackages: string[];
   DisplayImageSource: string;
+  SessionId: string;
   FTCIP: string;
   FTCVersion: string;
+  Hidden: boolean;
   Whitelisted: boolean;
 };
 

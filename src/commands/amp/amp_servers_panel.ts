@@ -12,7 +12,6 @@ import {
 import { setTimeout } from 'timers/promises';
 import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
-import fs from 'node:fs';
 import ColorText from '../../utility/ColorText';
 import ServersFile from '../../utility/ServersFile';
 
@@ -68,10 +67,10 @@ export default class ServersPanel {
     messageCache: Map<string, string>,
   ) {
     try {
-      await amp.readFile(await amp.getInstances());
-      const servers = JSON.parse(ServersFile.readFile(`servers.json`)) as Instance[];
-      //const servers = await amp.getServers();
+      const servers = await amp.readFile(await amp.getInstances());
       if (!servers) return;
+
+      ServersFile.writeFile('servers.json', JSON.stringify(servers, null, 2));
 
       // Overview of pack and player count
       let summary = new EmbedBuilder().setTitle('Server Status');
@@ -84,7 +83,8 @@ export default class ServersPanel {
           server.FriendlyName.includes(`Bot`) ||
           server.FriendlyName.includes(`Scheduler`) ||
           !server.Running ||
-          server.Suspended
+          server.Suspended ||
+          server.Hidden
         )
           continue;
 
@@ -114,7 +114,8 @@ export default class ServersPanel {
             !info.FriendlyName.includes(`Scheduler`) &&
             !info.FriendlyName.includes(`Bot`) &&
             info.Running &&
-            !info.Suspended,
+            !info.Suspended &&
+            !info.Hidden
         )
         .map((info: Instance) => {
           const embedColor = info.AppState === 20 ? Colors.Green : Colors.Red;
@@ -142,26 +143,26 @@ export default class ServersPanel {
 
           return new EmbedBuilder()
             .setColor(embedColor)
-            .setTitle(info.FriendlyName.replace(/\d\d\s/, ''))
+            .setTitle(`**${info.FriendlyName.replace(/\d\d\s/, '')}**`)
             .addFields(
               {
-                name: `Version`,
+                name: `__Version__`,
                 value: `\`\`\`${version}\`\`\``,
               },
               {
-                name: `IP`,
-                value: `\`\`\`${ip}\`\`\``,
+                name: `__IP__`,
+                value: `\`\`\`${ip.toUpperCase()}\`\`\``,
               },
               {
-                name: `Whitelist`,
-                value: `${info.Whitelisted}`,
+                name: `__Whitelist__`,
+                value: `\`\`\`${info.Whitelisted}\`\`\``,
               },
               {
-                name: 'Status',
+                name: '__Status__',
                 value: `\`\`\`${statusMessage}\`\`\``,
               },
               {
-                name: 'Players',
+                name: '__Players__',
                 value: `\`\`\`\n${currentPlayers} of ${maxPlayers} online\n\`\`\``,
               },
             )
