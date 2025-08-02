@@ -1,0 +1,1 @@
+import{a as o}from"../chunk-G2E7WY3Z.js";import{Events as t}from"discord.js";var m={name:t.ClientReady,once:!0,execute(e){o.info(e.isReady()?"Bot is ready!":"Bot is not ready yet..."),e.user&&o.info(`Logged in as ${e.user.tag}`)}};export{m as default};

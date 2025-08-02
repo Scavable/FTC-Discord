@@ -1,0 +1,1 @@
+import s from"dotenv";s.config();var{DISCORD_TOKEN:o,CLIENT_ID:n,GUILD_ID:r,AMP_USERNAME:e,AMP_PASS:i}=process.env;if(!o||!n||!r||!e||!i)throw new Error("Missing environment variables");var c={DISCORD_TOKEN:o,CLIENT_ID:n,GUILD_ID:r,AMP_USERNAME:e,AMP_PASS:i};export{c as a};

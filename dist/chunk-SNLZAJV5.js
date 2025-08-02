@@ -1,0 +1,1 @@
+import e from"node:fs";var s=class{static instances=new Map;static getInstances(){return this.instances}static readFile(t){let n=e.readFileSync(t).toString();return JSON.parse(n).forEach(i=>{this.instances.set(i.FriendlyName,i)}),this.instances}static writeFile(t,n){e.writeFileSync(t,n)}},p=s;export{p as a};
