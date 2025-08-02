@@ -20,7 +20,6 @@ const client = new CustomClient(); // Use CustomClient instead of Client
       'discord.js@14.21.0',
       'dotenv@17.0.1',
       'winston@3.17.0',
-      'pg@8.16.3',
       'prismarine-nbt@2.7.0',
     ];
     for (const dep of dep_arr) {

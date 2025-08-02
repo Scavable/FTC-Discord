@@ -227,6 +227,7 @@ class Amp {
           const temp = JSON.parse(atob(response.Result));
           server.FTCIP = temp.IP;
           server.FTCVersion = temp.Version;
+          server.Hidden = temp.Hidden;
         }catch(error){
           logger.error(error);
         }

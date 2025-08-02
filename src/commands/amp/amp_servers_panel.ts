@@ -43,6 +43,48 @@ export default class ServersPanel {
         channel = (await guild.channels.create({
           name: 'server-status',
           type: ChannelType.GuildText,
+          permissionOverwrites: [
+            {
+              id: guild.id, // @everyone role ID
+              deny: [
+                PermissionFlagsBits.ManageChannels,
+                PermissionFlagsBits.ManageRoles,
+                PermissionFlagsBits.ManageWebhooks,
+                PermissionFlagsBits.CreateInstantInvite,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.SendMessagesInThreads,
+                PermissionFlagsBits.CreatePublicThreads,
+                PermissionFlagsBits.CreatePrivateThreads,
+                PermissionFlagsBits.EmbedLinks,
+                PermissionFlagsBits.AttachFiles,
+                PermissionFlagsBits.AddReactions,
+                PermissionFlagsBits.UseExternalEmojis,
+                PermissionFlagsBits.UseExternalStickers,
+                PermissionFlagsBits.MentionEveryone,
+                PermissionFlagsBits.ManageMessages,
+                PermissionFlagsBits.ManageThreads,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendTTSMessages,
+                PermissionFlagsBits.SendVoiceMessages,
+                PermissionFlagsBits.SendPolls,
+                PermissionFlagsBits.Connect,
+                PermissionFlagsBits.Speak,
+                PermissionFlagsBits.Stream,
+                PermissionFlagsBits.UseSoundboard,
+                PermissionFlagsBits.UseExternalSounds,
+                PermissionFlagsBits.UseVAD,
+                PermissionFlagsBits.PrioritySpeaker,
+                PermissionFlagsBits.MuteMembers,
+                PermissionFlagsBits.DeafenMembers,
+                PermissionFlagsBits.MoveMembers,
+                PermissionFlagsBits.UseApplicationCommands,
+                PermissionFlagsBits.UseEmbeddedActivities,
+                PermissionFlagsBits.UseExternalApps,
+                PermissionFlagsBits.RequestToSpeak,
+                PermissionFlagsBits.CreateEvents,
+                PermissionFlagsBits.ManageEvents,
+              ],
+            }]
         })) as TextChannel;
       }
 
@@ -78,11 +120,12 @@ export default class ServersPanel {
       let color = true;
 
       for (const server of servers) {
+        console.log(server.FriendlyName);
+        console.log(server.Hidden);
         if (
           server.FriendlyName.includes(`ADS`) ||
           server.FriendlyName.includes(`Bot`) ||
           server.FriendlyName.includes(`Scheduler`) ||
-          !server.Running ||
           server.Suspended ||
           server.Hidden
         )
@@ -113,7 +156,6 @@ export default class ServersPanel {
             !info.FriendlyName.includes('ADS') &&
             !info.FriendlyName.includes(`Scheduler`) &&
             !info.FriendlyName.includes(`Bot`) &&
-            info.Running &&
             !info.Suspended &&
             !info.Hidden
         )
