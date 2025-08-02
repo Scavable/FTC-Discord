@@ -1,19 +1,17 @@
 import {
   ChannelType,
+  ChatInputCommandInteraction,
   Colors,
   EmbedBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
   TextChannel,
-  ChatInputCommandInteraction,
-  GuildBasedChannel,
-  Guild,
 } from 'discord.js';
-import { setTimeout } from 'timers/promises';
 import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
 import ColorText from '../../utility/ColorText';
 import ServersFile from '../../utility/ServersFile';
+import CustomClient from '../../CustomClient';
 
 export default class ServersPanel {
   static enabled = true;
@@ -27,15 +25,34 @@ export default class ServersPanel {
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
   }
 
-  createCommandFunctionality() {
+  async createCommandFunctionality() {
     return async (interaction: ChatInputCommandInteraction) => {
+      const client = interaction.client as CustomClient; // Cast to your custom client
+      const guild = interaction.guild;
+
+      if (!guild) {
+        return await interaction.reply('❌ Guild not found.');
+      }
+
+      const guildState = client.guildState.get(guild.id);
+
+      // If the panel is running, stop it
+      if (guildState?.updateInterval) {
+        clearInterval(guildState.updateInterval); // Stop the interval
+        client.cleanupGuildState(guild.id); // Clean up the guild state
+        return await interaction.reply('✅ Server status panel has been stopped.');
+      }
+
+
+      // Initialize guild state and AMP instance
+      client.initializeGuildState(guild.id);
+      const amp = client.getAmpInstance(guild.id);
+      await amp.login();
+
       await interaction.deferReply();
 
-      const guild: Guild = interaction.guild as Guild;
-      if (!guild) return await interaction.reply('❌ Guild not found.');
-
       let channel: TextChannel = guild.channels.cache.find(
-        (ch: GuildBasedChannel) =>
+        (ch) =>
           ch.type === ChannelType.GuildText && ch.name === 'server-status',
       ) as TextChannel;
 
@@ -84,21 +101,33 @@ export default class ServersPanel {
                 PermissionFlagsBits.CreateEvents,
                 PermissionFlagsBits.ManageEvents,
               ],
-            }]
+            },
+          ],
         })) as TextChannel;
       }
 
       await interaction.editReply('✅ Server status panel started.');
 
-      const amp = Amp.getInstance();
-      const messageCache = new Map<string, any>();
-
+      const messageCache = client.guildState.get(guild.id)?.messageCache!;
       const updateLoop = async () => {
-        await this.updateServerStatus(amp, channel, messageCache);
-        await setTimeout(60000);
-        await updateLoop();
+        try {
+          await this.updateServerStatus(amp, channel, messageCache);
+        } catch (error) {
+          console.error(
+            `Error updating server status for guild ${guild.id}:`,
+            error,
+          );
+        }
       };
 
+      // Start the update loop
+      // Run every 60 seconds
+      client.guildState.get(guild.id)!.updateInterval = setInterval(
+        updateLoop,
+        60000,
+      );
+
+      // Run the first update immediately
       await updateLoop();
     };
   }
@@ -157,7 +186,7 @@ export default class ServersPanel {
             !info.FriendlyName.includes(`Scheduler`) &&
             !info.FriendlyName.includes(`Bot`) &&
             !info.Suspended &&
-            !info.Hidden
+            !info.Hidden,
         )
         .map((info: Instance) => {
           const embedColor = info.AppState === 20 ? Colors.Green : Colors.Red;
@@ -251,7 +280,7 @@ export default class ServersPanel {
   async createObject() {
     return {
       data: await this.createSlashCommand(),
-      execute: this.createCommandFunctionality(),
+      execute: await this.createCommandFunctionality(),
     };
   }
 }

@@ -5,7 +5,8 @@ dotenv.config();
 const {
   DISCORD_TOKEN,
   CLIENT_ID,
-  GUILD_ID,
+  GUILD_ID1,
+  GUILD_ID2,
   AMP_USERNAME,
   AMP_PASS
 } = process.env;
@@ -13,7 +14,8 @@ const {
 if (
   !DISCORD_TOKEN ||
   !CLIENT_ID ||
-  !GUILD_ID ||
+  !GUILD_ID1 ||
+  !GUILD_ID2 ||
   !AMP_USERNAME ||
   !AMP_PASS
 ) {
@@ -23,7 +25,8 @@ if (
 export const config = {
   DISCORD_TOKEN,
   CLIENT_ID,
-  GUILD_ID,
+  GUILD_ID1,
+  GUILD_ID2,
   AMP_USERNAME,
   AMP_PASS
 };

@@ -47,18 +47,18 @@ const client = new CustomClient(); // Use CustomClient instead of Client
     await client.login(config.DISCORD_TOKEN);
 
     // Initialize Discord info
-    const guild = await client.guilds.fetch(config.GUILD_ID);
+    const guild = await client.guilds.fetch(config.GUILD_ID2);
     const roleMapper = new RoleMapper(guild);
     await roleMapper.initialize();
 
-    // Initialize AMP
-    const amp = Amp.getInstance(
-      config.AMP_USERNAME,
-      config.AMP_PASS,
-      '',
-      false,
-    );
-    await amp.login();
+    // // Initialize AMP
+    // const amp = Amp.getInstance(
+    //   config.AMP_USERNAME,
+    //   config.AMP_PASS,
+    //   '',
+    //   false,
+    // );
+    // await amp.login();
   } catch (error) {
     console.error('Error during bot initialization:', error);
   }

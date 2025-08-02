@@ -3,7 +3,6 @@ import logger from '../utility/Logger';
 import ServersFile from '../utility/ServersFile';
 
 class Amp {
-  private static instance: Amp | null = null;
   private readonly API_BASE_URL: string =
     process.env.AMP_API_BASE_URL || 'https://amp.feedthecraft.com/';
   private readonly username: string;
@@ -17,32 +16,11 @@ class Amp {
   private ID: string = '';
   private instances: Instance[] = [];
 
-  private constructor(
-    username: string,
-    password: string,
-    token = '',
-    rememberMe = false,
-  ) {
+  constructor(username: string, password: string, token = '', rememberMe = false) {
     this.username = username;
     this.password = password;
     this.token = token;
     this.rememberMe = rememberMe;
-  }
-
-  // Singleton AMP instance
-  public static getInstance(
-    username?: string,
-    password?: string,
-    token = '',
-    rememberMe = false,
-  ): Amp {
-    if (!Amp.instance) {
-      if (!username || !password) {
-        throw new Error('Amp instance not initialized. Credentials required.');
-      }
-      Amp.instance = new Amp(username, password, token, rememberMe);
-    }
-    return Amp.instance;
   }
 
   // Sends POST requests to the AMP API

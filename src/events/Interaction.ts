@@ -1,11 +1,13 @@
 import { ChatInputCommandInteraction, Events } from 'discord.js';
+import CustomClient from '../CustomClient';
 
 export default {
   name: Events.InteractionCreate,
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.isChatInputCommand()) return;
+    let customClient = interaction.client as CustomClient;
 
-    const command = interaction.client.commands.get(interaction.commandName);
+    const command = customClient.commands.get(interaction.commandName);
 
     if (!command) {
       console.error(

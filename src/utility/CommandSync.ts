@@ -16,7 +16,7 @@ export default class CommandSync {
   async syncGuildCommands(forceUpdate = false) {
     try {
       const guildCommands: Array<ApplicationCommand> = (await this.rest.get(
-        Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID),
+        Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID1),
       )) as Array<ApplicationCommand>;
 
       if (this.isCommandUpdateNeeded(guildCommands) || forceUpdate) {
@@ -36,11 +36,14 @@ export default class CommandSync {
 
         // Sync the commands to the Discord API
         await this.rest.put(
-          Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID),
+          Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID1),
           {
             body: commandArray,
           },
         );
+        await this.rest.put(
+          Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID2),
+        )
 
         logger.commands(
           `Successfully registered ${this.client.commands.size} commands.`,
