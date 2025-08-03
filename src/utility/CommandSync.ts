@@ -38,12 +38,21 @@ export default class CommandSync {
         await this.rest.put(
           Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID1),
           {
-            body: commandArray,
+            body: commandArray
           },
         );
+
         await this.rest.put(
           Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID2),
-        )
+          {
+            body: commandArray
+          }
+        );
+
+        // await this.rest.put(
+        //   Routes.applicationCommands(config.CLIENT_ID),
+        //   {body: []}
+        // );
 
         logger.commands(
           `Successfully registered ${this.client.commands.size} commands.`,

@@ -22,7 +22,6 @@ export default class Whitelist {
             name: server.FriendlyName,
             value: server.FriendlyName,
           }));
-    console.log(serverChoices);
 
     return new SlashCommandBuilder()
       .setName('minecraft_whitelist')
@@ -87,7 +86,6 @@ export default class Whitelist {
 
               // Process the filtered entries
               for (const entry of recentEntries) {
-                console.log(entry); // Log the entry for debugging
 
                 if (entry.Contents.includes('Player is already whitelisted')) {
                   await interaction.editReply('Player is already whitelisted');

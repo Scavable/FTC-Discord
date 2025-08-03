@@ -149,8 +149,6 @@ export default class ServersPanel {
       let color = true;
 
       for (const server of servers) {
-        console.log(server.FriendlyName);
-        console.log(server.Hidden);
         if (
           server.FriendlyName.includes(`ADS`) ||
           server.FriendlyName.includes(`Bot`) ||
@@ -194,7 +192,8 @@ export default class ServersPanel {
           const currentPlayers = info.Metrics?.['Active Users']?.RawValue || 0;
           const maxPlayers = info.Metrics?.['Active Users']?.MaxValue || 0;
           const version = info.FTCVersion ? info.FTCVersion : 'N/A';
-          const ip = info.FTCIP ? info.FTCIP : 'N/A';
+          const ip = info.FTCIP ? info.FTCIP.toUpperCase() : 'N/A';
+          const isWhitelisted = info.Whitelisted ? 'True' : 'False';
 
           let statusMessage;
           if (status === 'Offline')
@@ -219,18 +218,27 @@ export default class ServersPanel {
               {
                 name: `__Version__`,
                 value: `\`\`\`${version}\`\`\``,
+                inline: true
               },
               {
                 name: `__IP__`,
-                value: `\`\`\`${ip.toUpperCase()}\`\`\``,
+                value: `\`\`\`${ip}\`\`\``,
+                inline: true
+              },
+              {
+                name: '\u200b',
+                value: '\u200b',
+                inline: false,
               },
               {
                 name: `__Whitelist__`,
-                value: `\`\`\`${info.Whitelisted}\`\`\``,
+                value: `\`\`\`${isWhitelisted}\`\`\``,
+                inline: true
               },
               {
                 name: '__Status__',
                 value: `\`\`\`${statusMessage}\`\`\``,
+                inline: true
               },
               {
                 name: '__Players__',
