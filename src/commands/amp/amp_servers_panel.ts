@@ -143,145 +143,164 @@ export default class ServersPanel {
 
       ServersFile.writeFile('servers.json', JSON.stringify(servers, null, 2));
 
-      // Overview of pack and player count
-      let summary = new EmbedBuilder().setTitle('Server Status');
-      let field: string = ``;
-      let color = true;
-
-      for (const server of servers) {
-        if (
-          server.FriendlyName.includes(`ADS`) ||
-          server.FriendlyName.includes(`Bot`) ||
-          server.FriendlyName.includes(`Scheduler`) ||
-          server.Suspended ||
-          server.Hidden
-        )
-          continue;
-
-        const currentPlayers = server.Metrics?.['Active Users']?.RawValue || 0;
-        const serverName = server.FriendlyName.replace(/\d\d\s/, '');
-
-        if (color) {
-          field = field.concat(
-            `\`\`\`ansi\n [32m${serverName}: ${currentPlayers} players online[0m\n\`\`\``,
-          );
-          color = false;
-        } else {
-          field = field.concat(
-            `\`\`\`ansi\n [36m${serverName}: ${currentPlayers} players online[0m\n\`\`\``,
-          );
-          color = true;
-        }
-      }
-      summary.setColor(Colors.Blue);
-      summary.setDescription(field).setTimestamp();
-
-      // Individual embeds
-      const embeds = servers
-        .filter(
-          (info: Instance) =>
-            !info.FriendlyName.includes('ADS') &&
-            !info.FriendlyName.includes(`Scheduler`) &&
-            !info.FriendlyName.includes(`Bot`) &&
-            !info.Suspended &&
-            !info.Hidden,
-        )
-        .map((info: Instance) => {
-          const embedColor = info.AppState === 20 ? Colors.Green : Colors.Red;
-          const status = info.AppState === 20 ? 'Online' : 'Offline';
-          const currentPlayers = info.Metrics?.['Active Users']?.RawValue || 0;
-          const maxPlayers = info.Metrics?.['Active Users']?.MaxValue || 0;
-          const version = info.FTCVersion ? info.FTCVersion : 'N/A';
-          const ip = info.FTCIP ? info.FTCIP.toUpperCase() : 'N/A';
-          const isWhitelisted = info.Whitelisted ? 'True' : 'False';
-
-          let statusMessage;
-          if (status === 'Offline')
-            statusMessage = ColorText.colorText(
-              status,
-              undefined,
-              undefined,
-              ColorText.enums.foreground.red,
-            );
-          else
-            statusMessage = ColorText.colorText(
-              status,
-              undefined,
-              undefined,
-              ColorText.enums.foreground.green,
-            );
-
-          return new EmbedBuilder()
-            .setColor(embedColor)
-            .setTitle(`**${info.FriendlyName.replace(/\d\d\s/, '')}**`)
-            .addFields(
-              {
-                name: `__Version__`,
-                value: `\`\`\`${version}\`\`\``,
-                inline: true
-              },
-              {
-                name: `__IP__`,
-                value: `\`\`\`${ip}\`\`\``,
-                inline: true
-              },
-              {
-                name: '\u200b',
-                value: '\u200b',
-                inline: false,
-              },
-              {
-                name: `__Whitelist__`,
-                value: `\`\`\`${isWhitelisted}\`\`\``,
-                inline: true
-              },
-              {
-                name: '__Status__',
-                value: `\`\`\`${statusMessage}\`\`\``,
-                inline: true
-              },
-              {
-                name: '__Players__',
-                value: `\`\`\`\n${currentPlayers} of ${maxPlayers} online\n\`\`\``,
-              },
-            )
-            .setTimestamp();
-        });
+      const summary = await this.overviewEmbed(servers);
+      const embeds = await this.individualEmbeds(servers);
 
       embeds.unshift(summary);
 
-      const embedChunks: EmbedBuilder[][] = [];
-      for (let i = 0; i < embeds.length; i += 10) {
-        embedChunks.push(embeds.slice(i, i + 10));
-      }
+      await this.updateEmbeds(embeds, channel, messageCache);
 
-      const existingMessages = Array.from(
-        (await channel.messages.fetch({ limit: 100 })).values(),
-      );
-
-      for (let i = 0; i < embedChunks.length; i++) {
-        const newContent = JSON.stringify(
-          embedChunks[i].map((embed) => embed.toJSON()),
-        );
-
-        if (existingMessages[i]) {
-          const messageId = existingMessages[i].id;
-          if (messageCache.get(messageId) !== newContent) {
-            await existingMessages[i].edit({ embeds: embedChunks[i] });
-            messageCache.set(messageId, newContent);
-          }
-        } else {
-          const sentMessage = await channel.send({ embeds: embedChunks[i] });
-          messageCache.set(sentMessage.id, newContent);
-        }
-      }
-
-      for (let i = embedChunks.length; i < existingMessages.length; i++) {
-        await existingMessages[i].delete();
-        messageCache.delete(existingMessages[i].id);
-      }
     } catch (error) {
       console.error('Error updating server status:', error);
+    }
+  }
+
+  async overviewEmbed(servers: Instance[]): Promise<EmbedBuilder>{
+    // Overview of pack and player count
+    let summary = new EmbedBuilder().setTitle('Server Status');
+    let field: string = ``;
+    let color = true;
+    let count = 0;
+
+    for (const server of servers) {
+      if (
+        server.FriendlyName.includes(`ADS`) ||
+        server.FriendlyName.includes(`Bot`) ||
+        server.FriendlyName.includes(`Scheduler`) ||
+        server.Suspended ||
+        server.Hidden
+      )
+        continue;
+
+      const currentPlayers = server.Metrics?.['Active Users']?.RawValue || 0;
+      const serverName = server.FriendlyName.replace(/\d\d\s/, '');
+      count += currentPlayers;
+
+      if (color) {
+        field = field.concat(
+          `\`\`\`ansi\n [32m${serverName}: ${currentPlayers} players online[0m\n\`\`\``,
+        );
+        color = false;
+      } else {
+        field = field.concat(
+          `\`\`\`ansi\n [36m${serverName}: ${currentPlayers} players online[0m\n\`\`\``,
+        );
+        color = true;
+      }
+    }
+    field = field.concat(`**__\`\`\`Total Players Online: ${count}\`\`\`__**`)
+    summary.setColor(Colors.Blue);
+    summary.setDescription(field).setTimestamp();
+
+    return summary;
+  }
+
+  async individualEmbeds(servers: Instance[]): Promise<EmbedBuilder[]> {
+    // Individual embeds
+    const embeds = servers
+      .filter(
+        (info: Instance) =>
+          !info.FriendlyName.includes('ADS') &&
+          !info.FriendlyName.includes(`Scheduler`) &&
+          !info.FriendlyName.includes(`Bot`) &&
+          !info.Suspended &&
+          !info.Hidden,
+      )
+      .map((info: Instance) => {
+        const embedColor = info.AppState === 20 ? Colors.Green : Colors.Red;
+        const status = info.AppState === 20 ? 'Online' : 'Offline';
+        const currentPlayers = info.Metrics?.['Active Users']?.RawValue || 0;
+        const maxPlayers = info.Metrics?.['Active Users']?.MaxValue || 0;
+        const version = info.FTCVersion ? info.FTCVersion : 'N/A';
+        const ip = info.FTCIP ? info.FTCIP.toUpperCase() : 'N/A';
+        const isWhitelisted = info.Whitelisted ? 'True' : 'False';
+
+        let statusMessage;
+        if (status === 'Offline')
+          statusMessage = ColorText.colorText(
+            status,
+            undefined,
+            undefined,
+            ColorText.enums.foreground.red,
+          );
+        else
+          statusMessage = ColorText.colorText(
+            status,
+            undefined,
+            undefined,
+            ColorText.enums.foreground.green,
+          );
+
+        return new EmbedBuilder()
+          .setColor(embedColor)
+          .setTitle(`**${info.FriendlyName.replace(/\d\d\s/, '')}**`)
+          .addFields(
+            {
+              name: `__Version__`,
+              value: `\`\`\`${version}\`\`\``,
+              inline: true
+            },
+            {
+              name: `__IP__`,
+              value: `\`\`\`${ip}\`\`\``,
+              inline: true
+            },
+            {
+              name: '\u200b',
+              value: '\u200b',
+              inline: false,
+            },
+            {
+              name: `__Whitelist__`,
+              value: `\`\`\`${isWhitelisted}\`\`\``,
+              inline: true
+            },
+            {
+              name: '__Status__',
+              value: `\`\`\`${statusMessage}\`\`\``,
+              inline: true
+            },
+            {
+              name: '__Players__',
+              value: `\`\`\`\n${currentPlayers} of ${maxPlayers} online\n\`\`\``,
+            },
+          )
+          .setTimestamp();
+      });
+
+    return embeds;
+  }
+
+  async updateEmbeds(embeds: EmbedBuilder[], channel: TextChannel, messageCache: Map<string, string>) {
+    const embedChunks: EmbedBuilder[][] = [];
+    for (let i = 0; i < embeds.length; i += 10) {
+      embedChunks.push(embeds.slice(i, i + 10));
+    }
+
+    const existingMessages = Array.from(
+      (await channel.messages.fetch({ limit: 100 })).values(),
+    );
+
+    for (let i = 0; i < embedChunks.length; i++) {
+      const newContent = JSON.stringify(
+        embedChunks[i].map((embed) => embed.toJSON()),
+      );
+
+      if (existingMessages[i]) {
+        const messageId = existingMessages[i].id;
+        if (messageCache.get(messageId) !== newContent) {
+          await existingMessages[i].edit({ embeds: embedChunks[i] });
+          messageCache.set(messageId, newContent);
+        }
+      } else {
+        const sentMessage = await channel.send({ embeds: embedChunks[i] });
+        messageCache.set(sentMessage.id, newContent);
+      }
+    }
+
+    for (let i = embedChunks.length; i < existingMessages.length; i++) {
+      await existingMessages[i].delete();
+      messageCache.delete(existingMessages[i].id);
     }
   }
 
