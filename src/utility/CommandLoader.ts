@@ -1,7 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import CustomClient from '../CustomClient';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import CommandRegistry from './CommandRegistry';
 import logger from './Logger';
 
 class CommandLoader {
@@ -12,60 +10,20 @@ class CommandLoader {
   }
 
   async loadCommands() {
-    // Node.js platform independent file handling
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const __root = __dirname.includes('src')
-      ? path.resolve(__dirname, '../')
-      : __dirname;
-    const commandsPath = path.join(__root, '/commands');
-
     try {
-      const commandPromises = [];
+      // Load commands from CommandRegistry
+      const commandObjects = await CommandRegistry.getCommands();
 
-      // Use async directory reading
-      const folders = await fs.promises.readdir(commandsPath, {
-        withFileTypes: true,
-      });
-
-      for (const folder of folders) {
-        if (!folder.isDirectory()) continue;
-
-        const folderPath = path.join(commandsPath, folder.name);
-        const files = await fs.promises.readdir(folderPath);
-        const commandFiles = files.filter(
-          (file) => file.endsWith('.ts') || file.endsWith('.js'),
-        );
-
-        for (const file of commandFiles) {
-          const filePath = path.join(folderPath, file);
-          try {
-            const commandModule = await import(pathToFileURL(filePath).href);
-            if(commandModule.default?.enabled === false) continue;
-            const commandInstance = new commandModule.default();
-
-            commandPromises.push(commandInstance.createObject());
-          } catch (error) {
-            console.error(`Error loading command from ${file}:`, error);
-          }
-        }
-      }
-
-      const commandObjects = await Promise.allSettled(commandPromises);
-
-      for (const result of commandObjects) {
-        if (result.status === 'fulfilled') {
-          const commandObject = result.value;
-          if ('data' in commandObject && 'execute' in commandObject) {
-            this.client.commands.set(commandObject.data.name, commandObject);
-            logger.commands(`Loaded command: ${commandObject.data.name}`);
-          } else {
-            console.warn(`[WARNING] Command is missing required properties.`);
-          }
+      for (const commandObject of commandObjects) {
+        if ('data' in commandObject && 'execute' in commandObject) {
+          this.client.commands.set(commandObject.data.name, commandObject);
+          logger.commands(`Loaded command: ${commandObject.data.name}`);
         } else {
-          console.error('[ERROR] Failed to load command:', result.reason);
+          console.warn(`[WARNING] Command is missing required properties.`);
         }
       }
+
+      logger.info('All commands loaded successfully.');
     } catch (error) {
       console.error('[ERROR] Failed to load commands:', error);
       throw error;

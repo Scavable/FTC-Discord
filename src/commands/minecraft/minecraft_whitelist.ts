@@ -6,6 +6,7 @@ import {
 import ServersFile from '../../utility/ServersFile';
 import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
+import CustomClient from '../../CustomClient';
 
 export default class Whitelist {
   async createSlashCommand() {
@@ -56,13 +57,24 @@ export default class Whitelist {
   createSlashCommandFunctionality() {
     return async function execute(interaction: ChatInputCommandInteraction) {
       await interaction.deferReply();
+
+      const client = interaction.client as CustomClient; // Cast to your custom client
+      const guild = interaction.guild;
+
+      if (!guild) {
+        return await interaction.reply('❌ Guild not found.');
+      }
+
       const option = interaction.options.getString('option');
       const ign = interaction.options.getString('ign');
       const server = interaction.options.getString('server');
       const commandString: string = `whitelist ${option} ${ign}`;
       let time = new Date();
 
-      let amp = Amp.getInstance();
+      client.initializeGuildState(guild.id);
+      const amp = client.getAmpInstance(guild.id);
+      await amp.login();
+
       const servers: Map<string, Instance> = ServersFile.getInstances();
       if(server != null){
         const targetServer = servers.get(server);
