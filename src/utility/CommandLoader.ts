@@ -12,14 +12,19 @@ class CommandLoader {
   async loadCommands() {
     try {
       // Load commands from CommandRegistry
-      const commandObjects = await CommandRegistry.getCommands();
+      const instanceObjects = CommandRegistry.getCommands();
+      let commandObject
 
-      for (const commandObject of commandObjects) {
-        if ('data' in commandObject && 'execute' in commandObject) {
-          this.client.commands.set(commandObject.data.name, commandObject);
-          logger.commands(`Loaded command: ${commandObject.data.name}`);
-        } else {
-          console.warn(`[WARNING] Command is missing required properties.`);
+      for (const instanceObject of instanceObjects) {
+        if (instanceObject.enabled) {
+          commandObject = await instanceObject.createObject();
+
+          if ('data' in commandObject && 'execute' in commandObject) {
+            this.client.commands.set(commandObject.data.name, commandObject);
+            logger.commands(`Loaded command: ${commandObject.data.name}`);
+          } else {
+            console.warn(`[WARNING] Command is missing required properties.`);
+          }
         }
       }
 

@@ -5,7 +5,7 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
-  TextChannel,
+  TextChannel
 } from 'discord.js';
 import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
@@ -14,9 +14,9 @@ import ServersFile from '../../utility/ServersFile';
 import CustomClient from '../../CustomClient';
 
 export default class ServersPanel {
-  static enabled = true;
-  static commandName = 'amp_servers_panel';
-  static commandDescription = 'Display AMP server information';
+  enabled: boolean = true;
+  static commandName: string = 'servers_panel';
+  static commandDescription: string = 'Display AMP server information';
 
   async createSlashCommand() {
     return new SlashCommandBuilder()
@@ -197,7 +197,7 @@ export default class ServersPanel {
 
   async individualEmbeds(servers: Instance[]): Promise<EmbedBuilder[]> {
     // Individual embeds
-    const embeds = servers
+    return servers
       .filter(
         (info: Instance) =>
           !info.FriendlyName.includes('ADS') &&
@@ -238,12 +238,12 @@ export default class ServersPanel {
             {
               name: `__Version__`,
               value: `\`\`\`${version}\`\`\``,
-              inline: true
+              inline: true,
             },
             {
               name: `__IP__`,
               value: `\`\`\`${ip}\`\`\``,
-              inline: true
+              inline: true,
             },
             {
               name: '\u200b',
@@ -253,12 +253,12 @@ export default class ServersPanel {
             {
               name: `__Whitelist__`,
               value: `\`\`\`${isWhitelisted}\`\`\``,
-              inline: true
+              inline: true,
             },
             {
               name: '__Status__',
               value: `\`\`\`${statusMessage}\`\`\``,
-              inline: true
+              inline: true,
             },
             {
               name: '__Players__',
@@ -267,8 +267,6 @@ export default class ServersPanel {
           )
           .setTimestamp();
       });
-
-    return embeds;
   }
 
   async updateEmbeds(embeds: EmbedBuilder[], channel: TextChannel, messageCache: Map<string, string>) {

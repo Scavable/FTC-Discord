@@ -1,14 +1,17 @@
 import {
   ChatInputCommandInteraction,
   PermissionFlagsBits,
-  SlashCommandBuilder, TimestampStyles
+  SlashCommandBuilder
 } from 'discord.js';
 import ServersFile from '../../utility/ServersFile';
-import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
 
 export default class Whitelist {
+  enabled: boolean = true;
+  static commandName: string = 'whitelist';
+  static commandDescription: string = 'Add a player to the whitelist';
+
   async createSlashCommand() {
     // Load server choices dynamically from servers.json
     const servers = ServersFile.getInstances();
@@ -25,8 +28,8 @@ export default class Whitelist {
           }));
 
     return new SlashCommandBuilder()
-      .setName('minecraft_whitelist')
-      .setDescription('Add a player to the whitelist')
+      .setName(Whitelist.commandName)
+      .setDescription(Whitelist.commandDescription)
       .addStringOption((option) =>
         option
           .setName('ign')

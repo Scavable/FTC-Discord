@@ -1,19 +1,19 @@
-import AmpServersPanelCommand from '../commands/amp/amp_servers_panel';
-import CreateCategoryCommand from '../commands/discord/discord_create_category';
-import DeleteAllMessagesCommand from '../commands/discord/discord_delete_all_messages';
-import DeleteChannelCommand from '../commands/discord/discord_delete_channel';
-import ReloadAllCommand from '../commands/discord/discord_reload_all';
-import WhitelistCommand from '../commands/minecraft/minecraft_whitelist';
+import AmpServersPanelCommand from '../commands/amp/servers_panel';
+import CreateCategoryCommand from '../commands/discord/create_category';
+import DeleteAllMessagesCommand from '../commands/discord/delete_all_messages';
+import DeleteChannelCommand from '../commands/discord/delete_channel';
+import ReloadAllCommand from '../commands/discord/reload_all';
+import WhitelistCommand from '../commands/minecraft/whitelist';
 
 const CommandRegistry = {
-  async getCommands() {
+   getCommands() {
     return [
-      await new AmpServersPanelCommand().createObject(),
-      await new CreateCategoryCommand().createObject(),
-      await new DeleteAllMessagesCommand().createObject(),
-      await new DeleteChannelCommand().createObject(),
-      await new ReloadAllCommand().createObject(),
-      await new WhitelistCommand().createObject(),
+      new AmpServersPanelCommand(),
+      new CreateCategoryCommand(),
+      new DeleteAllMessagesCommand(),
+      new DeleteChannelCommand(),
+      new ReloadAllCommand(),
+      new WhitelistCommand(),
     ];
   },
 };

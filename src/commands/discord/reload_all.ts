@@ -4,9 +4,9 @@ import path from 'node:path';
 import CustomClient from '../../CustomClient';
 
 export default class ReloadAll {
-  static enabled = false;
-  static commandName = 'discord_reload_all';
-  static description = 'Reloads all commands';
+  enabled: boolean = false;
+  static commandName: string = 'discord_reload_all';
+  static description: string = 'Reloads all commands';
 
   async createSlashCommand() {
     return new SlashCommandBuilder()

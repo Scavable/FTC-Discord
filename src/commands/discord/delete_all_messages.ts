@@ -7,11 +7,11 @@ import {
 } from 'discord.js';
 
 export default class DeleteAllMessages {
-  static enabled = false;
-  static commandName = 'discord_delete_all_messages';
-  static description = 'Delete all messages in a specified channel.';
-  static subName = 'channel';
-  static subDescription = 'Channel to delete messages from';
+  enabled: boolean = false;
+  static commandName: string = 'discord_delete_all_messages';
+  static description: string = 'Delete all messages in a specified channel.';
+  static subName: string = 'channel';
+  static subDescription: string = 'Channel to delete messages from';
 
   createSlashCommand() {
     return new SlashCommandBuilder()
