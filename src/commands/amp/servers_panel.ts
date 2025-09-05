@@ -12,8 +12,9 @@ import Instance from '../../types/Instance';
 import ColorText from '../../utility/ColorText';
 import ServersFile from '../../utility/ServersFile';
 import CustomClient from '../../CustomClient';
+import { BaseCommand } from '../../interface/BaseCommand';
 
-export default class ServersPanel {
+export default class ServersPanel implements BaseCommand {
   enabled: boolean = true;
   static commandName: string = 'servers_panel';
   static commandDescription: string = 'Display AMP server information';
@@ -40,9 +41,10 @@ export default class ServersPanel {
       if (guildState?.updateInterval) {
         clearInterval(guildState.updateInterval); // Stop the interval
         client.cleanupGuildState(guild.id); // Clean up the guild state
-        return await interaction.reply('✅ Server status panel has been stopped.');
+        return await interaction.reply(
+          '✅ Server status panel has been stopped.',
+        );
       }
-
 
       // Initialize guild state and AMP instance
       client.initializeGuildState(guild.id);
@@ -149,13 +151,12 @@ export default class ServersPanel {
       embeds.unshift(summary);
 
       await this.updateEmbeds(embeds, channel, messageCache);
-
     } catch (error) {
       console.error('Error updating server status:', error);
     }
   }
 
-  async overviewEmbed(servers: Instance[]): Promise<EmbedBuilder>{
+  async overviewEmbed(servers: Instance[]): Promise<EmbedBuilder> {
     // Overview of pack and player count
     let summary = new EmbedBuilder().setTitle('Server Status');
     let field: string = ``;
@@ -188,7 +189,7 @@ export default class ServersPanel {
         color = true;
       }
     }
-    field = field.concat(`**__\`\`\`Total Players Online: ${count}\`\`\`__**`)
+    field = field.concat(`**__\`\`\`Total Players Online: ${count}\`\`\`__**`);
     summary.setColor(Colors.Blue);
     summary.setDescription(field).setTimestamp();
 
@@ -269,7 +270,11 @@ export default class ServersPanel {
       });
   }
 
-  async updateEmbeds(embeds: EmbedBuilder[], channel: TextChannel, messageCache: Map<string, string>) {
+  async updateEmbeds(
+    embeds: EmbedBuilder[],
+    channel: TextChannel,
+    messageCache: Map<string, string>,
+  ) {
     const embedChunks: EmbedBuilder[][] = [];
     for (let i = 0; i < embeds.length; i += 10) {
       embedChunks.push(embeds.slice(i, i + 10));
