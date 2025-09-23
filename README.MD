@@ -96,7 +96,7 @@ To get started with this project, follow these steps:
 <li> Frameworks: Discord.js for Discord bot integration </li>
 <li> Configuration: Dotenv </li>
 <li> Testing: Jest as the unit testing framework </li>
-<li> Build Tool: Tsup and Tsx </li>
+<li> Build Tool: Tsup and Tsx
 <li/> Logging: Winston
 
 - [TypeScript](https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing.
