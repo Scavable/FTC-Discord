@@ -94,9 +94,10 @@ To get started with this project, follow these steps:
 
 <li> Backend: Node.js, TypeScript </li>
 <li> Frameworks: Discord.js for Discord bot integration </li>
-<li> Configuration: Dotenv for environment variable management </li>
+<li> Configuration: Dotenv </li>
 <li> Testing: Jest as the unit testing framework </li>
-<li> Build Tool: Tsup for building the TypeScript project </li>
+<li> Build Tool: Tsup and Tsx </li>
+<li/> Logging: Winston
 
 - [TypeScript](https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing.
 - [Discord.js](https://discord.js.org/) (v14.18.0): A powerful library for building Discord bots.
