@@ -69,28 +69,34 @@ To get started with this project, follow these steps:
 ## Features
 
 <ul>
-<li>AMP Integration:</li>
+   <li> AMP Integration: </li>
 <ul>
-<li>Authenticate and interact with AMP-managed Minecraft servers.</li>
-<li>Fetch server instances, configurations, and statuses.</li>
-<li>Send commands and manage server console messages programmatically.</li>
+      <li> Authenticate and interact with AMP-managed Minecraft servers. </li>
+      <li> Fetch server instances, configurations, and statuses. </li>
+      <li> Send commands and manage server console messages programmatically. </li>
 </ul>
-<li>Discord Bot:</li>
+   <li> Discord Bot: </li>
 <ul>
-<li>Manage Discord-specific tasks like creating categories, deleting messages or channels, and other server automation functionalities.</li>
-<li>Enable role management and permissions synced across platforms.</li>
+      <li> Manage Discord-specific tasks like creating categories, deleting messages or channels, and other server automation functionalities. </li>
+      <li> Enable role management and permissions synced across platforms. </li>
 </ul>
-<li>Minecraft Features:</li>
+   <li> Minecraft Features: </li>
 <ul>
-<li>Whitelist management for Minecraft servers.</li>
-<li>Retrieval of server configurations and dynamic server updates.</li>
+      <li> Whitelist management for Minecraft servers. </li>
+      <li> Retrieval of server configurations and dynamic server updates. </li>
 </ul>
-<li>Logging: Centralized logging system for debugging and error tracking.</li>
+   <li> Logging: Centralized logging system for debugging and error tracking. </li>
 </ul>
 
 ---
 
-## Technologies Used
+## Technology Stack
+
+<li> Backend: Node.js, TypeScript </li>
+<li> Frameworks: Discord.js for Discord bot integration </li>
+<li> Configuration: Dotenv for environment variable management </li>
+<li> Testing: Jest as the unit testing framework </li>
+<li> Build Tool: Tsup for building the TypeScript project </li>
 
 - [TypeScript](https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing.
 - [Discord.js](https://discord.js.org/) (v14.18.0): A powerful library for building Discord bots.
