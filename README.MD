@@ -68,10 +68,25 @@ To get started with this project, follow these steps:
 
 ## Features
 
-- Customizable command handling.
-- Real-time interaction with Discord servers.
-- Easily extensible to meet specific requirements.
-- Built-in support for modern TypeScript features.
+<ol>
+<li>AMP Integration:</li>
+<ol>
+<li>Authenticate and interact with AMP-managed Minecraft servers.</li>
+<li>Fetch server instances, configurations, and statuses.</li>
+<li>Send commands and manage server console messages programmatically.</li>
+</ol>
+<li>Discord Bot:</li>
+<ol>
+<li>Manage Discord-specific tasks like creating categories, deleting messages or channels, and other server automation functionalities.</li>
+<li>Enable role management and permissions synced across platforms.</li>
+</ol>
+<li>Minecraft Features:</li>
+<ol>
+<li>Whitelist management for Minecraft servers.</li>
+<li>Retrieval of server configurations and dynamic server updates.</li>
+</ol>
+<li>Logging: Centralized logging system for debugging and error tracking.</li>
+</ol>
 
 ---
 
