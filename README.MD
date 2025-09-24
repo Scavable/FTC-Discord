@@ -98,7 +98,7 @@ To get started with this project, follow these steps:
 <li> Testing: Jest as the unit testing framework
 <li> Build Tool: Tsup and Tsx
 <li> Logging: Winston
-
+<br/>
 - [Node.js](https://nodejs.org/en) (v22.19.0): Free, open-source, cross-platform JavaScript runtime environment.
 - [TypeScript](https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing.
 - [Discord.js](https://discord.js.org/) (v14.18.0): A powerful library for building Discord bots.
