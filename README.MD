@@ -117,7 +117,6 @@ Logging: Winston <br>
 The project follows a clean structure to ensure maintainability and scalability:
 
 <pre>
-<p>
 /src
  ├── amp                 # Contains AMP-specific API integration logic
  │   └── Amp.ts          # Main AMP-related functionality
@@ -138,7 +137,6 @@ LicenseAgreement.md      # License
 package.json
 README.MD # Readme file for GitHub
 tsconfig.json # TypeScript configuration
-</p>
 </pre>
 ---
 
