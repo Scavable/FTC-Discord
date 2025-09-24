@@ -92,12 +92,12 @@ To get started with this project, follow these steps:
 
 ## Technology Stack
 
-<p>Backend: Node.js, TypeScript
-<p>Frameworks: Discord.js
-<p>Configuration: Dotenv
-<p>Testing: Jest
-<p>Build Tool: Tsup and Tsx
-<p>Logging: Winston
+Backend: Node.js, TypeScript <br/>
+Frameworks: Discord.js <br/>
+Configuration: Dotenv <br/>
+Testing: Jest <br/>
+Build Tool: Tsup and Tsx <br/>
+Logging: Winston <br/>
 
 <br/>
 
