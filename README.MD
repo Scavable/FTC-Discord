@@ -134,9 +134,9 @@ The project follows a clean structure to ensure maintainability and scalability:
 .env                     # Environment variables
 .envTemplate             # Gives all currently used variables without values; Rename to .env
 LicenseAgreement.md      # License
-package.json
-README.MD # Readme file for GitHub
-tsconfig.json # TypeScript configuration
+package.json             # Project information
+README.MD                # Readme file for GitHub
+tsconfig.json            # TypeScript configuration
 </pre>
 ---
 
