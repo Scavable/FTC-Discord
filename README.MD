@@ -97,7 +97,7 @@ To get started with this project, follow these steps:
 <li> Configuration: Dotenv </li>
 <li> Testing: Jest </li>
 <li> Build Tool: Tsup and Tsx </li>
-<li> Logging: Winston </li>
+<li> Logging: Winston </li><br/>
 
 - [Node.js](https://nodejs.org/en) (v22.19.0): Free, open-source, cross-platform JavaScript runtime environment.
 - [TypeScript](https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing.
