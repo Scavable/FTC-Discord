@@ -117,13 +117,14 @@ Logging: Winston <br>
 The project follows a clean structure to ensure maintainability and scalability:
 
 <pre>
+<p>
 /src <br>
- ├── amp # Contains AMP-specific API integration logic <br>
- │   └── Amp.ts # Main AMP-related functionality <br>
- ├── commands # Commands for both Discord and Minecraft <br>
- │    ├── amp  # AMP server-related commands <br>
- │    └── discord # Discord-specific commands (e.g., create category) <br>
- │    └── minecraft # Minecraft-specific commands (e.g., whitelist management) <br>
+ ├── amp                 # Contains AMP-specific API integration logic <br>
+ │   └── Amp.ts          # Main AMP-related functionality <br>
+ ├── commands            # Commands for both Discord and Minecraft <br>
+ │    ├── amp            # AMP server-related commands <br>
+ │    └── discord        # Discord-specific commands (e.g., create category) <br>
+ │    └── minecraft      # Minecraft-specific commands (e.g., whitelist management) <br>
  ├── events              # Discord event handlers <br>
  ├── interface           # Interfaces and abstract command classes <br>
  ├── types               # TypeScript types used in the project <br>
@@ -131,12 +132,13 @@ The project follows a clean structure to ensure maintainability and scalability:
  ├── Config.ts           # Configurations for the project <br>
  ├── Bot.ts              # Main entry for the Discord bot <br>
  ├── CustomClient.ts     # Customized Discord client instance <br>
-.env # Environment variables <br>
-.envTemplate # Gives all currently used variables without values; Rename to .env <br>
-LicenseAgreement.md # License <br>
+.env                     # Environment variables <br>
+.envTemplate             # Gives all currently used variables without values; Rename to .env <br>
+LicenseAgreement.md      # License <br>
 package.json <br>
 README.MD # Readme file for GitHub <br>
 tsconfig.json # TypeScript configuration <br>
+</p>
 </pre>
 ---
 
