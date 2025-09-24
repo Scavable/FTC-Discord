@@ -119,10 +119,10 @@ The project follows a clean structure to ensure maintainability and scalability:
 /src <br>
  ├── amp   &emsp;&emsp;&emsp; # Contains AMP-specific API integration logic <br>
  │&emsp;&emsp;└── Amp.ts   &emsp;&emsp; # Main AMP-related functionality <br>
- ├── commands            # Commands for both Discord and Minecraft <br>
- │&emsp;&emsp;├── amp             # AMP server-related commands <br>
- │&emsp;&emsp;└── discord         # Discord-specific commands (e.g., create category) <br>
- │&emsp;&emsp;└── minecraft       # Minecraft-specific commands (e.g., whitelist management) <br>
+ ├── commands   &emsp;&emsp;&emsp; # Commands for both Discord and Minecraft <br>
+ │&emsp;&emsp;├── amp   &emsp;&emsp; # AMP server-related commands <br>
+ │&emsp;&emsp;└── discord   &emsp;&emsp; # Discord-specific commands (e.g., create category) <br>
+ │&emsp;&emsp;└── minecraft   &emsp;&emsp; # Minecraft-specific commands (e.g., whitelist management) <br>
  ├── events              # Discord event handlers <br>
  ├── interface           # Interfaces and abstract command classes <br>
  ├── types               # TypeScript types used in the project <br>
