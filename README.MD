@@ -119,8 +119,8 @@ The project follows a clean structure to ensure maintainability and scalability:
 <pre>
 <p>
 /src <br>
- ├── amp                 # Contains AMP-specific API integration logic <br>
- │   └── Amp.ts          # Main AMP-related functionality <br>
+ ├── amp                 # Contains AMP-specific API integration logic
+ │   └── Amp.ts          # Main AMP-related functionality
  ├── commands            # Commands for both Discord and Minecraft <br>
  │    ├── amp            # AMP server-related commands <br>
  │    └── discord        # Discord-specific commands (e.g., create category) <br>
