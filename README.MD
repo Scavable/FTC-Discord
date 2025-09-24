@@ -101,14 +101,14 @@ Logging: Winston <br/>
 
 <br/>
 
-[Node.js] (https://nodejs.org/en) (v22.19.0): Free, open-source, cross-platform JavaScript runtime environment.
-[TypeScript] (https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing.
-[Discord.js] (https://discord.js.org/) (v14.18.0): A powerful library for building Discord bots.
-[dotenv] (https://www.npmjs.com/package/dotenv) (v16.4.7): For environment variable management.
-[Jest] (https://jestjs.io/) (v29.5.14): Unit testing framework.
-[tsup] (https://www.npmjs.com/package/tsup) (v8.4.0): For bundling and building the application.
-[tsx] (https://github.com/esbuild-kit/tsx) (v4.19.3): For TypeScript runtime and execution.
-[winston] (https://www.npmjs.com/package/winston) (v3.17.0): A simple and universal logging library with support for multiple transports.
+[Node.js] (https://nodejs.org/en) (v22.19.0): Free, open-source, cross-platform JavaScript runtime environment. <br/>
+[TypeScript] (https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing. <br/>
+[Discord.js] (https://discord.js.org/) (v14.18.0): A powerful library for building Discord bots. <br/>
+[dotenv] (https://www.npmjs.com/package/dotenv) (v16.4.7): For environment variable management. <br/>
+[Jest] (https://jestjs.io/) (v29.5.14): Unit testing framework. <br/>
+[tsup] (https://www.npmjs.com/package/tsup) (v8.4.0): For bundling and building the application. <br/>
+[tsx] (https://github.com/esbuild-kit/tsx) (v4.19.3): For TypeScript runtime and execution. <br/>
+[winston] (https://www.npmjs.com/package/winston) (v3.17.0): A simple and universal logging library with support for multiple transports. <br/>
 
 ---
 
