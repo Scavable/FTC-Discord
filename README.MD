@@ -107,7 +107,7 @@ To get started with this project, follow these steps:
 <li> [Jest](https://jestjs.io/) (v29.5.14): Unit testing framework.
 <li> [tsup](https://www.npmjs.com/package/tsup) (v8.4.0): For bundling and building the application.
 <li> [tsx](https://github.com/esbuild-kit/tsx) (v4.19.3): For TypeScript runtime and execution.
-<li> [winston](https://www.npmjs.com/package/winston) (v3.17.0): A simple and universal logging library with support for multiple transports.
+- [winston](https://www.npmjs.com/package/winston) (v3.17.0): A simple and universal logging library with support for multiple transports.
 
 ---
 
