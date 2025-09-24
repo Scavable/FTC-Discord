@@ -117,8 +117,8 @@ Logging: Winston <br>
 The project follows a clean structure to ensure maintainability and scalability:
 
 /src <br>
- ├── amp                 # Contains AMP-specific API integration logic <br>
- │&emsp;&emsp;└── Amp.ts          # Main AMP-related functionality <br>
+ ├── amp   &emsp;&emsp;&emsp;# Contains AMP-specific API integration logic <br>
+ │&emsp;&emsp;└── Amp.ts   &emsp;&emsp;# Main AMP-related functionality <br>
  ├── commands            # Commands for both Discord and Minecraft <br>
  │&emsp;&emsp;├── amp             # AMP server-related commands <br>
  │&emsp;&emsp;└── discord         # Discord-specific commands (e.g., create category) <br>
