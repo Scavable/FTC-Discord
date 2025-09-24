@@ -137,7 +137,7 @@ LicenseAgreement.md # License <br>
 package.json <br>
 README.MD # Readme file for GitHub <br>
 tsconfig.json # TypeScript configuration <br>
-<pre/>
+</pre>
 ---
 
 ## License
