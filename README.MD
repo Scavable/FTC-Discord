@@ -116,14 +116,20 @@ Logging: Winston <br/>
 
 The project follows a clean structure to ensure maintainability and scalability:
 
-/src <br>
-&emsp;├── amp/ # Amp functions <br>
-&emsp;├── commands/ # Command files go here <br>
-&emsp;├── database/ # Database handling <br>
-&emsp;├── events/ # Event handling <br>
-&emsp;├── types/ # Types <br>
-&emsp;├── utility/ # Utility functions and tools <br>
-&emsp;├── Bot.ts # Main entry point of the bot <br>
+src
+ ├── amp                 # Contains AMP-specific API integration logic
+ │   └── Amp.ts          # Main AMP-related functionality
+ ├── commands            # Commands for both Discord and Minecraft
+ │   ├── amp             # AMP server-related commands
+ │   └── discord         # Discord-specific commands (e.g., create category)
+ │   └── minecraft       # Minecraft-specific commands (e.g., whitelist management)
+ ├── events              # Discord event handlers
+ ├── interface           # Interfaces and abstract command classes
+ ├── types               # TypeScript types used in the project
+ ├── utility             # Core utility functions (e.g., logging, file operations)
+ ├── Config.ts           # Configurations for the project
+ ├── Bot.ts              # Main entry for the Discord bot
+ ├── CustomClient.ts     # Customized Discord client instance
 .env # Environment variables <br>
 .envTemplate # Gives all currently used variables without values; Rename to .env <br>
 LicenseAgreement.md # License <br>
