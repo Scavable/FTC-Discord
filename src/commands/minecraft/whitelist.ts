@@ -6,8 +6,9 @@ import {
 import ServersFile from '../../utility/ServersFile';
 import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
+import { BaseCommand } from '../../interface/BaseCommand';
 
-export default class Whitelist {
+export default class Whitelist implements BaseCommand{
   enabled: boolean = true;
   static commandName: string = 'whitelist';
   static commandDescription: string = 'Add a player to the whitelist';
@@ -57,7 +58,7 @@ export default class Whitelist {
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
   }
 
-  createSlashCommandFunctionality() {
+  async createCommandFunctionality() {
     return async function execute(interaction: ChatInputCommandInteraction) {
       await interaction.deferReply();
 
@@ -135,7 +136,7 @@ export default class Whitelist {
   async createObject() {
     return {
       data: await this.createSlashCommand(),
-      execute: this.createSlashCommandFunctionality(),
+      execute: await this.createCommandFunctionality(),
     };
   }
 }

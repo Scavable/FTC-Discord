@@ -16,9 +16,9 @@ const client = new CustomClient(); // Use CustomClient instead of Client
   try {
     // Check and Install dependencies if missing
     const dep_arr: string[] = [
-      'discord.js@14.21.0',
-      'dotenv@17.0.1',
-      'winston@3.17.0',
+      'discord.js@14.23.0',
+      'dotenv@17.2.3',
+      'winston@3.18.3',
       'prismarine-nbt@2.7.0',
     ];
     for (const dep of dep_arr) {
