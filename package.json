@@ -16,13 +16,13 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.23.0",
+    "dotenv": "^17.2.3",
     "prismarine-nbt": "^2.7.0",
     "winston": "^3.18.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
     "@types/jest": "^29.5.14",
-    "dotenv": "^17.2.3",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "globals": "^16.1.0",
