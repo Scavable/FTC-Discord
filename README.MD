@@ -68,21 +68,47 @@ To get started with this project, follow these steps:
 
 ## Features
 
-- Customizable command handling.
-- Real-time interaction with Discord servers.
-- Easily extensible to meet specific requirements.
-- Built-in support for modern TypeScript features.
+<ul>
+   <li> AMP Integration: </li>
+<ul>
+      <li> Authenticate and interact with AMP-managed Minecraft servers. </li>
+      <li> Fetch server instances, configurations, and statuses. </li>
+      <li> Send commands and manage server console messages programmatically. </li>
+</ul>
+   <li> Discord Bot: </li>
+<ul>
+      <li> Manage Discord-specific tasks like creating categories, deleting messages or channels, and other server automation functionalities. </li>
+      <li> Enable role management and permissions synced across platforms. </li>
+</ul>
+   <li> Minecraft Features: </li>
+<ul>
+      <li> Whitelist management for Minecraft servers. </li>
+      <li> Retrieval of server configurations and dynamic server updates. </li>
+</ul>
+   <li> Logging: Centralized logging system for debugging and error tracking. </li>
+</ul>
 
 ---
 
-## Technologies Used
+## Technology Stack
 
-- [TypeScript](https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing.
-- [Discord.js](https://discord.js.org/) (v14.18.0): A powerful library for building Discord bots.
-- [dotenv](https://www.npmjs.com/package/dotenv) (v16.4.7): For environment variable management.
-- [tsx](https://github.com/esbuild-kit/tsx) (v4.19.3): For TypeScript runtime and execution.
-- [tsup](https://www.npmjs.com/package/tsup) (v8.4.0): For bundling and building the application.
-- [winston](https://www.npmjs.com/package/winston) (v3.17.0): A simple and universal logging library with support for multiple transports.
+Backend: Node.js, TypeScript <br>
+Frameworks: Discord.js <br>
+Configuration: Dotenv <br>
+Testing: Jest <br>
+Build Tool: Tsup and Tsx <br>
+Logging: Winston <br>
+
+<br>
+
+[Node.js] (https://nodejs.org/en) (v22.19.0): Free, open-source, cross-platform JavaScript runtime environment. <br>
+[TypeScript] (https://www.typescriptlang.org/) (v5.8.2): A superset of JavaScript that provides optional static typing. <br>
+[Discord.js] (https://discord.js.org/) (v14.18.0): A powerful library for building Discord bots. <br>
+[dotenv] (https://www.npmjs.com/package/dotenv) (v16.4.7): For environment variable management. <br>
+[Jest] (https://jestjs.io/) (v29.5.14): Unit testing framework. <br>
+[tsup] (https://www.npmjs.com/package/tsup) (v8.4.0): For bundling and building the application. <br>
+[tsx] (https://github.com/esbuild-kit/tsx) (v4.19.3): For TypeScript runtime and execution. <br>
+[winston] (https://www.npmjs.com/package/winston) (v3.17.0): A simple and universal logging library with support for multiple transports. <br>
 
 ---
 
@@ -90,21 +116,28 @@ To get started with this project, follow these steps:
 
 The project follows a clean structure to ensure maintainability and scalability:
 
-/src <br>
-&emsp;├── amp/ # Amp functions <br>
-&emsp;├── commands/ # Command files go here <br>
-&emsp;├── database/ # Database handling <br>
-&emsp;├── events/ # Event handling <br>
-&emsp;├── types/ # Types <br>
-&emsp;├── utility/ # Utility functions and tools <br>
-&emsp;├── Bot.ts # Main entry point of the bot <br>
-.env # Environment variables <br>
-.envTemplate # Gives all currently used variables without values; Rename to .env <br>
-LicenseAgreement.md # License <br>
-package.json <br>
-README.MD # Readme file for GitHub <br>
-tsconfig.json # TypeScript configuration <br>
-
+<pre>
+/src
+ ├── amp                 # Contains AMP-specific API integration logic
+ │   └── Amp.ts          # Main AMP-related functionality
+ ├── commands            # Commands for both Discord and Minecraft
+ │    ├── amp            # AMP server-related commands
+ │    └── discord        # Discord-specific commands (e.g., create category)
+ │    └── minecraft      # Minecraft-specific commands (e.g., whitelist management)
+ ├── events              # Discord event handlers
+ ├── interface           # Interfaces and abstract command classes
+ ├── types               # TypeScript types used in the project
+ ├── utility             # Core utility functions (e.g., logging, file operations)
+ ├── Config.ts           # Configurations for the project
+ ├── Bot.ts              # Main entry for the Discord bot
+ ├── CustomClient.ts     # Customized Discord client instance
+.env                     # Environment variables
+.envTemplate             # Gives all currently used variables without values; Rename to .env
+LicenseAgreement.md      # License
+package.json             # Project information
+README.MD                # Readme file for GitHub
+tsconfig.json            # TypeScript configuration
+</pre>
 ---
 
 ## License
