@@ -207,6 +207,7 @@ class Amp {
           server.FTCVersion = temp.Version;
           server.Hidden = temp.Hidden;
         }catch(error){
+          // @ts-ignore
           logger.error(error);
         }
       }

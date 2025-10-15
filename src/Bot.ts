@@ -14,23 +14,17 @@ const client = new CustomClient(); // Use CustomClient instead of Client
 
 (async () => {
   try {
-    // Check and Install dependencies if missing
-    const dep_arr: string[] = [
-      'discord.js@14.23.0',
-      'dotenv@17.2.3',
-      'winston@3.18.3',
-      'prismarine-nbt@2.7.0',
-    ];
-    for (const dep of dep_arr) {
+    // Verify required dependencies are installed; fail fast with helpful message
+    const required = ['discord.js', 'dotenv', 'winston', 'prismarine-nbt'];
+    logger.info('Verifying dependencies...');
+    for (const dep of required) {
       try {
-        logger.info(child_process.execSync('npm ls ' + dep).toString());
-      } catch (e) {
-        logger.warn(
-          `Installing missing dependency: ` +
-            child_process.execSync(`npm install ` + dep).toString(),
-        );
+        child_process.execSync(`npm ls ${dep}`, { stdio: 'ignore' });
+      } catch {
+        throw new Error(`Missing dependency: ${dep}. Please run "npm install" before starting the bot.`);
       }
     }
+    logger.info('All dependencies verified.');
 
     logger.info('Starting bot...');
 

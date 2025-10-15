@@ -75,8 +75,8 @@ export default class Whitelist implements BaseCommand{
       const commandString: string = `whitelist ${option} ${ign}`;
       let time = new Date();
 
-      client.initializeGuildState(guild.id);
-      const amp = client.getAmpInstance(guild.id);
+      client.initializeState();
+      const amp = client.getAmpInstance();
       await amp.login();
 
       const servers: Map<string, Instance> = ServersFile.getInstances();

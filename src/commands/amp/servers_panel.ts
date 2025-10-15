@@ -35,20 +35,18 @@ export default class ServersPanel implements BaseCommand {
         return await interaction.reply('❌ Guild not found.');
       }
 
-      const guildState = client.guildState.get(guild.id);
-
       // If the panel is running, stop it
-      if (guildState?.updateInterval) {
-        clearInterval(guildState.updateInterval); // Stop the interval
-        client.cleanupGuildState(guild.id); // Clean up the guild state
+      if (client.updateInterval) {
+        clearInterval(client.updateInterval); // Stop the interval
+        client.cleanupState(); // Clean up the state
         return await interaction.reply(
           '✅ Server status panel has been stopped.',
         );
       }
 
-      // Initialize guild state and AMP instance
-      client.initializeGuildState(guild.id);
-      const amp = client.getAmpInstance(guild.id);
+      // Initialize state and AMP instance
+      client.initializeState();
+      const amp = client.getAmpInstance();
       await amp.login();
 
       await interaction.deferReply();
@@ -110,7 +108,7 @@ export default class ServersPanel implements BaseCommand {
 
       await interaction.editReply('✅ Server status panel started.');
 
-      const messageCache = client.guildState.get(guild.id)?.messageCache!;
+      const messageCache = client.messageCache!;
       const updateLoop = async () => {
         try {
           await this.updateServerStatus(amp, channel, messageCache);
@@ -124,7 +122,7 @@ export default class ServersPanel implements BaseCommand {
 
       // Start the update loop
       // Run every 60 seconds
-      client.guildState.get(guild.id)!.updateInterval = setInterval(
+      client.updateInterval = setInterval(
         updateLoop,
         60000,
       );
