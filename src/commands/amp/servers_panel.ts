@@ -13,6 +13,7 @@ import ColorText from '../../utility/ColorText';
 import ServersFile from '../../utility/ServersFile';
 import CustomClient from '../../CustomClient';
 import { BaseCommand } from '../../interface/BaseCommand';
+import { AppState, MetricKey } from '../../types/AppState';
 
 export default class ServersPanel implements BaseCommand {
   enabled: boolean = true;
@@ -132,11 +133,8 @@ export default class ServersPanel implements BaseCommand {
     };
   }
 
-  private async updateServerStatus(
-    amp: Amp,
-    channel: TextChannel,
-    messageCache: Map<string, string>,
-  ) {
+  private async updateServerStatus(amp: Amp, channel: TextChannel,
+    messageCache: Map<string, string>) {
     try {
       const servers = await amp.readFile(await amp.getInstances());
       if (!servers) return;
@@ -171,22 +169,15 @@ export default class ServersPanel implements BaseCommand {
       )
         continue;
 
-      const currentPlayers = server.Metrics?.['Active Users']?.RawValue || 0;
+      const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
       const serverName = server.FriendlyName.replace(/\d\d\s/, '');
       count += currentPlayers;
 
-      if (color) {
-        field = field.concat(
-          `\`\`\`ansi\n [32m${serverName}: ${currentPlayers} players online[0m\n\`\`\``,
-        );
-        color = false;
-      } else {
-        field = field.concat(
-          `\`\`\`ansi\n [36m${serverName}: ${currentPlayers} players online[0m\n\`\`\``,
-        );
-        color = true;
-      }
+      field = field.concat(
+        `\`\`\`${serverName}: ${currentPlayers} players online\n\`\`\``,
+      );
     }
+
     field = field.concat(`**__\`\`\`Total Players Online: ${count}\`\`\`__**`);
     summary.setColor(Colors.Blue);
     summary.setDescription(field).setTimestamp();
@@ -206,13 +197,18 @@ export default class ServersPanel implements BaseCommand {
           !info.Hidden,
       )
       .map((info: Instance) => {
-        const embedColor = info.AppState === 20 ? Colors.Green : Colors.Red;
-        const status = info.AppState === 20 ? 'Online' : 'Offline';
-        const currentPlayers = info.Metrics?.['Active Users']?.RawValue || 0;
-        const maxPlayers = info.Metrics?.['Active Users']?.MaxValue || 0;
+
+        const isWhitelisted = info.Whitelisted ? 'True' : 'False';
+        const isOnline = info.AppState === AppState.Online;
+
+        const embedColor = isOnline ? Colors.Green : Colors.Red;
+        const status = isOnline ? 'Online' : 'Offline';
+
+        const currentPlayers = info.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
+        const maxPlayers = info.Metrics?.[MetricKey.ActiveUsers]?.MaxValue || 0;
+
         const version = info.FTCVersion ? info.FTCVersion : 'N/A';
         const ip = info.FTCIP ? info.FTCIP.toUpperCase() : 'N/A';
-        const isWhitelisted = info.Whitelisted ? 'True' : 'False';
 
         let statusMessage;
         if (status === 'Offline')
@@ -268,11 +264,8 @@ export default class ServersPanel implements BaseCommand {
       });
   }
 
-  async updateEmbeds(
-    embeds: EmbedBuilder[],
-    channel: TextChannel,
-    messageCache: Map<string, string>,
-  ) {
+  async updateEmbeds(embeds: EmbedBuilder[], channel: TextChannel,
+    messageCache: Map<string, string>) {
     const embedChunks: EmbedBuilder[][] = [];
     for (let i = 0; i < embeds.length; i += 10) {
       embedChunks.push(embeds.slice(i, i + 10));
