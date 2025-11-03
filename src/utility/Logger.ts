@@ -12,13 +12,18 @@ const customLevels = {
     warn: 1,
     debug: 2,
     commands: 3, // Adding a custom 'success' level
-    info: 4,
+    updates: 4,
+    amp: 5,
+    info: 6,
+
   },
   colors: {
     error: 'red',
     warn: 'yellow',
     info: 'green',
     commands: 'blue', // Adding a color for the 'success' level
+    updates: 'cyan',
+    amp: 'magenta',
   },
 };
 
@@ -83,6 +88,16 @@ class Logger {
   // Log a success message (our custom level)
   public commands(message: string): void {
     this.logger.log('commands', message); // Use the custom 'success' level
+  }
+
+  // Log a success message (our custom level)
+  public updates(message: string): void {
+    this.logger.log('updates', message); // Use the custom 'success' level
+  }
+
+  // Log a success message (our custom level)
+  public amp(message: string): void {
+    this.logger.log('amp', message); // Use the custom 'success' level
   }
 }
 

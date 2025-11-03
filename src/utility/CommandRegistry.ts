@@ -1,6 +1,5 @@
 import AmpServersPanelCommand from '../commands/amp/servers_panel';
 import CreateCategoryCommand from '../commands/discord/create_category';
-import DeleteAllMessagesCommand from '../commands/discord/delete_all_messages';
 import DeleteChannelCommand from '../commands/discord/delete_channel';
 import ReloadAllCommand from '../commands/discord/reload_all';
 import WhitelistCommand from '../commands/minecraft/whitelist';
@@ -10,7 +9,6 @@ const CommandRegistry = {
     return [
       new AmpServersPanelCommand(),
       new CreateCategoryCommand(),
-      new DeleteAllMessagesCommand(),
       new DeleteChannelCommand(),
       new ReloadAllCommand(),
       new WhitelistCommand(),

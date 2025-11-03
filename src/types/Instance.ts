@@ -87,6 +87,7 @@ type Instance = {
   FTCIP: string;
   FTCVersion: string;
   Hidden: boolean;
+  PackName: string;
   Whitelisted: boolean;
 };
 

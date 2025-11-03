@@ -4,13 +4,17 @@ import CommandLoader from './utility/CommandLoader';
 import CommandSync from './utility/CommandSync';
 import CustomClient from './CustomClient';
 import RoleMapper from './utility/RoleMapper';
+import { validateConfig } from './validation/Config';
 
 import logger from './utility/Logger';
 import child_process from 'child_process';
 import ServersFile from './utility/ServersFile';
 import fs from 'node:fs';
+import { scheduleDaily } from './utility/Scheduler';
+import { checkForPackUpdates } from './utility/PackUpdateChecker';
 
 const client = new CustomClient(); // Use CustomClient instead of Client
+validateConfig(config);
 
 (async () => {
   try {
@@ -43,6 +47,14 @@ const client = new CustomClient(); // Use CustomClient instead of Client
     const guild = await client.guilds.fetch(config.GUILD_ID);
     const roleMapper = new RoleMapper(guild);
     await roleMapper.initialize();
+
+    // Schedule daily pack update checks
+    scheduleDaily('PackUpdate', config.UPDATE_CHECK_TIME, async () => {
+      await checkForPackUpdates(client, config.UPDATE_CHANNEL_ID || undefined);
+    });
+
+    // Also run once on startup
+    await checkForPackUpdates(client, config.UPDATE_CHANNEL_ID || undefined);
 
   } catch (error) {
     console.error('Error during bot initialization:', error);

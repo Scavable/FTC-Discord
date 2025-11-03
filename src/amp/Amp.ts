@@ -85,7 +85,7 @@ class Amp {
       const response = await this.sendPostRequest(endpoint, json);
 
       if (response.success) {
-        logger.info(`AMP logged in successfully.`);
+        logger.amp(`AMP logged in successfully.`);
 
         if (instanceId) {
           this.instanceSessionIds.set(instanceId, response.sessionID); // Cache instance session ID
@@ -206,6 +206,7 @@ class Amp {
           server.FTCIP = temp.IP;
           server.FTCVersion = temp.Version;
           server.Hidden = temp.Hidden;
+          server.PackName = temp.PackName;
         }catch(error){
           // @ts-ignore
           logger.error(error);

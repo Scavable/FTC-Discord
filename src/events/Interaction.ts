@@ -1,33 +1,55 @@
-import { ChatInputCommandInteraction, Events } from 'discord.js';
+import { Events, Interaction, ButtonInteraction } from 'discord.js';
 import CustomClient from '../CustomClient';
 import { config } from '../Config';
+import logger from '../utility/Logger';
 
 export default {
   name: Events.InteractionCreate,
-  async execute(interaction: ChatInputCommandInteraction) {
-    if (!interaction.isChatInputCommand()) return;
-
+  async execute(interaction: Interaction) {
     // Restrict the bot to a single configured guild only
     if (!interaction.guildId || interaction.guildId !== config.GUILD_ID) {
-      try {
-        await interaction.reply({
-          content: 'This bot is restricted to a specific server and cannot be used here.',
-          ephemeral: true,
-        });
-      } catch (_) {
-        // ignore reply errors (e.g., already replied)
+      if (interaction.isRepliable()) {
+        try {
+          await interaction.reply({
+            content: 'This bot is restricted to a specific server and cannot be used here.',
+            ephemeral: true,
+          });
+        } catch (_) {
+          // ignore reply errors (e.g., already replied)
+        }
       }
       return;
     }
 
-    let customClient = interaction.client as CustomClient;
+    // Handle button interactions for Pack Update messages
+    if (interaction.isButton()) {
+      const btn = interaction as ButtonInteraction;
+      const cid = btn.customId || '';
+      if (cid.startsWith('packupdate:complete')) {
+        try {
+          await btn.deferUpdate(); // acknowledge to avoid interaction failure toast
+          await btn.message.delete();
+          logger.updates(`[PackUpdate] Completed clicked by ${btn.user.tag}; message deleted.`);
+        } catch (err: any) {
+          logger.warn(`[PackUpdate] Failed to delete pack update message: ${err?.message ?? err}`);
+          try {
+            await btn.followUp({ content: 'Unable to delete this message (missing permissions or it is too old).', ephemeral: true });
+          } catch (_) {}
+        }
+        return;
+      }
+      // Unknown button: ignore
+      return;
+    }
 
+    // Slash command handling
+    if (!interaction.isChatInputCommand()) return;
+
+    const customClient = interaction.client as CustomClient;
     const command = customClient.commands.get(interaction.commandName);
 
     if (!command) {
-      console.error(
-        `No command matching ${interaction.commandName} was found.`,
-      );
+      console.error(`No command matching ${interaction.commandName} was found.`);
       return;
     }
 
@@ -38,7 +60,7 @@ export default {
       const reply = {
         content: 'There was an error while executing this command!',
         ephemeral: true,
-      };
+      } as const;
       interaction.replied || interaction.deferred
         ? await interaction.followUp(reply)
         : await interaction.reply(reply);
