@@ -1,0 +1,61 @@
+import { z } from 'zod';
+
+export const metricsSchema = z.object({
+  'CPU Usage': z.object({ RawValue: z.number(), MaxValue: z.number(), Percent: z.number(), Units: z.string(), Color: z.string(), Color2: z.string(), Color3: z.string(), ShortName: z.string() }),
+  'Memory Usage': z.object({ RawValue: z.number(), MaxValue: z.number(), Percent: z.number(), Units: z.string(), Color: z.string(), Color2: z.string(), Color3: z.string(), ShortName: z.string() }),
+  'Active Users': z.object({ RawValue: z.number(), MaxValue: z.number(), Percent: z.number(), Units: z.string(), Color: z.string(), Color2: z.string(), Color3: z.string(), ShortName: z.string() }),
+  TPS: z.object({ RawValue: z.number(), MaxValue: z.number(), Percent: z.number(), Units: z.string(), Color: z.string(), Color2: z.string(), Color3: z.string(), ShortName: z.string() })
+});
+
+export const instanceSchema = z.object({
+  InstanceID: z.string(),
+  TargetID: z.string(),
+  InstanceName: z.string(),
+  FriendlyName: z.string(),
+  WelcomeMessage: z.string(),
+  Description: z.string(),
+  Module: z.string(),
+  ModuleDisplayName: z.string(),
+  AMPVersion: z.string(),
+  IsHTTPS: z.boolean(),
+  IP: z.string(),
+  Port: z.number().int().nonnegative(),
+  Daemon: z.boolean(),
+  DaemonAutostart: z.boolean(),
+  ExcludeFromFirewall: z.boolean(),
+  UseHostModeNetwork: z.boolean(),
+  Running: z.boolean(),
+  AppState: z.number().int(),
+  Tags: z.array(z.string()),
+  DiskUsageMB: z.number(),
+  Group: z.string(),
+  Order: z.number().int(),
+  ReleaseStream: z.number().int(),
+  ManagementMode: z.number().int(),
+  Suspended: z.boolean(),
+  IsContainerInstance: z.boolean(),
+  ContainerMemoryMB: z.number(),
+  ContainerSwapMB: z.number(),
+  ContainerMemoryPolicy: z.number(),
+  ContainerCPUs: z.number(),
+  SpecificDockerImage: z.string(),
+  Metrics: metricsSchema,
+  ApplicationEndpoints: z.array(z.record(z.any())),
+  DeploymentEndpoints: z.object({
+    'FileManagerPlugin.SFTP.SFTPIPBinding': z.string(),
+    'MinecraftModule.Minecraft.ServerIPBinding': z.string(),
+    'FileManagerPlugin.SFTP.SFTPPortNumber': z.string(),
+    'MinecraftModule.Minecraft.PortNumber': z.string(),
+    'Core.Monitoring.MonitorPorts': z.string(),
+  }),
+  CustomMountBinds: z.record(z.any()),
+  ExtraContainerPackages: z.array(z.string()),
+  DisplayImageSource: z.string(),
+  SessionId: z.string(),
+  FTCIP: z.string(),
+  FTCVersion: z.string(),
+  Hidden: z.boolean(),
+  Whitelisted: z.boolean(),
+});
+
+export type InstanceValidated = z.infer<typeof instanceSchema>;

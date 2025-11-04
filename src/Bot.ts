@@ -19,7 +19,7 @@ validateConfig(config);
 (async () => {
   try {
     // Verify required dependencies are installed; fail fast with helpful message
-    const required = ['discord.js', 'dotenv', 'winston', 'prismarine-nbt'];
+    const required = ['discord.js', 'dotenv', 'winston', 'prismarine-nbt', 'zod'];
     logger.info('Verifying dependencies...');
     for (const dep of required) {
       try {
