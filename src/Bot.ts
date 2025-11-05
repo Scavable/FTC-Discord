@@ -10,8 +10,8 @@ import logger from './utility/Logger';
 import child_process from 'child_process';
 import ServersFile from './utility/ServersFile';
 import fs from 'node:fs';
-import { scheduleDaily } from './utility/Scheduler';
-import { checkForPackUpdates } from './utility/PackUpdateChecker';
+import { scheduleDaily } from './packs/Scheduler';
+import { checkForPackUpdates } from './packs/PackUpdateChecker';
 
 const client = new CustomClient(); // Use CustomClient instead of Client
 validateConfig(config);
