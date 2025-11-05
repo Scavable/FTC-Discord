@@ -1,5 +1,11 @@
-DISCORD_TOKEN=
-CLIENT_ID=
-GUILD_ID=
-AMP_USERNAME=
-AMP_PASS=
+# Discord Bot Creds
+# Delete the "#" in front of the lines below to use them.
+#CLIENT_ID=
+#DISCORD_TOKEN=
+#GUILD_ID=
+#AMP_USERNAME=
+#AMP_PASS=
+# Update check time is based on a 24 hour clock. 5pm is 17:00.
+#UPDATE_CHECK_TIME=
+#UPDATE_CHANNEL_ID=
+#CURSEFORGE_API_KEY=
