@@ -24,29 +24,43 @@ class Amp {
   }
 
   // Sends POST requests to the AMP API
-  private async sendPostRequest(url: string, data: any) {
-    try {
+  private async sendPostRequest(url: string, data?: any, SessionID?: string) {
+    const doFetch = async (sid?: string) => {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${sid}`,
         },
         body: JSON.stringify(data),
       });
+      return response;
+    };
+
+    try {
+      let response = await doFetch(SessionID);
+
+      // If unauthorized/forbidden, try to re-login and retry once
+      if (response.status === 401 || response.status === 403) {
+        const match = url.match(/Servers\/(.*?)\//);
+        const instanceId = match?.[1];
+        await this.login(instanceId);
+        const refreshedSession = instanceId
+          ? this.instanceSessionIds.get(instanceId)
+          : this.baseSessionId;
+        response = await doFetch(refreshedSession);
+      }
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP Error: ${response.status} - ${response.statusText}`,
-        );
+        throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
       }
 
       const contentType = response.headers.get('content-type');
-      if (contentType?.includes('application/json')) {
-        return await response.json();
-      } else {
+      if (!contentType?.includes('application/json')) {
         throw new Error('Invalid response format. Expected JSON.');
       }
+      return await response.json();
     } catch (error: any) {
       throw new Error(`Request to ${url} failed: ${error.message}`);
     }
@@ -54,9 +68,9 @@ class Amp {
 
   // Checks for current login connection
   private async ensureAuthenticated(instanceId?: string): Promise<void> {
-    if(!instanceId){
+    if (!instanceId) {
       if (!this.baseSessionId) {
-        throw new Error('Not authenticated. Please login first.');
+        await this.login();
       }
       return;
     }
@@ -65,7 +79,6 @@ class Amp {
     if (!this.instanceSessionIds.has(instanceId)) {
       await this.login(instanceId); // Refresh instance session if not present
     }
-
   }
 
   // Logs into the AMP container and instances.
@@ -107,12 +120,13 @@ class Amp {
   // Returns all AMP instances including AMP container
   async getInstances(): Promise<Instance[]> {
     await this.ensureAuthenticated();
-    const json = { SESSIONID: this.baseSessionId };
+    const json = { 'ForceIncludeSelf': false };
 
     try {
       const response = await this.sendPostRequest(
         `${this.API_BASE_URL}API/ADSModule/GetInstances`,
         json,
+        this.baseSessionId,
       );
 
       if (
@@ -137,13 +151,13 @@ class Amp {
     const json = {
       // @ts-ignore
       SettingNode: 'Game',
-      SESSIONID: this.instanceSessionIds.get(server.InstanceID) || '',
       node: 'MinecraftModule.Game.Whitelist',
     };
 
     const response = await this.sendPostRequest(
       `${this.API_BASE_URL}API/ADSModule/Servers/${server.InstanceID}/API/Core/GetConfig`,
       json,
+      this.instanceSessionIds.get(server.InstanceID) || ''
     );
 
     return JSON.parse(JSON.stringify(response)).CurrentValue;
@@ -151,15 +165,14 @@ class Amp {
 
   // Sends a string to a console
   async sendConsoleMessage(instance: Instance, message: string): Promise<void> {
-    await this.ensureAuthenticated();
-    await this.login(instance.InstanceID);
+    await this.ensureAuthenticated(instance.InstanceID);
     const json = {
       message: message,
-      SESSIONID: this.instanceSessionIds.get(instance.InstanceID) || '',
     };
-    const response = await this.sendPostRequest(
+    await this.sendPostRequest(
       `${this.API_BASE_URL}API/ADSModule/Servers/${instance.InstanceID}/API/Core/SendConsoleMessage`,
       json,
+      this.instanceSessionIds.get(instance.InstanceID) || ''
     );
     logger.info(`Sent console message to ${instance.FriendlyName}: ${message}`);
   }
@@ -169,10 +182,12 @@ class Amp {
   // called by the current session.
   async getUpdates(instanceId: string):Promise<string> {
     await this.ensureAuthenticated(instanceId);
-    const json = {
-      SESSIONID: this.instanceSessionIds.get(instanceId) || '',
-    };
-    const response = await this.sendPostRequest(`${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/GetUpdates`, json);
+    const json = { };
+    const response = await this.sendPostRequest(
+      `${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/GetUpdates`,
+      json,
+      this.instanceSessionIds.get(instanceId) || ''
+    );
     return JSON.stringify(response);
   }
 
@@ -193,11 +208,11 @@ class Amp {
       const json = {
         Filename: `packInfo.json`,
         offset: 0,
-        SESSIONID: this.instanceSessionIds.get(server.InstanceID) || '',
       };
       const response = await this.sendPostRequest(
         `${this.API_BASE_URL}API/ADSModule/Servers/${server.InstanceID}/API/FileManagerPlugin/ReadFileChunk`,
         json,
+        this.instanceSessionIds.get(server.InstanceID) || ''
       );
 
       if (response.Result !== null && response.Result !== undefined) {
