@@ -155,7 +155,7 @@ export default class ServersPanel implements BaseCommand {
 
       // Update in-memory cache so commands can use fresh data
       Servers.setAll(servers);
-      const summary = await this.overviewEmbed(servers);
+      const summary = await this.overviewEmbed(amp, servers);
       const embeds = await this.individualEmbeds(servers);
 
       // Order: Static plain-text message (posted once, outside of embeds),
@@ -271,12 +271,13 @@ export default class ServersPanel implements BaseCommand {
     return { displayContent, silent, headerLine };
   }
 
-  async overviewEmbed(servers: Instance[]): Promise<EmbedBuilder> {
+  async overviewEmbed(amp: Amp, servers: Instance[]): Promise<EmbedBuilder> {
     // Overview of pack and player count
     let summary = new EmbedBuilder().setTitle('Server Status');
     let field: string = ``;
     let color = true;
     let count = 0;
+
 
     for (const server of servers) {
       if (
@@ -288,7 +289,8 @@ export default class ServersPanel implements BaseCommand {
       )
         continue;
 
-      const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
+      await amp.sendConsoleMessage(server, 'list');
+      const currentPlayers = await this.messageFilter(await amp.getUpdates(server.InstanceID));
       const serverName = server.FriendlyName.replace(/\d\d\s/, '');
       count += currentPlayers;
 
@@ -302,6 +304,28 @@ export default class ServersPanel implements BaseCommand {
     summary.setDescription(field).setTimestamp();
 
     return summary;
+  }
+
+  async messageFilter(message: string): Promise<number> {
+    let time = new Date();
+    const updates = JSON.parse(message); // Get all updates for the instance
+
+    if (Array.isArray(updates.ConsoleEntries) && updates.ConsoleEntries.length > 0) {
+      // Filter console entries to only include those after the recorded time
+      const recentEntries = updates.ConsoleEntries.filter((entry: any) => {
+        const entryDate = new Date(entry.Timestamp);
+        return entryDate.getTime() > time.getTime() - 9000; // Filter based on timestamp
+      });
+
+      for (const entry of recentEntries) {
+        const match = entry.Contents.match(/There are (\d+) of a max of (\d+) players online/i);
+        if (match) {
+          return parseInt(match[1], 10);
+        }
+      }
+    }
+
+    return 0;
   }
 
   async individualEmbeds(servers: Instance[]): Promise<EmbedBuilder[]> {
