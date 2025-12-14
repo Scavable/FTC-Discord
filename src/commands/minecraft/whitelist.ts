@@ -3,10 +3,10 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder
 } from 'discord.js';
-import ServersFile from '../../utility/ServersFile';
 import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
 import { BaseCommand } from '../../interface/BaseCommand';
+import Servers from '../../utility/Servers';
 
 export default class Whitelist implements BaseCommand{
   enabled: boolean = true;
@@ -14,8 +14,8 @@ export default class Whitelist implements BaseCommand{
   static commandDescription: string = 'Add a player to the whitelist';
 
   async createSlashCommand() {
-    // Load server choices dynamically from servers.json
-    const servers = ServersFile.getInstances();
+    // Load server choices dynamically from in-memory cache
+    const servers = Servers.getMap();
 
     // Exclude servers and map other names into choices
     const serverChoices = Array.from(servers.values())
@@ -79,7 +79,7 @@ export default class Whitelist implements BaseCommand{
       const amp = client.getAmpInstance();
       await amp.login();
 
-      const servers: Map<string, Instance> = ServersFile.getInstances();
+      const servers: Map<string, Instance> = Servers.getMap();
       if(server != null){
         const targetServer = servers.get(server);
         if(!targetServer){

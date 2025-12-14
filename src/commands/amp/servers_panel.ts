@@ -13,15 +13,15 @@ import * as path from 'path';
 import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
 import ColorText from '../../utility/ColorText';
-import ServersFile from '../../utility/ServersFile';
 import CustomClient from '../../CustomClient';
 import { BaseCommand } from '../../interface/BaseCommand';
 import { AppState, MetricKey } from '../../types/AppState';
+import Servers from '../../utility/Servers';
 
 export default class ServersPanel implements BaseCommand {
   enabled: boolean = true;
   static commandName: string = 'servers_panel';
-  static commandDescription: string = 'Display AMP server information';
+  static commandDescription: string = 'Display AMP server information.txt';
 
   async createSlashCommand() {
     return new SlashCommandBuilder()
@@ -113,7 +113,7 @@ export default class ServersPanel implements BaseCommand {
       await interaction.editReply('✅ Server status panel started.');
 
       const messageCache = client.messageCache!;
-      // Ensure the static server information message exists as plain text (not an embed)
+      // Ensure the static server information.txt message exists as plain text (not an embed)
       const firstEnsure = await this.ensureOrUpdateStaticInfo(channel);
       let forceRecreateEmbeds = firstEnsure.created; // if we just posted the static, recreate embeds to appear below it
       const updateLoop = async () => {
@@ -153,7 +153,8 @@ export default class ServersPanel implements BaseCommand {
       const servers = await amp.readFile(await amp.getInstances());
       if (!servers) return;
 
-      ServersFile.writeFile('servers.json', JSON.stringify(servers, null, 2));
+      // Update in-memory cache so commands can use fresh data
+      Servers.setAll(servers);
       const summary = await this.overviewEmbed(servers);
       const embeds = await this.individualEmbeds(servers);
 
@@ -164,7 +165,7 @@ export default class ServersPanel implements BaseCommand {
       // Ensure static message stays at the top (older) and embeds at the bottom (newer)
       // If the static message is newer than existing embed messages, force a one-time recreation
       try {
-        const filePath = path.join(process.cwd(), 'server information');
+        const filePath = path.join(process.cwd(), 'server information.txt');
         if (fs.existsSync(filePath)) {
           const content = fs.readFileSync(filePath, 'utf8');
           const parsed = this.parseSilentDirective(content);
@@ -192,7 +193,7 @@ export default class ServersPanel implements BaseCommand {
   }
 
   /**
-   * Ensure the static plain-text server information message exists and is up-to-date.
+   * Ensure the static plain-text server information.txt message exists and is up-to-date.
    * - If missing: post it and return { created: true, updated: false }
    * - If present and content differs: edit it in place and return { created: false, updated: true }
    * - Otherwise: return { created: false, updated: false }
@@ -202,7 +203,7 @@ export default class ServersPanel implements BaseCommand {
     channel: TextChannel,
   ): Promise<{ created: boolean; updated: boolean }> {
     try {
-      const filePath = path.join(process.cwd(), 'server information');
+      const filePath = path.join(process.cwd(), 'server information.txt');
       if (!fs.existsSync(filePath)) return { created: false, updated: false };
 
       const original = fs.readFileSync(filePath, 'utf8');
@@ -236,7 +237,7 @@ export default class ServersPanel implements BaseCommand {
 
       return { created: false, updated: false };
     } catch (e) {
-      console.error('Failed to ensure/update static server information message:', e);
+      console.error('Failed to ensure/update static server information.txt message:', e);
       return { created: false, updated: false };
     }
   }

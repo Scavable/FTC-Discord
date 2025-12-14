@@ -4,6 +4,7 @@ import Amp from '../amp/Amp';
 import Instance from '../types/Instance';
 import logger from '../utility/Logger';
 import { getLatestByPackNameAPI } from './CurseForgeApi';
+import Servers from '../utility/Servers';
 
 function normalizeServerName(name: string): string {
   // Remove leading two digits and space (e.g., "01 My Pack" -> "My Pack")
@@ -22,10 +23,24 @@ function shouldSkip(server: Instance): boolean {
 
 export async function checkForPackUpdates(client: CustomClient, channelId?: string): Promise<void> {
   const amp: Amp = client.getAmpInstance();
-  await amp.login();
+
+  // If the cache was just populated (e.g., by Bot.ts at startup), avoid immediately refreshing again.
+  // Treat cache as fresh for 30 seconds to prevent duplicate AMP calls on startup.
+  const FRESH_TTL_MS = 30_000;
+  let servers: Instance[];
+
+  if (Servers.getAll().length > 0 && Servers.isFresh(FRESH_TTL_MS)) {
+    logger.info('[PackUpdate] Using fresh servers cache; skipping AMP refresh.');
+    servers = Servers.getAll();
+  } else {
+    await amp.login();
+    const refreshed = await amp.readFile(await amp.getInstances());
+    Servers.setAll(refreshed);
+    servers = Servers.getAll();
+  }
 
   // Refresh servers and pack info from AMP (updates FTCVersion, FTCIP, Hidden, Whitelisted)
-  const servers: Instance[] = await amp.readFile(await amp.getInstances());
+  //const servers: Instance[] = await amp.readFile(await amp.getInstances());
 
   const updates: {
     server: Instance;

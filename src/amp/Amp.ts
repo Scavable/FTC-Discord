@@ -1,6 +1,6 @@
 import Instance from '../types/Instance';
 import logger from '../utility/Logger';
-import ServersFile from '../utility/ServersFile';
+import Servers from '../utility/Servers';
 
 class Amp {
   private readonly API_BASE_URL: string =
@@ -230,9 +230,8 @@ class Amp {
       server.Whitelisted = await this.getConfig(server);
     }
 
-    const file = process.cwd() + '/servers.json';
-    const json = JSON.stringify(servers, null, 2);
-    ServersFile.writeFile(file, json);
+    // Update cache only; no file persistence
+    Servers.setAll(servers);
 
     return servers;
   }

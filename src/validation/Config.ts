@@ -11,7 +11,9 @@ const configSchema = z.object({
   CURSEFORGE_API_KEY: z.string().min(10),
 });
 
-export function validateConfig(cfg: unknown) {
+export type AppConfig = z.infer<typeof configSchema>;
+
+export function validateConfig(cfg: unknown): AppConfig {
   const r = configSchema.safeParse(cfg);
   if (!r.success) throw new Error(`Invalid config: ${r.error.message}`);
   return r.data;

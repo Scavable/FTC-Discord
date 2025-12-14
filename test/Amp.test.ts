@@ -1,9 +1,7 @@
 import Amp from '../src/amp/Amp';
-import ServersFile from '../src/utility/ServersFile';
 import logger from '../src/utility/Logger';
 import type Instance from '../src/types/Instance';
 
-jest.mock('../src/utility/ServersFile');
 jest.mock('../src/utility/Logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
@@ -87,7 +85,7 @@ describe('Amp', () => {
     expect(list).toEqual([]);
   });
 
-  it('readFile filters servers, annotates values, writes file', async () => {
+  it('readFile filters servers and annotates values, updates cache (no file I/O)', async () => {
     // Authenticate base
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
@@ -128,8 +126,6 @@ describe('Amp', () => {
     expect(out[0].FTCVersion).toBe('1.0');
     expect(out[0].Hidden).toBe(true);
     expect(out[0].Whitelisted).toBe(true);
-
-    expect((ServersFile.writeFile as jest.Mock)).toHaveBeenCalled();
     expect((logger.info as jest.Mock)).toHaveBeenCalled();
   });
 });
