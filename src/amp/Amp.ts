@@ -157,10 +157,14 @@ class Amp {
     const response = await this.sendPostRequest(
       `${this.API_BASE_URL}API/ADSModule/Servers/${server.InstanceID}/API/Core/GetConfig`,
       json,
-      this.instanceSessionIds.get(server.InstanceID) || ''
+      this.instanceSessionIds.get(server.InstanceID) || '',
     );
 
     return JSON.parse(JSON.stringify(response)).CurrentValue;
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // Sends a string to a console
@@ -174,6 +178,7 @@ class Amp {
       json,
       this.instanceSessionIds.get(instance.InstanceID) || ''
     );
+
     logger.info(`Sent console message to ${instance.FriendlyName}: ${message}`);
   }
 

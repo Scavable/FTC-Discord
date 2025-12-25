@@ -118,7 +118,7 @@ export default class Whitelist implements BaseCommand{
                 }
               }
 
-              await interaction.editReply(commandString); // Command was successful if no conflicts were found
+              //await interaction.editReply(commandString); // Command was successful if no conflicts were found
             } else {
               await interaction.editReply('No recent console entries found.');
             }

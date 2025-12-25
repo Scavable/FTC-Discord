@@ -156,7 +156,7 @@ export default class ServersPanel implements BaseCommand {
       // Update in-memory cache so commands can use fresh data
       Servers.setAll(servers);
       const summary = await this.overviewEmbed(amp, servers);
-      const embeds = await this.individualEmbeds(servers);
+      const embeds = await this.individualEmbeds(amp, servers);
 
       // Order: Static plain-text message (posted once, outside of embeds),
       // then overview and individual dynamic embeds
@@ -289,8 +289,7 @@ export default class ServersPanel implements BaseCommand {
       )
         continue;
 
-      await amp.sendConsoleMessage(server, 'list');
-      const currentPlayers = await this.messageFilter(await amp.getUpdates(server.InstanceID));
+      const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue ||0;
       const serverName = server.FriendlyName.replace(/\d\d\s/, '');
       count += currentPlayers;
 
@@ -306,70 +305,50 @@ export default class ServersPanel implements BaseCommand {
     return summary;
   }
 
-  async messageFilter(message: string): Promise<number> {
-    let time = new Date();
-    const updates = JSON.parse(message); // Get all updates for the instance
-
-    if (Array.isArray(updates.ConsoleEntries) && updates.ConsoleEntries.length > 0) {
-      // Filter console entries to only include those after the recorded time
-      const recentEntries = updates.ConsoleEntries.filter((entry: any) => {
-        const entryDate = new Date(entry.Timestamp);
-        return entryDate.getTime() > time.getTime() - 9000; // Filter based on timestamp
-      });
-
-      for (const entry of recentEntries) {
-        const match = entry.Contents.match(/There are (\d+) of a max of (\d+) players online/i);
-        if (match) {
-          return parseInt(match[1], 10);
-        }
-      }
-    }
-
-    return 0;
-  }
-
-  async individualEmbeds(servers: Instance[]): Promise<EmbedBuilder[]> {
+  async individualEmbeds(amp: Amp, servers: Instance[]): Promise<EmbedBuilder[]> {
     // Individual embeds
-    return servers
-      .filter(
-        (info: Instance) =>
-          !info.FriendlyName.includes('ADS') &&
-          !info.FriendlyName.includes(`Scheduler`) &&
-          !info.FriendlyName.includes(`Bot`) &&
-          !info.Suspended &&
-          !info.Hidden,
-      )
-      .map((info: Instance) => {
+    const filtered = servers.filter(
+      (info: Instance) =>
+        !info.FriendlyName.includes('ADS') &&
+        !info.FriendlyName.includes(`Scheduler`) &&
+        !info.FriendlyName.includes(`Bot`) &&
+        !info.Suspended &&
+        !info.Hidden,
+    );
 
-        const isWhitelisted = info.Whitelisted ? 'True' : 'False';
-        const isOnline = info.AppState === AppState.Online;
+    const embeds: EmbedBuilder[] = [];
 
-        const embedColor = isOnline ? Colors.Green : Colors.Red;
-        const status = isOnline ? 'Online' : 'Offline';
+    for (const info of filtered) {
+      const isWhitelisted = info.Whitelisted ? 'True' : 'False';
+      const isOnline = info.AppState === AppState.Online;
 
-        const currentPlayers = info.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
-        const maxPlayers = info.Metrics?.[MetricKey.ActiveUsers]?.MaxValue || 0;
+      const embedColor = isOnline ? Colors.Green : Colors.Red;
+      const status = isOnline ? 'Online' : 'Offline';
 
-        const version = info.FTCVersion ? info.FTCVersion : 'N/A';
-        const ip = info.FTCIP ? info.FTCIP.toUpperCase() : 'N/A';
+      const maxPlayers = info.Metrics?.[MetricKey.ActiveUsers]?.MaxValue || 0;
+      const currentPlayers = info.Metrics?.[MetricKey.ActiveUsers]?.RawValue ||0;
 
-        let statusMessage;
-        if (status === 'Offline')
-          statusMessage = ColorText.colorText(
-            status,
-            undefined,
-            undefined,
-            ColorText.enums.foreground.red,
-          );
-        else
-          statusMessage = ColorText.colorText(
-            status,
-            undefined,
-            undefined,
-            ColorText.enums.foreground.green,
-          );
+      const version = info.FTCVersion ? info.FTCVersion : 'N/A';
+      const ip = info.FTCIP ? info.FTCIP.toUpperCase() : 'N/A';
 
-        return new EmbedBuilder()
+      let statusMessage;
+      if (status === 'Offline')
+        statusMessage = ColorText.colorText(
+          status,
+          undefined,
+          undefined,
+          ColorText.enums.foreground.red,
+        );
+      else
+        statusMessage = ColorText.colorText(
+          status,
+          undefined,
+          undefined,
+          ColorText.enums.foreground.green,
+        );
+
+      embeds.push(
+        new EmbedBuilder()
           .setColor(embedColor)
           .setTitle(`**${info.FriendlyName.replace(/\d\d\s/, '')}**`)
           .addFields(
@@ -403,8 +382,11 @@ export default class ServersPanel implements BaseCommand {
               value: `\`\`\`\n${currentPlayers} of ${maxPlayers} online\n\`\`\``,
             },
           )
-          .setTimestamp();
-      });
+          .setTimestamp()
+      );
+    }
+
+    return embeds;
   }
 
   async updateEmbeds(embeds: EmbedBuilder[], channel: TextChannel,

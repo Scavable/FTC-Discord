@@ -11,6 +11,14 @@ function normalizeServerName(name: string): string {
   return name.replace(/^[0-9]{2}\s/, '').trim();
 }
 
+function formatDate(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 function shouldSkip(server: Instance): boolean {
   return (
     server.FriendlyName.includes('ADS') ||
@@ -40,49 +48,56 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
   }
 
   // Refresh servers and pack info from AMP (updates FTCVersion, FTCIP, Hidden, Whitelisted)
-  //const servers: Instance[] = await amp.readFile(await amp.getInstances());
-
   const updates: {
     server: Instance;
     packName: string;
     currentVersion: string;
-    latestFileName: string;
+    latestVersion: string;
     latestUrl: string;
+    uploadedAt: string;
   }[] = [];
 
-  for (const s of servers) {
-    if (shouldSkip(s)) continue;
+  for (const server of servers) {
+    if (shouldSkip(server)) continue;
 
-    const queryNameRaw = (s.PackName && s.PackName.trim().length > 0)
-      ? s.PackName.trim()
-      : normalizeServerName(s.FriendlyName);
+    const queryNameRaw = (server.PackName && server.PackName.trim().length > 0)
+      ? server.PackName.trim()
+      : normalizeServerName(server.FriendlyName);
     const packName = queryNameRaw.replace(/\s+/g, ' ');
-    const currentVersion = s.FTCVersion || '';
+    const currentVersion = server.FTCVersion || '';
 
     try {
-      const usedPackName = !!(s.PackName && s.PackName.trim().length > 0);
+      const usedPackName = !!(server.PackName && server.PackName.trim().length > 0);
       const latest = await getLatestByPackNameAPI(packName, { strict: usedPackName });
       if (!latest) {
-        logger.warn(`[PackUpdate] No strong CurseForge match for QueryUsed=${usedPackName ? 'PackName' : 'FriendlyName'}="${packName}" (Server=${s.FriendlyName}). Skipping to avoid mismatch.`);
+        logger.warn(`[PackUpdate] No strong CurseForge match for QueryUsed=${usedPackName ? 'PackName' : 'FriendlyName'}="${packName}" (Server=${server.FriendlyName}). Skipping to avoid mismatch.`);
         continue;
       }
 
-      logger.updates(`[PackUpdate] Server=${s.FriendlyName} | QueryUsed=${usedPackName ? 'PackName' : 'FriendlyName'}="${packName}" | Matched=${latest.mod.name} (${latest.mod.slug || 'no-slug'}#${latest.mod.id}) | MatchType=${latest.matchType ?? 'n/a'} | Score=${latest.matchScore ?? 'n/a'}`);
+      logger.updates(`[PackUpdate] Server=${server.FriendlyName} | QueryUsed=${usedPackName ? 'PackName' : 'FriendlyName'}="${packName}" | Matched=${latest.mod.name} (${latest.mod.slug || 'no-slug'}#${latest.mod.id}) | MatchType=${latest.matchType ?? 'n/a'} | Score=${latest.matchScore ?? 'n/a'}`);
 
-      const latestName = latest.latestFile.displayName || latest.latestFile.fileName;
+      const latestNameRaw = latest.latestFile.displayName || latest.latestFile.fileName;
+      let latestVersion = latestNameRaw;
+
+      // Extract version pattern (x.x.x or x.x.x.x etc.)
+      const versionMatch = latestNameRaw.match(/(\d+(?:\.\d+)+)/);
+      if (versionMatch) {
+        latestVersion = versionMatch[1];
+      }
 
       // Simple comparison heuristic: if current version string is not contained in latest file name, assume an update is available.
       // This is intentionally conservative due to varied naming schemes.
-      if (currentVersion && latestName.includes(currentVersion)) {
+      if (currentVersion && latestNameRaw.includes(currentVersion)) {
         continue; // up to date
       }
 
       updates.push({
-        server: s,
+        server: server,
         packName,
         currentVersion: currentVersion || 'N/A',
-        latestFileName: latestName,
+        latestVersion: latestVersion,
         latestUrl: latest.latestFileUrl,
+        uploadedAt: latest.latestFile.fileDate,
       });
     } catch (err: any) {
       logger.warn(`[PackUpdate] Failed check for ${packName}: ${err?.message ?? err}`);
@@ -99,7 +114,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
 
   if (!channelId) {
     for (const u of updates) {
-      logger.info(`[PackUpdate] - Update ${u.packName}: ${u.currentVersion} -> ${u.latestFileName} ${u.latestUrl}`);
+      logger.info(`[PackUpdate] - Update ${u.packName}: ${u.currentVersion} -> ${u.latestVersion} (Uploaded: ${formatDate(u.uploadedAt)}) ${u.latestUrl}`);
     }
     return;
   }
@@ -109,7 +124,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
     if (!channel || !(channel instanceof TextChannel)) {
       logger.warn(`[PackUpdate] Channel ID ${channelId} not found or not a text channel.`);
       for (const u of updates) {
-        logger.info(`[PackUpdate] - Update ${u.packName}: ${u.currentVersion} -> ${u.latestFileName} ${u.latestUrl}`);
+        logger.info(`[PackUpdate] - Update ${u.packName}: ${u.currentVersion} -> ${u.latestVersion} (Uploaded: ${formatDate(u.uploadedAt)}) ${u.latestUrl}`);
       }
       return;
     }
@@ -132,7 +147,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
     for (const u of updates) {
       const embed = new EmbedBuilder()
         .setTitle(`Update: ${u.packName}`)
-        .setDescription(`Current: ${u.currentVersion}\nLatest: ${u.latestFileName}`)
+        .setDescription(`**Current:** ${u.currentVersion}\n**Latest:** ${u.latestVersion}\n**Uploaded:** ${formatDate(u.uploadedAt)}`)
         .setURL(u.latestUrl);
 
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -147,7 +162,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
   } catch (err: any) {
     logger.warn(`[PackUpdate] Failed to send messages to channel ${channelId}: ${err?.message ?? err}`);
     for (const u of updates) {
-      logger.info(`[PackUpdate] - Update ${u.packName}: ${u.currentVersion} -> ${u.latestFileName} ${u.latestUrl}`);
+      logger.info(`[PackUpdate] - Update ${u.packName}: ${u.currentVersion} -> ${u.latestVersion} (Uploaded: ${formatDate(u.uploadedAt)}) ${u.latestUrl}`);
     }
   }
 }
