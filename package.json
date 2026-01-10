@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/Bot.ts",
     "start": "node dist/Bot.js",
-    "build": "tsup src --out-dir dist --format esm --target esnext --minify",
+    "build": "tsup",
     "test": "jest",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write ."

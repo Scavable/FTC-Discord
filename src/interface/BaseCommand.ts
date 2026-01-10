@@ -1,7 +1,11 @@
 import {
+  BooleanCache,
+  ButtonInteraction,
   CacheType,
   ChatInputCommandInteraction,
+  InteractionCallbackResponse,
   InteractionResponse,
+  ModalSubmitInteraction,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
 } from 'discord.js';
@@ -11,10 +15,18 @@ export interface BaseCommand {
   commandName?: string;
   commandDescription?: string;
 
-  createSlashCommand(): Promise<SlashCommandBuilder | SlashCommandOptionsOnlyBuilder>;
-  createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<InteractionResponse | undefined>>;
+  createSlashCommand(): Promise<
+    SlashCommandBuilder | SlashCommandOptionsOnlyBuilder
+  >;
+  createCommandFunctionality(): Promise<
+    (interaction: ChatInputCommandInteraction) => Promise<void>
+  >;
   createObject(): Promise<{
-    data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
-    execute: (interaction: ChatInputCommandInteraction) => Promise<InteractionResponse | undefined>;
+    data: any;
+    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+    handleButton?: (interaction: ButtonInteraction) => Promise<any>;
+    handleModal?: (interaction: ModalSubmitInteraction) => Promise<any>;
   }>;
+  handleButton?(interaction: ButtonInteraction): Promise<any>;
+  handleModal?(interaction: ModalSubmitInteraction): Promise<any>;
 }

@@ -1,4 +1,4 @@
-import { Events, Interaction, ButtonInteraction } from 'discord.js';
+import { Events, Interaction, ButtonInteraction, ModalSubmitInteraction } from 'discord.js';
 import CustomClient from '../CustomClient';
 import { config } from '../Config';
 import logger from '../utility/Logger';
@@ -21,13 +21,15 @@ export default {
       return;
     }
 
-    // Handle button interactions for Pack Update messages
+    // Handle button interactions
     if (interaction.isButton()) {
       const btn = interaction as ButtonInteraction;
       const cid = btn.customId || '';
+
+      // Handle Pack Update messages (global/hardcoded)
       if (cid.startsWith('packupdate:complete')) {
         try {
-          await btn.deferUpdate(); // acknowledge to avoid interaction failure toast
+          await btn.deferUpdate();
           await btn.message.delete();
           logger.updates(`[PackUpdate] Completed clicked by ${btn.user.tag}; message deleted.`);
         } catch (err: any) {
@@ -38,7 +40,30 @@ export default {
         }
         return;
       }
+
+      // Delegate to commands that have a handleButton method
+      const customClient = interaction.client as CustomClient;
+      for (const command of customClient.commands.values()) {
+        if (command.handleButton) {
+          await command.handleButton(btn);
+          if (btn.replied || btn.deferred) return;
+        }
+      }
+
       // Unknown button: ignore
+      return;
+    }
+
+    // Handle modal submissions
+    if (interaction.isModalSubmit()) {
+      const modal = interaction as ModalSubmitInteraction;
+      const customClient = interaction.client as CustomClient;
+      for (const command of customClient.commands.values()) {
+        if (command.handleModal) {
+          await command.handleModal(modal);
+          if (modal.replied || modal.deferred) return;
+        }
+      }
       return;
     }
 

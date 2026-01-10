@@ -1,142 +1,168 @@
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ChatInputCommandInteraction,
+  ModalBuilder,
   PermissionFlagsBits,
-  SlashCommandBuilder
+  SlashCommandBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ButtonInteraction,
+  ModalSubmitInteraction,
+  SlashCommandOptionsOnlyBuilder,
+  InteractionResponse,
+  BooleanCache,
+  CacheType,
+  InteractionCallbackResponse,
 } from 'discord.js';
 import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
 import { BaseCommand } from '../../interface/BaseCommand';
 import Servers from '../../utility/Servers';
 
-export default class Whitelist implements BaseCommand{
+export default class Whitelist implements BaseCommand {
   enabled: boolean = true;
   static commandName: string = 'whitelist';
   static commandDescription: string = 'Add a player to the whitelist';
 
   async createSlashCommand() {
-    // Load server choices dynamically from in-memory cache
-    const servers = Servers.getMap();
-
-    // Exclude servers and map other names into choices
-    const serverChoices = Array.from(servers.values())
-          .filter((server: Instance) => !server.FriendlyName.includes('Scheduler')
-          && !server.FriendlyName.includes('ADS')
-          && !server.FriendlyName.includes('Bot')
-          && !server.Suspended)
-          .map((server: any) => ({
-            name: server.FriendlyName,
-            value: server.FriendlyName,
-          }));
+    const serverChoices = this.getAvailableServers().map((server) => ({
+      name: server.FriendlyName,
+      value: server.FriendlyName,
+    }));
 
     return new SlashCommandBuilder()
       .setName(Whitelist.commandName)
       .setDescription(Whitelist.commandDescription)
-      .addStringOption((option) =>
-        option
-          .setName('ign')
-          .setDescription("The player's IGN")
-          .setRequired(true),
+      .addStringOption((o) => o.setName('ign').setDescription("The player's IGN").setRequired(true))
+      .addStringOption((o) =>
+        o.setName('option').setDescription('Add or remove').setRequired(true)
+          .addChoices({ name: 'Add', value: 'add' }, { name: 'Remove', value: 'remove' }),
       )
-      .addStringOption((option) =>
-        option
-          .setName('option')
-          .setDescription('To add or remove the player from the whitelist')
-          .setRequired(true)
-          .addChoices(
-            { name: 'Add', value: 'add' },
-            { name: 'Remove', value: 'remove' },
-          ),
-      )
-      .addStringOption(
-        (option) =>
-          option
-            .setName('server')
-            .setDescription('The server for the whitelist operation')
-            .setRequired(true)
-            .addChoices(...serverChoices), // Dynamically add server choices
+      .addStringOption((o) =>
+        o.setName('server').setDescription('The server').setRequired(true).addChoices(...serverChoices),
       )
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
   }
 
-  async createCommandFunctionality() {
-    return async function execute(interaction: ChatInputCommandInteraction) {
+  async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<void>> {
+    return async (interaction: ChatInputCommandInteraction) => {
       await interaction.deferReply();
+      const [ign, option, server] = [
+        interaction.options.getString('ign'),
+        interaction.options.getString('option'),
+        interaction.options.getString('server'),
+      ];
 
-      const client = interaction.client as CustomClient; // Cast to your custom client
-      const guild = interaction.guild;
-
-      if (!guild) {
-        return await interaction.reply('❌ Guild not found.');
-      }
-
-      const option = interaction.options.getString('option');
-      const ign = interaction.options.getString('ign');
-      const server = interaction.options.getString('server');
-      const commandString: string = `whitelist ${option} ${ign}`;
-      let time = new Date();
-
-      client.initializeState();
-      const amp = client.getAmpInstance();
-      await amp.login();
-
-      const servers: Map<string, Instance> = Servers.getMap();
-      if(server != null){
-        const targetServer = servers.get(server);
-        if(!targetServer){
-          await interaction.editReply('Server not found');
-          return;
-        }
-        // Send the whitelist command to the target server
-        await amp.sendConsoleMessage(targetServer, commandString);
-
-        setTimeout(async () => {
-          try{
-            const updates = JSON.parse(await amp.getUpdates(targetServer.InstanceID)); // Get all updates for the instance
-
-            if (Array.isArray(updates.ConsoleEntries) && updates.ConsoleEntries.length > 0) {
-              // Filter console entries to only include those after the recorded time
-              const recentEntries = updates.ConsoleEntries.filter((entry: any) => {
-                const entryDate = new Date(entry.Timestamp);
-                return entryDate.getTime() > time.getTime() - 9000; // Filter based on timestamp
-              });
-
-              // Process the filtered entries
-              for (const entry of recentEntries) {
-
-                if (entry.Contents.includes('Player is already whitelisted')) {
-                  await interaction.editReply('Player is already whitelisted');
-                  return;
-                }else if(entry.Contents.includes(`Removed ${ign} from the whitelist`)){
-                  await interaction.editReply(`Removed ${ign} from the whitelist`);
-                  return;
-                }else if(entry.Contents.includes(`Added ${ign} to the whitelist`)){
-                  await interaction.editReply(`Added ${ign} to the whitelist`);
-                  return;
-                }else if(entry.Contents.includes(`Player is not whitelisted`)){
-                  await interaction.editReply(`Player is not whitelisted`);
-                  return;
-                }
-              }
-
-              //await interaction.editReply(commandString); // Command was successful if no conflicts were found
-            } else {
-              await interaction.editReply('No recent console entries found.');
-            }
-          } catch (error) {
-            console.error('Error fetching updates:', error);
-            await interaction.editReply('Failed to fetch console updates. Please try again.');
-          }
-        }, 2000);
+      if (ign && option && server) {
+        await this.executeWhitelistCommand(interaction, server, option, ign);
       } else {
-        await interaction.editReply('Server selection is invalid or missing.');
+        await interaction.editReply('Invalid or missing options.');
       }
     };
   }
 
-  async createObject() {
+  async createObject(): Promise<{
+    data: any;
+    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+    handleButton: (interaction: ButtonInteraction) => Promise<any>;
+    handleModal: (interaction: ModalSubmitInteraction) => Promise<any>
+  }> {
     return {
       data: await this.createSlashCommand(),
       execute: await this.createCommandFunctionality(),
+      handleButton: this.handleButton.bind(this),
+      handleModal: this.handleModal.bind(this),
     };
+  }
+
+  private getAvailableServers(): Instance[] {
+    return Array.from(Servers.getMap().values()).filter(
+      (s) => !['Scheduler', 'ADS', 'Bot'].some((keyword) => s.FriendlyName.includes(keyword)) && !s.Suspended,
+    );
+  }
+
+  private async executeWhitelistCommand(
+    interaction: ChatInputCommandInteraction | ModalSubmitInteraction,
+    serverName: string,
+    operation: string,
+    ign: string,
+  ) {
+    const client = interaction.client as CustomClient;
+    client.initializeState();
+    const amp = client.getAmpInstance();
+    await amp.login();
+
+    const targetServer = Servers.get(serverName);
+    if (!targetServer) return interaction.editReply('Server not found.');
+
+    const command = `whitelist ${operation} ${ign}`;
+    const startTime = Date.now();
+
+    try {
+      await amp.sendConsoleMessage(targetServer, command);
+      setTimeout(async () => {
+        try {
+          const updates = JSON.parse(await amp.getUpdates(targetServer.InstanceID));
+          const entry = (updates.ConsoleEntries || []).find((e: any) => 
+            new Date(e.Timestamp).getTime() > startTime - 5000 &&
+            (e.Contents.includes('whitelisted') || e.Contents.includes(`from the whitelist`))
+          );
+          let responseText = entry ? entry.Contents : `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
+          if (responseText.includes('Player is already whitelisted')) {
+            responseText = responseText.replace('Player', ign);
+          }
+          await interaction.editReply(`**${serverName}** (Executed by: ${interaction.user.tag}): ${responseText}`);
+        } catch (e) {
+          await interaction.editReply(`**${serverName}** (Executed by: ${interaction.user.tag}): Failed to confirm result from logs.`);
+        }
+      }, 2000);
+    } catch (e) {
+      await interaction.editReply(`**${serverName}** (Executed by: ${interaction.user.tag}): Error sending command.`);
+    }
+  }
+
+  async handleButton(interaction: ButtonInteraction): Promise<any> {
+    const [action, ...args] = interaction.customId.split(':');
+
+    if (action === 'whitelist') {
+      const buttons = this.getAvailableServers().map((s) =>
+        new ButtonBuilder().setCustomId(`whitelist_server:${s.FriendlyName}`).setLabel(s.FriendlyName).setStyle(ButtonStyle.Secondary),
+      );
+
+      if (!buttons.length) return interaction.reply({ content: 'No servers available.', ephemeral: true });
+
+      const rows = [];
+      for (let i = 0; i < buttons.length; i += 5) {
+        rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(i, i + 5)));
+      }
+      return interaction.reply({ content: 'Select server:', components: rows, ephemeral: true });
+    }
+
+    if (action === 'whitelist_server') {
+      const [serverName] = args;
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId(`whitelist_op:${serverName}:add`).setLabel('Add').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`whitelist_op:${serverName}:remove`).setLabel('Remove').setStyle(ButtonStyle.Danger),
+      );
+      return interaction.update({ content: `Server: **${serverName}**`, components: [row] });
+    }
+
+    if (action === 'whitelist_op') {
+      const [serverName, operation] = args;
+      const modal = new ModalBuilder().setCustomId(`whitelist_modal:${serverName}:${operation}`).setTitle(`Whitelist ${operation}`);
+      const input = new TextInputBuilder().setCustomId('ign').setLabel('IGN').setStyle(TextInputStyle.Short).setRequired(true);
+      modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
+      await interaction.showModal(modal);
+    }
+  }
+
+  async handleModal(interaction: ModalSubmitInteraction) {
+    if (interaction.customId.startsWith('whitelist_modal:')) {
+      const [, server, op] = interaction.customId.split(':');
+      await interaction.deferReply({ ephemeral: false });
+      await this.executeWhitelistCommand(interaction, server, op, interaction.fields.getTextInputValue('ign'));
+    }
   }
 }

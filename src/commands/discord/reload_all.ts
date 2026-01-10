@@ -1,8 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import logger from '../../utility/Logger';
 import CustomClient from '../../CustomClient';
-import CommandLoader from '../../utility/CommandLoader';
-import CommandSync from '../../utility/CommandSync';
+import Commands from '../../utility/Commands';
 
 export default class ReloadAll {
   enabled: boolean = true;
@@ -24,13 +23,10 @@ export default class ReloadAll {
 
         // Clear existing commands and reload from the CommandRegistry via CommandLoader
         client.commands.clear();
-        await new CommandLoader(client).loadCommands();
-
-        // Force sync commands to Discord
-        await new CommandSync(client).syncGuildCommands(true);
+        await new Commands(client).updateGuildCommands();
 
         const reloadCount = client.commands.size;
-        logger.info(`✅ Reloaded ${reloadCount} commands via CommandLoader.`);
+        logger.info(`✅ Reloaded ${reloadCount} commands via Commands class.`);
 
         await interaction.followUp(
           `✅ Successfully reloaded ${reloadCount} commands.`,

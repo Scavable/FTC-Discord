@@ -1,7 +1,5 @@
 import { config } from './Config';
 import EventLoader from './utility/EventLoader';
-import CommandLoader from './utility/CommandLoader';
-import CommandSync from './utility/CommandSync';
 import CustomClient from './CustomClient';
 import RoleMapper from './utility/RoleMapper';
 import { validateConfig } from './validation/Config';
@@ -12,6 +10,7 @@ import { scheduleDaily } from './packs/Scheduler';
 import { checkForPackUpdates } from './packs/PackUpdateChecker';
 import Amp from './amp/Amp';
 import Servers from './utility/Servers';
+import Commands from './utility/Commands';
 
 const client = new CustomClient(); // Use CustomClient instead of Client
 const appConfig = validateConfig(config);
@@ -36,13 +35,11 @@ const appConfig = validateConfig(config);
     let instances = await amp.readFile(await amp.getInstances());
     Servers.setAll(instances);
 
-    // Load servers.json file into cache (if exists)
-    // Removed file-based hydration; cache is populated via AMP only.
-
     // Backbone Classes
     await new EventLoader(client).loadEvents();
-    await new CommandLoader(client).loadCommands();
-    await new CommandSync(client).syncGuildCommands(true);
+
+    let temp = new Commands(client);
+    await temp.updateGuildCommands();
 
     // Discord Bot Login (Console message located in, Ready.ts)
     await client.login(appConfig.DISCORD_TOKEN);
