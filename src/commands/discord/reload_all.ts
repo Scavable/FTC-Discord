@@ -43,7 +43,7 @@ export default class ReloadAll {
   async createObject() {
     return {
       data: await this.createSlashCommand(),
-      execute: this.createCommandFunctionality(),
+      execute: await this.createCommandFunctionality(),
     };
   }
 }

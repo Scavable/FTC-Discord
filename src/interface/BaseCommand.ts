@@ -19,11 +19,11 @@ export interface BaseCommand {
     SlashCommandBuilder | SlashCommandOptionsOnlyBuilder
   >;
   createCommandFunctionality(): Promise<
-    (interaction: ChatInputCommandInteraction) => Promise<void>
+    (interaction: ChatInputCommandInteraction) => Promise<any>
   >;
   createObject(): Promise<{
     data: any;
-    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+    execute: (interaction: ChatInputCommandInteraction) => Promise<any>;
     handleButton?: (interaction: ButtonInteraction) => Promise<any>;
     handleModal?: (interaction: ModalSubmitInteraction) => Promise<any>;
   }>;

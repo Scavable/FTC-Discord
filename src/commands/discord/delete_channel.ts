@@ -7,7 +7,7 @@ import {
   ChatInputCommandInteraction,
   Collection,
   GuildMember,
-
+  MessageFlags,
 } from 'discord.js';
 import Logger from '../../utility/Logger';
 
@@ -37,7 +37,7 @@ export default class DeleteChannelCommand {
   createCommandFunctionality() {
     return async (interaction: ChatInputCommandInteraction) => {
       if (!interaction.inGuild()) {
-        return interaction.reply({ content: '❌ Guild context required.', ephemeral: true });
+        return interaction.reply({ content: '❌ Guild context required.', flags: [MessageFlags.Ephemeral] });
       }
 
       const guild = interaction.guild!;
@@ -46,15 +46,15 @@ export default class DeleteChannelCommand {
 
       // Optional: extra member permission guard (beyond default member permissions)
       if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-        return interaction.reply({ content: '❌ Missing Manage Channels permission.', ephemeral: true });
+        return interaction.reply({ content: '❌ Missing Manage Channels permission.', flags: [MessageFlags.Ephemeral] });
       }
 
       const me = guild.members.me;
       if (!me || !me.permissions.has(PermissionFlagsBits.ManageChannels)) {
-        return interaction.reply({ content: "❌ I don't have permission to manage channels.", ephemeral: true });
+        return interaction.reply({ content: "❌ I don't have permission to manage channels.", flags: [MessageFlags.Ephemeral] });
       }
 
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
       try {
         if (targetChannel instanceof CategoryChannel) {

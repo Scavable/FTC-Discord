@@ -1,4 +1,4 @@
-import { Events, Interaction, ButtonInteraction, ModalSubmitInteraction } from 'discord.js';
+import { Events, Interaction, ButtonInteraction, ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import CustomClient from '../CustomClient';
 import { config } from '../Config';
 import logger from '../utility/Logger';
@@ -12,7 +12,7 @@ export default {
         try {
           await interaction.reply({
             content: 'This bot is restricted to a specific server and cannot be used here.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         } catch (_) {
           // ignore reply errors (e.g., already replied)
@@ -35,7 +35,7 @@ export default {
         } catch (err: any) {
           logger.warn(`[PackUpdate] Failed to delete pack update message: ${err?.message ?? err}`);
           try {
-            await btn.followUp({ content: 'Unable to delete this message (missing permissions or it is too old).', ephemeral: true });
+            await btn.followUp({ content: 'Unable to delete this message (missing permissions or it is too old).', flags: [MessageFlags.Ephemeral] });
           } catch (_) {}
         }
         return;
@@ -84,7 +84,7 @@ export default {
       console.error(error);
       const reply = {
         content: 'There was an error while executing this command!',
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       } as const;
       interaction.replied || interaction.deferred
         ? await interaction.followUp(reply)

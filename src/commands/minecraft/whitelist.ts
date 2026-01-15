@@ -10,11 +10,8 @@ import {
   TextInputStyle,
   ButtonInteraction,
   ModalSubmitInteraction,
-  SlashCommandOptionsOnlyBuilder,
-  InteractionResponse,
-  BooleanCache,
-  CacheType,
-  InteractionCallbackResponse,
+  MessagePayload,
+  MessageFlags,
 } from 'discord.js';
 import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
@@ -63,12 +60,7 @@ export default class Whitelist implements BaseCommand {
     };
   }
 
-  async createObject(): Promise<{
-    data: any;
-    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
-    handleButton: (interaction: ButtonInteraction) => Promise<any>;
-    handleModal: (interaction: ModalSubmitInteraction) => Promise<any>
-  }> {
+  async createObject() {
     return {
       data: await this.createSlashCommand(),
       execute: await this.createCommandFunctionality(),
@@ -105,7 +97,7 @@ export default class Whitelist implements BaseCommand {
       setTimeout(async () => {
         try {
           const updates = JSON.parse(await amp.getUpdates(targetServer.InstanceID));
-          const entry = (updates.ConsoleEntries || []).find((e: any) => 
+          const entry = (updates.ConsoleEntries || []).find((e: any) =>
             new Date(e.Timestamp).getTime() > startTime - 5000 &&
             (e.Contents.includes('whitelisted') || e.Contents.includes(`from the whitelist`))
           );
@@ -131,13 +123,13 @@ export default class Whitelist implements BaseCommand {
         new ButtonBuilder().setCustomId(`whitelist_server:${s.FriendlyName}`).setLabel(s.FriendlyName).setStyle(ButtonStyle.Secondary),
       );
 
-      if (!buttons.length) return interaction.reply({ content: 'No servers available.', ephemeral: true });
+      if (!buttons.length) return interaction.reply({ content: 'No servers available.', flags: [MessageFlags.Ephemeral] });
 
       const rows = [];
       for (let i = 0; i < buttons.length; i += 5) {
         rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(i, i + 5)));
       }
-      return interaction.reply({ content: 'Select server:', components: rows, ephemeral: true });
+      return interaction.reply({ content: 'Select server:', components: rows, flags: [MessageFlags.Ephemeral] });
     }
 
     if (action === 'whitelist_server') {
@@ -161,7 +153,7 @@ export default class Whitelist implements BaseCommand {
   async handleModal(interaction: ModalSubmitInteraction) {
     if (interaction.customId.startsWith('whitelist_modal:')) {
       const [, server, op] = interaction.customId.split(':');
-      await interaction.deferReply({ ephemeral: false });
+      await interaction.deferReply();
       await this.executeWhitelistCommand(interaction, server, op, interaction.fields.getTextInputValue('ign'));
     }
   }
