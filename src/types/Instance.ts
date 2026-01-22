@@ -88,6 +88,7 @@ type Instance = {
   FTCVersion: string;
   Hidden: boolean;
   PackName: string;
+  CurseForgeURL?: string;
   Whitelisted: boolean;
 };
 

@@ -33,7 +33,8 @@ function normalizeName(s: string): string {
     .toLowerCase()
     .trim()
     .replace(/[._\-()\[\]:]/g, ' ')
-    .replace(/\s+/g, ' ');
+    .replace(/\s+/g, ' ')
+    .replace(/\s(to the sky|skyblock)$/g, ''); // ignore common suffixes that might be missing in search
 }
 
 function isSlugLike(s: string): boolean {
@@ -78,16 +79,62 @@ type RankedCandidate = {
 };
 
 async function searchRanked(name: string): Promise<RankedCandidate[]> {
+  // 1. If it's a numeric ID, fetch it directly.
+  if (/^\d+$/.test(name)) {
+    try {
+      const { data: m } = await cfFetch<{ data: any }>(`/v1/mods/${name}`);
+      if (m?.name) {
+        return [{
+          mod: {
+            id: m.id,
+            name: m.name,
+            slug: m.slug ?? '',
+            links: m.links,
+            dateModified: m.dateModified,
+            downloadCount: m.downloadCount,
+          },
+          score: 100,
+          matchType: 'exactSlug',
+        }];
+      }
+    } catch { /* fallback to search */ }
+  }
+
   const q = new URLSearchParams({
     gameId: String(GAME_ID_MINECRAFT),
     classId: String(CLASS_ID_MODPACK),
-    searchFilter: name,
     sortField: '2', // popularity
     sortOrder: 'desc',
     pageSize: '50',
   });
+
+  // 2. Perform initial search (slug or name)
+  if (isSlugLike(name)) {
+    q.set('slug', name);
+  } else {
+    q.set('searchFilter', name);
+  }
+
   type Resp = { data: any[] };
-  const resp = await cfFetch<Resp>(`/v1/mods/search?${q.toString()}`);
+  let resp = await cfFetch<Resp>(`/v1/mods/search?${q.toString()}`);
+
+  // 3. Fallback: if slug search failed, try generic filter
+  if (isSlugLike(name) && (!resp.data || resp.data.length === 0)) {
+    q.delete('slug');
+    q.set('searchFilter', name);
+    resp = await cfFetch<Resp>(`/v1/mods/search?${q.toString()}`);
+  }
+
+  // 4. Fallback: if still nothing, try cleaning "noisy" names (e.g., "ATM10: To the Sky - v1.0")
+  if ((!resp.data || resp.data.length === 0) && (name.includes('-') || name.includes(':'))) {
+    const cleaner = name.split(/[:\-]/)[0].trim();
+    if (cleaner.length > 3 && cleaner !== name) {
+      q.delete('slug');
+      q.set('searchFilter', cleaner);
+      resp = await cfFetch<Resp>(`/v1/mods/search?${q.toString()}`);
+    }
+  }
+
   const items = (resp.data || []).filter((m: any) => typeof m?.name === 'string');
   const qNorm = normalizeName(name);
   const qTokens = new Set(tokenize(name));
@@ -102,41 +149,46 @@ async function searchRanked(name: string): Promise<RankedCandidate[]> {
       dateModified: m.dateModified,
       downloadCount: m.downloadCount,
     };
+
     const nameNorm = normalizeName(mod.name);
     let score = 0;
     let matchType: RankedCandidate['matchType'] = 'unknown';
 
-    if (nameNorm === qNorm) { score = 100; matchType = 'exactName'; }
-    else if (slugLike && mod.slug && mod.slug.toLowerCase() === name.toLowerCase()) { score = 100; matchType = 'exactSlug'; }
-    else if (nameNorm.startsWith(qNorm)) { score = 80; matchType = 'startsWith'; }
-    else if (nameNorm.includes(qNorm)) { score = 65; matchType = 'contains'; }
-    else {
+    if (nameNorm === qNorm) {
+      score = 100;
+      matchType = 'exactName';
+    } else if (slugLike && mod.slug?.toLowerCase() === name.toLowerCase()) {
+      score = 100;
+      matchType = 'exactSlug';
+    } else if (nameNorm.startsWith(qNorm)) {
+      score = 80;
+      matchType = 'startsWith';
+    } else if (nameNorm.includes(qNorm)) {
+      score = 65;
+      matchType = 'contains';
+    } else {
       const t = new Set(tokenize(mod.name));
       const jac = jaccard(qTokens, t);
       score = Math.floor(60 + 40 * jac); // 60..100 depending on overlap
       matchType = 'tokenOverlap';
-      // tweak with distance
+
       const dist = levenshtein(nameNorm, qNorm);
       const maxLen = Math.max(nameNorm.length, qNorm.length) || 1;
       const penalty = Math.min(20, Math.round((dist / maxLen) * 20));
       score -= penalty;
+
       if (dist <= 2 && jac >= 0.6) matchType = 'levenshtein';
     }
 
     return { mod, score, matchType };
   });
 
-  ranked.sort((a, b) => {
+  return ranked.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     const da = a.mod.dateModified ? Date.parse(a.mod.dateModified) : 0;
     const db = b.mod.dateModified ? Date.parse(b.mod.dateModified) : 0;
-    if (db !== da) return db - da;
-    const dca = a.mod.downloadCount ?? 0;
-    const dcb = b.mod.downloadCount ?? 0;
-    return dcb - dca;
+    return db - da || (b.mod.downloadCount ?? 0) - (a.mod.downloadCount ?? 0);
   });
-
-  return ranked;
 }
 
 
@@ -157,21 +209,70 @@ function formatCandidate(c: RankedCandidate): string {
 }
 
 async function selectBestMod(query: string, strict: boolean): Promise<RankedCandidate | null> {
-  const ranked = await searchRanked(query);
+  const urlSlug = extractSlugFromUrl(query);
+  const effectiveQuery = urlSlug || query;
+
+  const ranked = await searchRanked(effectiveQuery);
   if (ranked.length === 0) return null;
 
-  // If strict (PackName provided), accept only strong matches
+  // 1. If we have a slug from a URL, prioritize the exact slug match.
+  if (urlSlug) {
+    const exactSlugMatch = ranked.find(r => r.mod.slug.toLowerCase() === urlSlug.toLowerCase());
+    if (exactSlugMatch) return exactSlugMatch;
+  }
+
+  // 2. In strict mode (PackName/URL provided), only accept high-confidence matches.
   if (strict) {
-    const strong = ranked.filter(r => r.matchType === 'exactName' || r.matchType === 'exactSlug');
+    const strong = ranked.filter(r => 
+      r.matchType === 'exactName' || 
+      r.matchType === 'exactSlug' || 
+      (r.score >= 85 && r.matchType === 'levenshtein')
+    );
+    
     if (strong.length > 0) return strong[0];
-    // No strong match — log top candidates and return null to avoid mismatch
+
     const top = ranked.slice(0, 3).map(formatCandidate).join('; ');
-    logger.warn(`[CurseForgeAPI] No strong match for "${query}". Top candidates: ${top}`);
+    logger.warn(`[CurseForgeAPI] No strong match for "${effectiveQuery}". Top candidates: ${top}`);
     return null;
   }
 
-  // Non-strict: return best-ranked candidate
+  // 3. Fallback for non-strict (FriendlyName search): just return the top candidate.
   return ranked[0];
+}
+
+export function extractSlugFromUrl(s: string): string | null {
+  if (!s.includes('curseforge.com/')) return null;
+  try {
+    const url = new URL(s);
+    const path = url.pathname.replace(/\/$/, ''); // remove trailing slash
+    const parts = path.split('/');
+
+    // Standard modpack URL: /minecraft/modpacks/slug
+    // Files page: /minecraft/modpacks/slug/files
+    // Specific file: /minecraft/modpacks/slug/files/12345
+    // We want the part after 'modpacks'
+    const modpacksIndex = parts.indexOf('modpacks');
+    if (modpacksIndex !== -1 && parts.length > modpacksIndex + 1) {
+      return parts[modpacksIndex + 1];
+    }
+
+    // Projects fallback: /projects/slug or /projects/slug/files
+    const projectsIndex = parts.indexOf('projects');
+    if (projectsIndex !== -1 && parts.length > projectsIndex + 1) {
+      return parts[projectsIndex + 1];
+    }
+
+    // Generic fallback: last part if it doesn't match known subpages
+    const lastPart = parts[parts.length - 1];
+    if (lastPart && !['files', 'screenshots', 'relations', 'install', 'download'].includes(lastPart.toLowerCase())) {
+      return lastPart;
+    }
+  } catch {
+    // maybe it's not a full URL but just contains curseforge.com
+    const match = s.match(/curseforge\.com\/(?:minecraft\/modpacks|projects)\/([a-z0-9\-]+)/i);
+    if (match) return match[1];
+  }
+  return null;
 }
 
 export async function getLatestByPackNameAPI(packName: string, opts?: { strict?: boolean }): Promise<LatestFileInfo | null> {
@@ -179,13 +280,16 @@ export async function getLatestByPackNameAPI(packName: string, opts?: { strict?:
   try {
     const selected = await selectBestMod(packName, strict);
     if (!selected) return null;
-    const mod = selected.mod;
+
+    const { mod } = selected;
     const latestFile = await getLatestFileForMod(mod.id);
     if (!latestFile) return null;
+
     const modPage = mod.slug
       ? `https://www.curseforge.com/minecraft/modpacks/${mod.slug}`
       : (mod.links?.websiteUrl || `https://www.curseforge.com/projects/${mod.id}`);
     const latestFileUrl = `${modPage}/files/${latestFile.id}`;
+
     return { mod, latestFile, latestFileUrl, matchScore: selected.score, matchType: selected.matchType };
   } catch (err: any) {
     logger.warn(`[CurseForgeAPI] Failed to get latest for "${packName}": ${err?.message ?? err}`);

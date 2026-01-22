@@ -60,21 +60,28 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
   for (const server of servers) {
     if (shouldSkip(server)) continue;
 
-    const queryNameRaw = (server.PackName && server.PackName.trim().length > 0)
-      ? server.PackName.trim()
-      : normalizeServerName(server.FriendlyName);
-    const packName = queryNameRaw.replace(/\s+/g, ' ');
+    const queryUsed = (server.CurseForgeURL && server.CurseForgeURL.trim().length > 0)
+      ? 'CurseForgeURL'
+      : (server.PackName && server.PackName.trim().length > 0)
+        ? 'PackName'
+        : 'FriendlyName';
+
+    const packQuery = (queryUsed === 'CurseForgeURL')
+      ? server.CurseForgeURL!.trim()
+      : (queryUsed === 'PackName')
+        ? server.PackName.trim()
+        : normalizeServerName(server.FriendlyName);
+
     const currentVersion = server.FTCVersion || '';
 
     try {
-      const usedPackName = !!(server.PackName && server.PackName.trim().length > 0);
-      const latest = await getLatestByPackNameAPI(packName, { strict: usedPackName });
+      const latest = await getLatestByPackNameAPI(packQuery, { strict: queryUsed !== 'FriendlyName' });
       if (!latest) {
-        logger.warn(`[PackUpdate] No strong CurseForge match for QueryUsed=${usedPackName ? 'PackName' : 'FriendlyName'}="${packName}" (Server=${server.FriendlyName}). Skipping to avoid mismatch.`);
+        logger.warn(`[PackUpdate] No strong CurseForge match for ${queryUsed}="${packQuery}" (Server=${server.FriendlyName}). Skipping.`);
         continue;
       }
 
-      logger.updates(`[PackUpdate] Server=${server.FriendlyName} | QueryUsed=${usedPackName ? 'PackName' : 'FriendlyName'}="${packName}" | Matched=${latest.mod.name} (${latest.mod.slug || 'no-slug'}#${latest.mod.id}) | MatchType=${latest.matchType ?? 'n/a'} | Score=${latest.matchScore ?? 'n/a'}`);
+      logger.updates(`[PackUpdate] Server=${server.FriendlyName} | ${queryUsed}="${packQuery}" | Matched=${latest.mod.name} (${latest.mod.slug || 'no-slug'}#${latest.mod.id}) | Score=${latest.matchScore}`);
 
       const latestNameRaw = latest.latestFile.displayName || latest.latestFile.fileName;
       let latestVersion = latestNameRaw;
@@ -87,20 +94,24 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
 
       // Simple comparison heuristic: if current version string is not contained in latest file name, assume an update is available.
       // This is intentionally conservative due to varied naming schemes.
-      if (currentVersion && latestNameRaw.includes(currentVersion)) {
+      // Normalize: remove 'v' prefix if present for comparison
+      const normCurrent = currentVersion.toLowerCase().replace(/^v/, '');
+      const normLatestName = latestNameRaw.toLowerCase();
+      
+      if (currentVersion && (normLatestName.includes(normCurrent) || normLatestName.includes(currentVersion.toLowerCase()))) {
         continue; // up to date
       }
 
       updates.push({
         server: server,
-        packName,
+        packName: latest.mod.name,
         currentVersion: currentVersion || 'N/A',
         latestVersion: latestVersion,
         latestUrl: latest.latestFileUrl,
         uploadedAt: latest.latestFile.fileDate,
       });
     } catch (err: any) {
-      logger.warn(`[PackUpdate] Failed check for ${packName}: ${err?.message ?? err}`);
+      logger.warn(`[PackUpdate] Failed check for ${packQuery}: ${err?.message ?? err}`);
     }
   }
 

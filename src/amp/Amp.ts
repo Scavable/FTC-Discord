@@ -227,6 +227,7 @@ class Amp {
           server.FTCVersion = temp.Version;
           server.Hidden = temp.Hidden;
           server.PackName = temp.PackName;
+          server.CurseForgeURL = temp.CurseForgeURL;
         }catch(error){
           // @ts-ignore
           logger.error(error);
