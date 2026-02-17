@@ -241,6 +241,35 @@ class Amp {
 
     return servers;
   }
+
+  async getUserList(instanceId: string): Promise<string[]> {
+    await this.ensureAuthenticated(instanceId);
+
+    const json = { };
+    const response = await this.sendPostRequest(
+      `${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/GetUserList`,
+      json,
+      this.instanceSessionIds.get(instanceId) || ''
+    );
+    console.log(Object.values(response));
+    let list: string[] = Object.values(response);
+    let list2: string[] = [];
+    list.forEach((value: string) => {
+      console.log(value);
+      for(let i = 0; i <= list2.length; i++) {
+        if(!list2[i].includes(value)) {
+          console.log("no match");
+          list2.push(value);
+        }
+        console.log("match");
+      }
+    });
+    console.log(list2);
+
+    return [];
+    //return response.map((user: { Username: string }) => user.Username);
+  }
+
 }
 
 export default Amp;

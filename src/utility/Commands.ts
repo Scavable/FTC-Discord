@@ -1,5 +1,4 @@
 import CustomClient from '../CustomClient';
-import AmpServersPanelCommand from '../commands/amp/servers_panel';
 import CreateCategoryCommand from '../commands/discord/create_category';
 import DeleteChannelCommand from '../commands/discord/delete_channel';
 import ReloadAllCommand from '../commands/discord/reload_all';
@@ -8,6 +7,7 @@ import CommandButtons from '../commands/discord/command_buttons';
 import { REST, Routes } from 'discord.js';
 import { config } from '../Config';
 import logger from './Logger';
+import ServerInformation from '../commands/amp/server_information';
 
 class Commands {
   private client: CustomClient;
@@ -18,7 +18,7 @@ class Commands {
     this.client = client;
     this.rest = new REST().setToken(config.DISCORD_TOKEN);
     this.commands = [
-      new AmpServersPanelCommand(),
+      new ServerInformation(),
       new CreateCategoryCommand(),
       new DeleteChannelCommand(),
       new ReloadAllCommand(),

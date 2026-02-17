@@ -17,6 +17,8 @@ import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
 import { BaseCommand } from '../../interface/BaseCommand';
 import Servers from '../../utility/Servers';
+import { string } from 'zod';
+import * as assert from 'node:assert';
 
 export default class Whitelist implements BaseCommand {
   enabled: boolean = true;
@@ -32,6 +34,7 @@ export default class Whitelist implements BaseCommand {
     return new SlashCommandBuilder()
       .setName(Whitelist.commandName)
       .setDescription(Whitelist.commandDescription)
+      .addUserOption((o) => o.setName('user').setDescription('The discord user').setRequired(true))
       .addStringOption((o) => o.setName('ign').setDescription("The player's IGN").setRequired(true))
       .addStringOption((o) =>
         o.setName('option').setDescription('Add or remove').setRequired(true)
@@ -86,8 +89,15 @@ export default class Whitelist implements BaseCommand {
     const amp = client.getAmpInstance();
     await amp.login();
 
+    if(interaction.guild === null)
+      return interaction.editReply('Guild not found.');
+
+    const roles = interaction.guild.roles.cache;
+
     const targetServer = Servers.get(serverName);
     if (!targetServer) return interaction.editReply('Server not found.');
+
+    console.log(await amp.getUserList(targetServer.InstanceID));
 
     const command = `whitelist ${operation} ${ign}`;
     const startTime = Date.now();
