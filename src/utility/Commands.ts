@@ -7,7 +7,7 @@ import CommandButtons from '../commands/discord/command_buttons';
 import { REST, Routes } from 'discord.js';
 import { config } from '../Config';
 import logger from './Logger';
-import ServerInformation from '../commands/amp/server_information';
+import ServerInformationCommand from '../commands/amp/server_information';
 
 class Commands {
   private client: CustomClient;
@@ -18,7 +18,7 @@ class Commands {
     this.client = client;
     this.rest = new REST().setToken(config.DISCORD_TOKEN);
     this.commands = [
-      new ServerInformation(),
+      new ServerInformationCommand(),
       new CreateCategoryCommand(),
       new DeleteChannelCommand(),
       new ReloadAllCommand(),

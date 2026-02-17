@@ -228,6 +228,7 @@ class Amp {
           server.Hidden = temp.Hidden;
           server.PackName = temp.PackName;
           server.CurseForgeURL = temp.CurseForgeURL;
+          server.RoleName = temp.RoleName;
         }catch(error){
           // @ts-ignore
           logger.error(error);

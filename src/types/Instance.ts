@@ -88,8 +88,9 @@ type Instance = {
   FTCVersion: string;
   Hidden: boolean;
   PackName: string;
-  CurseForgeURL?: string;
+  CurseForgeURL: string;
   Whitelisted: boolean;
+  RoleName: string;
 };
 
 export default Instance;
