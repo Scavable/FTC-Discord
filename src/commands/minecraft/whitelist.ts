@@ -10,18 +10,18 @@ import {
   TextInputStyle,
   ButtonInteraction,
   ModalSubmitInteraction,
-  MessagePayload,
   MessageFlags,
   User,
   Guild,
+  Message,
+  BooleanCache,
+  CacheType, InteractionCallbackResponse,
 } from 'discord.js';
 import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
 import { BaseCommand } from '../../interface/BaseCommand';
 import Servers from '../../utility/Servers';
 import RoleMapper from '../../utility/RoleMapper';
-import { string } from 'zod';
-import * as assert from 'node:assert';
 import logger from '../../utility/Logger';
 
 export default class Whitelist implements BaseCommand {
@@ -38,14 +38,20 @@ export default class Whitelist implements BaseCommand {
     return new SlashCommandBuilder()
       .setName(Whitelist.commandName)
       .setDescription(Whitelist.commandDescription)
-      .addUserOption((o) =>
-        o.setName('user').setDescription('The discord user').setRequired(true),
+      .addUserOption((option) =>
+        option
+          .setName('user')
+          .setDescription('The discord user')
+          .setRequired(true),
       )
-      .addStringOption((o) =>
-        o.setName('ign').setDescription("The player's IGN").setRequired(true),
+      .addStringOption((option) =>
+        option
+          .setName('ign')
+          .setDescription("The player's IGN")
+          .setRequired(true),
       )
-      .addStringOption((o) =>
-        o
+      .addStringOption((option) =>
+        option
           .setName('option')
           .setDescription('Add or remove')
           .setRequired(true)
@@ -54,8 +60,8 @@ export default class Whitelist implements BaseCommand {
             { name: 'Remove', value: 'remove' },
           ),
       )
-      .addStringOption((o) =>
-        o
+      .addStringOption((option) =>
+        option
           .setName('server')
           .setDescription('The server')
           .setRequired(true)
@@ -64,29 +70,25 @@ export default class Whitelist implements BaseCommand {
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
   }
 
-  async createCommandFunctionality(): Promise<
-    (interaction: ChatInputCommandInteraction) => Promise<void>
-  > {
+  async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<InteractionCallbackResponse<BooleanCache<CacheType>>>> {
     return async (interaction: ChatInputCommandInteraction) => {
       await interaction.deferReply();
-      const [user, ign, option, server] = [
-        interaction.options.getUser('user'),
-        interaction.options.getString('ign'),
-        interaction.options.getString('option'),
-        interaction.options.getString('server'),
-      ];
+      const user = interaction.options.getUser('user');
+      const ign = interaction.options.getString('ign');
+      const option = interaction.options.getString('option');
+      const server = interaction.options.getString('server');
 
-      if (user && ign && option && server) {
-        await this.executeWhitelistCommand(
-          interaction,
-          server,
-          option,
-          ign,
-          user,
-        );
-      } else {
-        await interaction.editReply('Invalid or missing options.');
+      if (!user || !ign || !option || !server) {
+        return interaction.editReply('Invalid or missing options.');
       }
+
+      await this.executeWhitelistCommand(
+        interaction,
+        server,
+        option,
+        ign,
+        user,
+      );
     };
   }
 
@@ -99,6 +101,39 @@ export default class Whitelist implements BaseCommand {
     );
   }
 
+  private async updateUserRole(
+    interaction: ChatInputCommandInteraction | ModalSubmitInteraction,
+    user: User,
+    targetServer: Instance,
+    operation: string,
+  ): Promise<string> {
+    if (!targetServer.RoleName || !interaction.guild) return '';
+
+    try {
+      const member = await interaction.guild.members.fetch(user.id);
+      if (!member) return '';
+
+      const roleMapper = new RoleMapper(interaction.guild as Guild);
+      await roleMapper.initialize();
+      const role = roleMapper.getRole(targetServer.RoleName);
+
+      if (!role) {
+        console.error(`Role not found: ${targetServer.RoleName}`);
+        return `\n(Warning: Role "${targetServer.RoleName}" not found)`;
+      }
+
+      if (operation === 'add') {
+        await member.roles.add(role);
+      } else if (operation === 'remove') {
+        await member.roles.remove(role);
+      }
+      return '';
+    } catch (roleError) {
+      console.error(`Failed to ${operation} role:`, roleError);
+      return `\n(Warning: Failed to ${operation === 'add' ? 'assign' : 'remove'} role: ${targetServer.RoleName})`;
+    }
+  }
+
   private async executeWhitelistCommand(
     interaction: ChatInputCommandInteraction | ModalSubmitInteraction,
     serverName: string,
@@ -109,90 +144,62 @@ export default class Whitelist implements BaseCommand {
     const client = interaction.client as CustomClient;
     client.initializeState();
     const amp = client.getAmpInstance();
-    await amp.login();
-
-    if (interaction.guild === null)
-      return interaction.editReply('Guild not found.');
-
-    const targetServer = Servers.get(serverName);
-    if (!targetServer) return interaction.editReply('Server not found.');
-
-    const command = `whitelist ${operation} ${ign}`;
-    const startTime = Date.now();
 
     try {
+      await amp.login();
+
+      if (!interaction.guild) return interaction.editReply('Guild not found.');
+
+      const targetServer = Servers.get(serverName);
+      if (!targetServer) return interaction.editReply('Server not found.');
+
+      const command = `whitelist ${operation} ${ign}`;
+      const startTime = Date.now();
+
       await amp.sendConsoleMessage(targetServer, command);
+
+      // Wait for 2 seconds to allow the command to process and appear in logs
       setTimeout(async () => {
         try {
-          const updates = JSON.parse(
-            await amp.getUpdates(targetServer.InstanceID),
-          );
-          const entry = (updates.ConsoleEntries || []).find(
+          const updatesRaw = await amp.getUpdates(targetServer.InstanceID);
+          const updates = JSON.parse(updatesRaw);
+          const consoleEntries = updates.ConsoleEntries || [];
+
+          const entry = consoleEntries.find(
             (e: any) =>
               new Date(e.Timestamp).getTime() > startTime - 5000 &&
               (e.Contents.includes('whitelisted') ||
                 e.Contents.includes(`from the whitelist`)),
           );
+
           let responseText = entry
             ? entry.Contents
             : `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
+
           if (responseText.includes('Player is already whitelisted')) {
             responseText = responseText.replace('Player', ign);
           }
 
-          if (
-            operation === 'add' &&
-            targetServer.RoleName &&
-            interaction.guild
-          ) {
-            try {
-              const member = await interaction.guild.members.fetch(user.id);
-              if (member) {
-                const roleMapper = new RoleMapper(interaction.guild as Guild);
-                await roleMapper.initialize();
-                const role = roleMapper.getRole(targetServer.RoleName);
-
-                if (role) {
-                  await member.roles.add(role);
-                } else {
-                  console.error(`Role not found: ${targetServer.RoleName}`);
-                  responseText += `\n(Warning: Role "${targetServer.RoleName}" not found)`;
-                }
-              }
-            } catch (roleError) {
-              console.error('Failed to add role:', roleError);
-              responseText += `\n(Warning: Failed to assign role: ${targetServer.RoleName})`;
-            }
-          }else if(operation === 'remove' && targetServer.RoleName && interaction.guild){
-            try {
-              const member = await interaction.guild.members.fetch(user.id);
-              if (member) {
-                const roleMapper = new RoleMapper(interaction.guild as Guild);
-                await roleMapper.initialize();
-                const role = roleMapper.getRole(targetServer.RoleName);
-                if (role) {
-                  await member.roles.remove(role);
-                } else {
-                  console.error(`Role not found: ${targetServer.RoleName}`);
-                  responseText += `\n(Warning: Role "${targetServer.RoleName}" not found)`;
-                }
-              }
-            } catch (roleError) {
-              console.error('Failed to remove role:', roleError);
-              responseText += `\n(Warning: Failed to remove role: ${targetServer.RoleName})`;
-            }
-          }
+          const roleWarning = await this.updateUserRole(
+            interaction,
+            user,
+            targetServer,
+            operation,
+          );
+          responseText += roleWarning;
 
           await interaction.editReply(
             `**${serverName}** (Executed by: ${interaction.user.tag}): ${responseText}`,
           );
         } catch (e) {
+          logger.error('Error confirming whitelist result:', e);
           await interaction.editReply(
             `**${serverName}** (Executed by: ${interaction.user.tag}): Failed to confirm result from logs.`,
           );
         }
       }, 2000);
     } catch (e) {
+      logger.error('Error sending whitelist command:', e);
       await interaction.editReply(
         `**${serverName}** (Executed by: ${interaction.user.tag}): Error sending command.`,
       );
@@ -203,18 +210,20 @@ export default class Whitelist implements BaseCommand {
     const [action, ...args] = interaction.customId.split(':');
 
     if (action === 'whitelist') {
-      const buttons = this.getAvailableServers().map((s) =>
+      const availableServers = this.getAvailableServers();
+      if (!availableServers.length) {
+        return interaction.reply({
+          content: 'No servers available.',
+          flags: [MessageFlags.Ephemeral],
+        });
+      }
+
+      const buttons = availableServers.map((s) =>
         new ButtonBuilder()
           .setCustomId(`whitelist_server:${s.FriendlyName}`)
           .setLabel(s.FriendlyName)
           .setStyle(ButtonStyle.Secondary),
       );
-
-      if (!buttons.length)
-        return interaction.reply({
-          content: 'No servers available.',
-          flags: [MessageFlags.Ephemeral],
-        });
 
       const rows = [];
       for (let i = 0; i < buttons.length; i += 5) {
@@ -267,17 +276,18 @@ export default class Whitelist implements BaseCommand {
   }
 
   async handleModal(interaction: ModalSubmitInteraction) {
-    if (interaction.customId.startsWith('whitelist_modal:')) {
-      const [, server, op] = interaction.customId.split(':');
-      await interaction.deferReply();
-      await this.executeWhitelistCommand(
-        interaction,
-        server,
-        op,
-        interaction.fields.getTextInputValue('ign'),
-        interaction.user,
-      );
-    }
+    if (!interaction.customId.startsWith('whitelist_modal:')) return;
+
+    const [, server, op] = interaction.customId.split(':');
+    await interaction.deferReply();
+    const ign = interaction.fields.getTextInputValue('ign');
+    await this.executeWhitelistCommand(
+      interaction,
+      server,
+      op,
+      ign,
+      interaction.user,
+    );
   }
 
   async createObject() {

@@ -7,15 +7,18 @@ import {
   SlashCommandBuilder,
   ButtonInteraction,
   MessageFlags,
+  Message,
+  BooleanCache,
+  CacheType, InteractionCallbackResponse,
 } from 'discord.js';
 import { BaseCommand } from '../../interface/BaseCommand';
 import CustomClient from '../../CustomClient';
 
 export default class CommandButtons implements BaseCommand {
-
   enabled: boolean = true;
   commandName: string = 'command_console';
-  commandDescription: string = 'Creates a row of buttons which execute commands';
+  commandDescription: string =
+    'Creates a row of buttons which execute commands';
 
   async createSlashCommand() {
     return new SlashCommandBuilder()
@@ -24,19 +27,22 @@ export default class CommandButtons implements BaseCommand {
       .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageMessages);
   }
 
-  async createCommandFunctionality() {
+  async createCommandFunctionality(): Promise<
+    (
+      interaction: ChatInputCommandInteraction,
+    ) => Promise<InteractionCallbackResponse<BooleanCache<CacheType>>>
+  > {
     return async (interaction: ChatInputCommandInteraction) => {
-      const row = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('reload_all')
-            .setLabel('Reload')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('whitelist')
-            .setLabel('Whitelist')
-            .setStyle(ButtonStyle.Primary),
-        );
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('reload_all')
+          .setLabel('Reload')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('whitelist')
+          .setLabel('Whitelist')
+          .setStyle(ButtonStyle.Primary),
+      );
 
       return await interaction.reply({
         content: 'Command console:',
@@ -63,7 +69,7 @@ export default class CommandButtons implements BaseCommand {
         }
       }
     }
-    if(interaction.customId === 'whitelist'){
+    if (interaction.customId === 'whitelist') {
       const customClient = interaction.client as CustomClient;
       const command = customClient.commands.get('whitelist');
       if (command && command.handleButton) {

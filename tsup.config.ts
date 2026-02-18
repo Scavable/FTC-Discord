@@ -31,18 +31,14 @@ export default defineConfig({
       }
     });
 
-    // Create .env.example in release folder instead of copying sensitive .envProd
-    const envExamplePath = path.join(process.cwd(), '.env.example');
-    const releaseEnvExamplePath = path.join(releaseDir, '.env.example');
+    // Handle .env.template in release folder for manual reference
+    const envTemplatePath = path.join(process.cwd(), '.envTemplate');
+    const releaseEnvTemplatePath = path.join(releaseDir, '.env.template');
 
-    if (fs.existsSync(envExamplePath)) {
-      fs.copyFileSync(envExamplePath, releaseEnvExamplePath);
-      console.log('Copied .env.example to release/.env.example');
-    } else {
-      // Generate a basic .env.example if it doesn't exist
-      const basicEnv = 'DISCORD_TOKEN=\nCLIENT_ID=\nGUILD_ID=\n';
-      fs.writeFileSync(releaseEnvExamplePath, basicEnv);
-      console.log('Generated basic .env.example in release folder');
+    if (fs.existsSync(envTemplatePath)) {
+      // Always provide a template for manual reference on the server
+      fs.copyFileSync(envTemplatePath, releaseEnvTemplatePath);
+      console.log('Copied .envTemplate to release/.env.template');
     }
   },
 });

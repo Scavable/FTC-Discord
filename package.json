@@ -11,7 +11,8 @@
     "build": "tsup",
     "test": "jest",
     "lint": "eslint . --ext .ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "deploy:prod": "powershell -ExecutionPolicy Bypass -File deploy.ps1"
   },
   "author": "Scavable",
   "license": "ISC",

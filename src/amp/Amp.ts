@@ -231,7 +231,7 @@ class Amp {
           server.RoleName = temp.RoleName;
         }catch(error){
           // @ts-ignore
-          logger.error(error);
+          logger.error(error, e);
         }
       }
       server.Whitelisted = await this.getConfig(server);

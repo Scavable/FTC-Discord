@@ -76,7 +76,7 @@ class Logger {
   }
 
   // Log an error message
-  public error(message: string): void {
+  public error(message: string, e): void {
     this.logger.error(message);
   }
 

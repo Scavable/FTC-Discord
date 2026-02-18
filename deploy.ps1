@@ -11,11 +11,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 2. Check for changes in 'release' folder
-# Remove any existing .env files from the release folder to ensure they are not committed
-if (Test-Path "release/.env") {
-    Write-Host "Removing sensitive .env from release folder before staging..." -ForegroundColor Yellow
-    Remove-Item "release/.env" -Force
-}
+# Note: we no longer automate .env creation in the release folder.
 
 $hasChanges = git status release --short
 if (-not $hasChanges) {
@@ -42,7 +38,8 @@ Write-Host "Pushing to production branch..." -ForegroundColor Cyan
 # This ensures that only the contents of 'release' end up in the production branch.
 $subtree_id = git subtree split --prefix release
 if ($LASTEXITCODE -eq 0) {
-    git push origin "${subtree_id}:production" --force
+    # Ensure fully qualified refname to avoid "not a full refname" errors
+    git push origin "${subtree_id}:refs/heads/production" --force
     Write-Host "Successfully pushed to production branch!" -ForegroundColor Green
 } else {
     Write-Host "Failed to split subtree." -ForegroundColor Red

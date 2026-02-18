@@ -4,7 +4,7 @@ import {
   CacheType,
   ChatInputCommandInteraction,
   InteractionCallbackResponse,
-  InteractionResponse,
+  InteractionResponse, Message,
   ModalSubmitInteraction,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
@@ -18,9 +18,7 @@ export interface BaseCommand {
   createSlashCommand(): Promise<
     SlashCommandBuilder | SlashCommandOptionsOnlyBuilder
   >;
-  createCommandFunctionality(): Promise<
-    (interaction: ChatInputCommandInteraction) => Promise<any>
-  >;
+  createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<InteractionCallbackResponse<BooleanCache<CacheType>>>>;
   createObject(): Promise<{
     data: any;
     execute: (interaction: ChatInputCommandInteraction) => Promise<any>;
