@@ -5,6 +5,7 @@
 #GUILD_ID=
 #AMP_USERNAME=
 #AMP_PASS=
+#AMP_API_BASE_URL=
 # Update check time is based on a 24 hour clock. 5pm is 17:00.
 #UPDATE_CHECK_TIME=
 #UPDATE_CHANNEL_ID=

@@ -2,17 +2,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Values from environment variables
 const {
   DISCORD_TOKEN,
   CLIENT_ID,
   GUILD_ID,
   AMP_USERNAME,
   AMP_PASS,
+  AMP_API_BASE_URL,
   UPDATE_CHECK_TIME,
   UPDATE_CHANNEL_ID,
   CURSEFORGE_API_KEY,
 } = process.env;
 
+// Check for required environment variables
 if (
   !DISCORD_TOKEN ||
   !CLIENT_ID ||
@@ -24,12 +27,14 @@ if (
   throw new Error('Missing environment variables');
 }
 
+// Assigned default values for optional config items
 export const config = {
   DISCORD_TOKEN,
   CLIENT_ID,
   GUILD_ID,
   AMP_USERNAME,
   AMP_PASS,
+  AMP_API_BASE_URL,
   UPDATE_CHECK_TIME: UPDATE_CHECK_TIME || '02:00',
   UPDATE_CHANNEL_ID: UPDATE_CHANNEL_ID || '',
   CURSEFORGE_API_KEY,
