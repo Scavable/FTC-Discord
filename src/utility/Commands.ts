@@ -7,7 +7,7 @@ import CommandButtons from '../commands/discord/command_buttons';
 import { REST, Routes } from 'discord.js';
 import { config } from '../Config';
 import logger from './Logger';
-import ServerInformationCommand from '../commands/amp/servers_panel';
+import ServerInformationCommand from '../commands/amp/server_information';
 
 class Commands {
   private client: CustomClient;
