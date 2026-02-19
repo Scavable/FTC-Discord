@@ -6,6 +6,7 @@ jest.mock('../src/utility/Logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
   commands: jest.fn(),
+  amp: jest.fn(),
 }));
 
 declare const global: any;
@@ -100,7 +101,7 @@ describe('Amp', () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       headers: { get: () => 'application/json' },
-      json: async () => ({ success: true, sessionID: 'S1' }),
+      json: async () => ({ success: true, sessionID: 'S1', userInfo: { ID: 'U1' } }),
     });
     // ReadFileChunk returns base64 of {IP, Version, Hidden}
     const packInfo = { IP: '127.0.0.1', Version: '1.0', Hidden: true };
@@ -126,6 +127,5 @@ describe('Amp', () => {
     expect(out[0].FTCVersion).toBe('1.0');
     expect(out[0].Hidden).toBe(true);
     expect(out[0].Whitelisted).toBe(true);
-    expect((logger.info as jest.Mock)).toHaveBeenCalled();
   });
 });

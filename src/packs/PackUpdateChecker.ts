@@ -57,63 +57,80 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
     uploadedAt: string;
   }[] = [];
 
-  for (const server of servers) {
-    if (shouldSkip(server)) continue;
+  await Promise.all(
+    servers.map(async (server) => {
+      if (shouldSkip(server)) return;
 
-    const queryUsed = (server.CurseForgeURL && server.CurseForgeURL.trim().length > 0)
-      ? 'CurseForgeURL'
-      : (server.PackName && server.PackName.trim().length > 0)
-        ? 'PackName'
-        : 'FriendlyName';
+      const queryUsed =
+        server.CurseForgeURL && server.CurseForgeURL.trim().length > 0
+          ? 'CurseForgeURL'
+          : server.PackName && server.PackName.trim().length > 0
+            ? 'PackName'
+            : 'FriendlyName';
 
-    const packQuery = (queryUsed === 'CurseForgeURL')
-      ? server.CurseForgeURL!.trim()
-      : (queryUsed === 'PackName')
-        ? server.PackName.trim()
-        : normalizeServerName(server.FriendlyName);
+      const packQuery =
+        queryUsed === 'CurseForgeURL'
+          ? server.CurseForgeURL!.trim()
+          : queryUsed === 'PackName'
+            ? server.PackName.trim()
+            : normalizeServerName(server.FriendlyName);
 
-    const currentVersion = server.FTCVersion || '';
+      const currentVersion = server.FTCVersion || '';
 
-    try {
-      const latest = await getLatestByPackNameAPI(packQuery, { strict: queryUsed !== 'FriendlyName' });
-      if (!latest) {
-        logger.warn(`[PackUpdate] No strong CurseForge match for ${queryUsed}="${packQuery}" (Server=${server.FriendlyName}). Skipping.`);
-        continue;
+      try {
+        const latest = await getLatestByPackNameAPI(packQuery, {
+          strict: queryUsed !== 'FriendlyName',
+        });
+        if (!latest) {
+          logger.warn(
+            `[PackUpdate] No strong CurseForge match for ${queryUsed}="${packQuery}" (Server=${server.FriendlyName}). Skipping.`,
+          );
+          return;
+        }
+
+        logger.updates(
+          `[PackUpdate] Server=${server.FriendlyName} | ${queryUsed}="${packQuery}" | Matched=${latest.mod.name} (${latest.mod.slug || 'no-slug'}#${latest.mod.id}) | Score=${latest.matchScore}`,
+        );
+
+        const latestNameRaw =
+          latest.latestFile.displayName || latest.latestFile.fileName;
+        let latestVersion = latestNameRaw;
+
+        // Extract version pattern (x.x.x or x.x.x.x etc.)
+        const versionMatch = latestNameRaw.match(/(\d+(?:\.\d+)+)/);
+        if (versionMatch) {
+          latestVersion = versionMatch[1];
+        }
+
+        // Simple comparison heuristic: if current version string is not contained in latest file name, assume an update is available.
+        // This is intentionally conservative due to varied naming schemes.
+        // Normalize: remove 'v' prefix if present for comparison
+        const normCurrent = currentVersion.toLowerCase().replace(/^v/, '');
+        const normLatestName = latestNameRaw.toLowerCase();
+
+        if (
+          currentVersion &&
+          (normLatestName.includes(normCurrent) ||
+            normLatestName.includes(currentVersion.toLowerCase()))
+        ) {
+          return; // up to date
+        }
+
+        updates.push({
+          server: server,
+          packName: latest.mod.name,
+          currentVersion: currentVersion || 'N/A',
+          latestVersion: latestVersion,
+          latestUrl: latest.latestFileUrl,
+          uploadedAt: latest.latestFile.fileDate,
+        });
+      } catch (err: any) {
+        logger.warn(
+          `[PackUpdate] Failed check for ${packQuery}: ${err?.message ?? err}`,
+        );
       }
-
-      logger.updates(`[PackUpdate] Server=${server.FriendlyName} | ${queryUsed}="${packQuery}" | Matched=${latest.mod.name} (${latest.mod.slug || 'no-slug'}#${latest.mod.id}) | Score=${latest.matchScore}`);
-
-      const latestNameRaw = latest.latestFile.displayName || latest.latestFile.fileName;
-      let latestVersion = latestNameRaw;
-
-      // Extract version pattern (x.x.x or x.x.x.x etc.)
-      const versionMatch = latestNameRaw.match(/(\d+(?:\.\d+)+)/);
-      if (versionMatch) {
-        latestVersion = versionMatch[1];
-      }
-
-      // Simple comparison heuristic: if current version string is not contained in latest file name, assume an update is available.
-      // This is intentionally conservative due to varied naming schemes.
-      // Normalize: remove 'v' prefix if present for comparison
-      const normCurrent = currentVersion.toLowerCase().replace(/^v/, '');
-      const normLatestName = latestNameRaw.toLowerCase();
-      
-      if (currentVersion && (normLatestName.includes(normCurrent) || normLatestName.includes(currentVersion.toLowerCase()))) {
-        continue; // up to date
-      }
-
-      updates.push({
-        server: server,
-        packName: latest.mod.name,
-        currentVersion: currentVersion || 'N/A',
-        latestVersion: latestVersion,
-        latestUrl: latest.latestFileUrl,
-        uploadedAt: latest.latestFile.fileDate,
-      });
-    } catch (err: any) {
-      logger.warn(`[PackUpdate] Failed check for ${packQuery}: ${err?.message ?? err}`);
-    }
-  }
+    }),
+  );
 
   if (updates.length === 0) {
     logger.info('[PackUpdate] No updates found.');

@@ -22,9 +22,11 @@ const appConfig = validateConfig(config);
     logger.info('Verifying dependencies...');
     for (const dep of required) {
       try {
-        child_process.execSync(`npm ls ${dep}`, { stdio: 'ignore' });
+        import.meta.resolve(dep);
       } catch {
-        throw new Error(`Missing dependency: ${dep}. Please run "npm install" before starting the bot.`);
+        throw new Error(
+          `Missing dependency: ${dep}. Please run "npm install" before starting the bot.`,
+        );
       }
     }
     logger.info('All dependencies verified.');
@@ -32,17 +34,24 @@ const appConfig = validateConfig(config);
     logger.info('Starting bot...');
 
     let amp = new Amp(config.AMP_USERNAME, config.AMP_PASS, '', false);
-    let instances = await amp.readFile(await amp.getInstances());
-    Servers.setAll(instances);
+    
+    // Start AMP initialization, event loading, and command updates in parallel
+    const ampInitPromise = (async () => {
+      let instances = await amp.readFile(await amp.getInstances());
+      Servers.setAll(instances);
+    })();
 
     // Backbone Classes
-    await new EventLoader(client).loadEvents();
+    const eventLoaderPromise = new EventLoader(client).loadEvents();
 
-    let temp = new Commands(client);
-    await temp.updateGuildCommands();
+    const commands = new Commands(client);
+    const commandUpdatePromise = commands.updateGuildCommands();
 
     // Discord Bot Login (Console message located in, Ready.ts)
-    await client.login(appConfig.DISCORD_TOKEN);
+    const loginPromise = client.login(appConfig.DISCORD_TOKEN);
+
+    // Wait for critical startup tasks in parallel
+    await Promise.all([ampInitPromise, eventLoaderPromise, commandUpdatePromise, loginPromise]);
 
     // Initialize Discord info
     const guild = await client.guilds.fetch(config.GUILD_ID);

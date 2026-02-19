@@ -32,7 +32,7 @@ describe('Logger wrapper', () => {
 
     logger.info('hello');
     logger.warn('w');
-    logger.error('e', e);
+    logger.error('e', new Error('e'));
     logger.debug('d');
     logger.commands('c');
 

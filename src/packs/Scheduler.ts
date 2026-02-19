@@ -36,7 +36,7 @@ export function scheduleDaily(label: string, timeHHMM: string, task: DailyTask):
       } catch (err: any) {
         logger.error(
           `[Scheduler:${label}] Task failed: ${err?.message ?? err}`,
-          e,
+          err,
         );
       } finally {
         if (!cancelled) scheduleNext(); // schedule again for the next day
