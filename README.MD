@@ -11,6 +11,7 @@ A powerful, multipurpose Discord bot built with **TypeScript** and **Discord.js*
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
+- [Deployment](#deployment)
 - [License](#license)
 
 ---
@@ -145,6 +146,30 @@ npm test
  ├── CustomClient.ts     # Extended Discord Client
  └── Config.ts           # Configuration loader
 ```
+
+---
+
+## Deployment
+
+To deploy the latest version to the production server:
+
+1.  **Run the deployment script**:
+    ```bash
+    npm run deploy:prod
+    ```
+    This will build the project and push the compiled artifacts to the `production` branch.
+
+### **Troubleshooting "Unrelated Histories" on Server**
+
+If the AMP bot instance shows the error `fatal: refusing to merge unrelated histories` during an update, and you do not have terminal access to the server, follow this **Nuclear Reset** procedure:
+
+1.  **Open the File Manager** in your AMP NodeJS instance.
+2.  **Delete all files and folders** *including* the `.git` folder, but **KEEP** your `.env` file (important for your credentials!).
+    - *Note: Deleting the `.git` folder forces AMP to perform a fresh clone, which resolves all history conflicts.*
+3.  **Click the "Update" button** in the AMP dashboard.
+4.  AMP will detect the empty directory and perform a fresh clone of the latest `production` branch.
+
+Once this is done, future updates will work normally as the histories will be synchronized with the new deployment strategy.
 
 ---
 
