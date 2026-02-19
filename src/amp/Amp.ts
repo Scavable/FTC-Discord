@@ -3,8 +3,8 @@ import logger from '../utility/Logger';
 import Servers from '../utility/Servers';
 
 class Amp {
-  private readonly API_BASE_URL: string =
-    process.env.AMP_API_BASE_URL || 'https://amp.feedthecraft.com/';
+  private readonly API_BASE_URL?: string =
+    process.env.AMP_API_BASE_URL;
   private readonly username: string;
   private readonly password: string;
   private readonly token: string;
@@ -26,7 +26,7 @@ class Amp {
   // Sends POST requests to the AMP API
   private async sendPostRequest(url: string, data?: any, SessionID?: string) {
     const doFetch = async (sid?: string) => {
-      const response = await fetch(url, {
+      return await fetch(url, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -35,7 +35,6 @@ class Amp {
         },
         body: JSON.stringify(data),
       });
-      return response;
     };
 
     try {
@@ -145,7 +144,7 @@ class Amp {
     }
   }
 
-  //
+  // Checks the instance module for the whitelist flag
   async getConfig(server: Instance): Promise<boolean> {
     await this.ensureAuthenticated();
     const json = {
@@ -161,10 +160,6 @@ class Amp {
     );
 
     return JSON.parse(JSON.stringify(response)).CurrentValue;
-  }
-
-  private async sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // Sends a string to a console
@@ -196,6 +191,7 @@ class Amp {
     return JSON.stringify(response);
   }
 
+  // Populates the server cache with the latest server info.
   async readFile(servers: Instance[]): Promise<Instance[]> {
     await this.ensureAuthenticated();
 
@@ -245,6 +241,7 @@ class Amp {
     return servers;
   }
 
+  // Work in progress for better and more accurate player counts.
   async getUserList(instanceId: string): Promise<string[]> {
     await this.ensureAuthenticated(instanceId);
 
