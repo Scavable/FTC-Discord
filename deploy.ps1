@@ -23,6 +23,12 @@ if (-not $hasChanges) {
 Write-Host "Staging release folder..." -ForegroundColor Cyan
 git add -f release
 
+# EXCLUSION: Ensure .env is NOT staged for production
+if (Test-Path "release/.env") {
+    Write-Host "Excluding .env from production push..." -ForegroundColor Yellow
+    git reset release/.env
+}
+
 # Check if there are staged changes to commit
 $staged = git diff --cached --name-only
 if ($staged) {

@@ -5,6 +5,7 @@ import {
   Logger as WinstonLogger,
   addColors,
 } from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 const customLevels = {
   levels: {
@@ -59,8 +60,15 @@ class Logger {
             ),
           ),
         }),
-        // Log messages to a file
-        new transports.File({ filename: 'logs/app.log', level: 'info' }),
+        // Log messages to a daily rotating file
+        new DailyRotateFile({
+          filename: 'logs/app-%DATE%.log',
+          datePattern: 'YYYY-MM-DD',
+          zippedArchive: true,
+          maxSize: '20m',
+          maxFiles: '14d',
+          level: 'info',
+        }),
       ],
     });
   }

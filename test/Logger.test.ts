@@ -17,6 +17,7 @@ jest.mock('winston', () => {
       Console: function Console() {},
       File: function File() {},
     },
+    DailyRotateFile: function DailyRotateFile() {},
     format: {
       combine: jest.fn((...args) => args),
       colorize: jest.fn(() => (x: any) => x),

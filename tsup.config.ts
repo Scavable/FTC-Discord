@@ -40,5 +40,14 @@ export default defineConfig({
       fs.copyFileSync(envTemplatePath, releaseEnvTemplatePath);
       console.log('Copied .envTemplate to release/.env.template');
     }
+
+    // Copy .env to release folder for testing
+    const envPath = path.join(process.cwd(), '.env');
+    const releaseEnvPath = path.join(releaseDir, '.env');
+
+    if (fs.existsSync(envPath)) {
+      fs.copyFileSync(envPath, releaseEnvPath);
+      console.log('Copied .env to release/.env');
+    }
   },
 });
