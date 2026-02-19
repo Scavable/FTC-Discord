@@ -1,0 +1,42 @@
+🖥️ **__Machine Specifications__**
+💪 **24/7 Dedicated machine for Minecraft**
+- Proxmox VE w/ Debian 12 Container
+- AMD Ryzen 9 9900X
+- Crucial Pro 192GB DDR5 (4x48GB)
+- 2x500GB SATA SSDs in RAID 1 (proxmox)
+- 2x2TB NVME m.2 SSDs in RAID 1 (servers)
+- 56TB Synology NAS (backups)
+- Verizon Fios Gigabit Fiber
+
+**__Server Staff__**
+🛡️ **Administrators**
+- <@191708873038495744>
+- <@346052822342696970>
+- <@199243395430875147>
+
+⭐ **Leadership**
+- <@161249868701106176>
+- <@292671365297864706>
+- <@108740160362917888>
+
+🛠️ **Maintenance**
+- <@396741156186226688>
+- <@222913305319047170>
+
+👮 **Moderators**
+- <@209468225417641986>
+- <@444960677690605599>
+- <@204316777419636746>
+- <@849523466441064478>
+- <@165569038045413377>
+- <@138702473001959424>
+
+
+**__Useful Links__**
+🌍 **Discord Invite Link:** ```https://discord.gg/FeedTheCraft```
+📝 **Apply for Staff:** [Application Form](<https://forms.gle/GgwiLRRC1ADAWmeQ8>)
+📢 **Send Feedback:** [Feedback Form](<https://forms.gle/dWiVSd1ToprScb1d8>)
+
+**__Useful Information__**
+- The **End & Mining Dimensions** reset at the end of each month! 🚧
+- **Remove personal items by the 25th** to avoid losing them.
