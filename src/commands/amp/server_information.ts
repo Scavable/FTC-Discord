@@ -288,8 +288,9 @@ export default class ServersPanel implements BaseCommand {
       )
         continue;
 
-      await amp.sendConsoleMessage(server, 'list');
-      const currentPlayers = await this.messageFilter(await amp.getUpdates(server.InstanceID));
+      //await amp.sendConsoleMessage(server, 'list');
+      const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
+      //const currentPlayers = await this.messageFilter(await amp.getUpdates(server.InstanceID));
       const serverName = server.FriendlyName.replace(/\d\d\s/, '');
       count += currentPlayers;
 
