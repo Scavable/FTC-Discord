@@ -36,7 +36,7 @@ const appConfig = validateConfig(config);
     let amp = new Amp(config.AMP_USERNAME, config.AMP_PASS, '', false);
     
     // Start AMP initialization, event loading, and command updates in parallel
-    const ampInitPromise = (async () => {
+    await (async () => {
       let instances = await amp.readFile(await amp.getInstances());
       Servers.setAll(instances);
     })();
@@ -51,7 +51,7 @@ const appConfig = validateConfig(config);
     const loginPromise = client.login(appConfig.DISCORD_TOKEN);
 
     // Wait for critical startup tasks in parallel
-    await Promise.all([ampInitPromise, eventLoaderPromise, commandUpdatePromise, loginPromise]);
+    await Promise.all([eventLoaderPromise, commandUpdatePromise, loginPromise]);
 
     // Initialize Discord info
     const guild = await client.guilds.fetch(config.GUILD_ID);
