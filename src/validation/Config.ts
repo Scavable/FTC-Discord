@@ -8,6 +8,7 @@ const configSchema = z.object({
   AMP_PASS: z.string().min(1),
   UPDATE_CHECK_TIME: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   UPDATE_CHANNEL_ID: z.string().min(0).optional(),
+  DISBOARD_CHANNEL_ID: z.string().min(0).optional(),
   CURSEFORGE_API_KEY: z.string().min(10),
 });
 

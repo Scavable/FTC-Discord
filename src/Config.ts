@@ -15,6 +15,7 @@ const {
   CURSEFORGE_API_KEY,
   AUTO_UPDATE_DEPS,
   NODE_ENV,
+  DISBOARD_CHANNEL_ID,
 } = process.env;
 
 // Check for required environment variables
@@ -42,4 +43,5 @@ export const config = {
   CURSEFORGE_API_KEY,
   AUTO_UPDATE_DEPS: (AUTO_UPDATE_DEPS || '').toLowerCase() === 'true',
   IS_PROD: (NODE_ENV || '').toLowerCase() === 'production',
+  DISBOARD_CHANNEL_ID: DISBOARD_CHANNEL_ID || '',
 };

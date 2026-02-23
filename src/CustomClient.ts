@@ -8,13 +8,20 @@ export default class CustomClient extends Client {
   amp: Amp | null;
   messageCache: Map<string, any>;
   updateInterval: NodeJS.Timeout | null;
+  disboardTimer: NodeJS.Timeout | null;
 
   constructor() {
-    super({ intents: [GatewayIntentBits.Guilds] });
+    super({
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+      ],
+    });
     this.commands = new Collection<string, any>();
     this.amp = null;
     this.messageCache = new Map();
     this.updateInterval = null;
+    this.disboardTimer = null;
   }
 
   /**

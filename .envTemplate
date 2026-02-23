@@ -10,9 +10,11 @@
 #UPDATE_CHECK_TIME=
 #UPDATE_CHANNEL_ID=
 #CURSEFORGE_API_KEY=
+#// Optional
+#DISBOARD_CHANNEL_ID=
 # Updates current dependencies to package versions, and installs missing.
-#AUTO_UPDATE_DEPS=
+#AUTO_UPDATE_DEPS=false
 # If development, updates all dependencies to latest versions.
 # If this is in the production enviroment, you will want to make this value "production".
 # Use "production" to disable automatic dependency updates. (production, development)
-#NODE_ENV=
+#NODE_ENV=production

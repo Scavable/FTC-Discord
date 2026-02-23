@@ -94,7 +94,7 @@ export default class DeleteChannelCommand {
         return interaction.editReply('❌ This type of channel cannot be deleted.');
       } catch (error) {
 
-        Logger.error(`Error deleting channel(s): ${error}`, e);
+        Logger.error(`Error deleting channel(s): ${error}`);
         return interaction.editReply('❌ An unexpected error occurred while deleting.');
       }
     };
