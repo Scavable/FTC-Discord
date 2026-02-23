@@ -5,6 +5,7 @@ import RoleMapper from './utility/RoleMapper';
 import { validateConfig } from './validation/Config';
 
 import logger from './utility/Logger';
+import DependencyManager from './utility/DependencyManager';
 import child_process from 'child_process';
 import { scheduleDaily } from './packs/Scheduler';
 import { checkForPackUpdates } from './packs/PackUpdateChecker';
@@ -17,19 +18,8 @@ const appConfig = validateConfig(config);
 
 (async () => {
   try {
-    // Verify required dependencies are installed; fail fast with helpful message
-    const required = ['discord.js', 'dotenv', 'winston', 'prismarine-nbt', 'zod'];
-    logger.info('Verifying dependencies...');
-    for (const dep of required) {
-      try {
-        import.meta.resolve(dep);
-      } catch {
-        throw new Error(
-          `Missing dependency: ${dep}. Please run "npm install" before starting the bot.`,
-        );
-      }
-    }
-    logger.info('All dependencies verified.');
+    // Verify required dependencies are installed; download any missing ones and update any versions outside the limit
+    await DependencyManager.verifyDependencies();
 
     logger.info('Starting bot...');
 

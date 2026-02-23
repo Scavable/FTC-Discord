@@ -13,6 +13,8 @@ const {
   UPDATE_CHECK_TIME,
   UPDATE_CHANNEL_ID,
   CURSEFORGE_API_KEY,
+  AUTO_UPDATE_DEPS,
+  NODE_ENV,
 } = process.env;
 
 // Check for required environment variables
@@ -38,4 +40,6 @@ export const config = {
   UPDATE_CHECK_TIME: UPDATE_CHECK_TIME || '02:00',
   UPDATE_CHANNEL_ID: UPDATE_CHANNEL_ID || '',
   CURSEFORGE_API_KEY,
+  AUTO_UPDATE_DEPS: (AUTO_UPDATE_DEPS || '').toLowerCase() === 'true',
+  IS_PROD: (NODE_ENV || '').toLowerCase() === 'production',
 };
