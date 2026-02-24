@@ -57,8 +57,10 @@ export default class CommandButtons implements BaseCommand {
       const command = customClient.commands.get('reload_all');
       if (command) {
         try {
-          // Asserting as any because reload_all's execute expects ChatInputCommandInteraction
-          // but only uses methods compatible with ButtonInteraction (deferReply, followUp)
+          /**
+           * Asserting as any because reload_all's execute expects ChatInputCommandInteraction
+           * but only uses methods compatible with ButtonInteraction (deferReply, followUp)
+           */
           await command.execute(interaction as any);
         } catch (error) {
           console.error(error);

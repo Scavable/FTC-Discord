@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Client, ClientEvents } from 'discord.js';
 
-// Define Event module interface
+/** Define Event module interface */
 type EventModule = {
   name: keyof ClientEvents;
   once?: boolean;
@@ -18,7 +18,7 @@ class EventLoader {
   }
 
   async loadEvents() {
-    // Correctly resolve the directory path in ESM
+    /** Correctly resolve the directory path in ESM */
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const __root = __dirname.includes('src')
@@ -26,7 +26,7 @@ class EventLoader {
       : __dirname;
     const eventsPath = path.join(__root, 'events');
 
-    // Ensure the events directory exists
+    /** Ensure the events directory exists */
     if (!fs.existsSync(eventsPath)) {
       console.error(`Events directory does not exist: ${eventsPath}`);
       return;
@@ -39,7 +39,7 @@ class EventLoader {
     for (const file of eventFiles) {
       const filePath = path.join(eventsPath, file);
 
-      // Dynamically import the event file
+      /** Dynamically import the event file */
       const event: EventModule = (await import(pathToFileURL(filePath).href))
         .default;
 
@@ -51,7 +51,7 @@ class EventLoader {
         }
       };
 
-      // Register event handler based on whether the event should run once or not
+      /** Register event handler based on whether the event should run once or not */
       if (event.once) {
         this.client.once(event.name, handler);
       } else {

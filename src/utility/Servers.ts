@@ -1,7 +1,7 @@
 import Instance from '../types/Instance';
 
 class Servers {
-  // In-memory cache of servers keyed by FriendlyName
+  /** In-memory cache of servers keyed by FriendlyName */
   public static servers: Map<string, Instance> = new Map<string, Instance>();
   private static lastUpdatedAt: number | null = null;
 
@@ -39,7 +39,7 @@ class Servers {
     this.lastUpdatedAt = Date.now();
   }
 
-  // Returns true if the cache was updated within the provided TTL (in ms)
+  /** Returns true if the cache was updated within the provided TTL (in ms) */
   public static isFresh(ttlMs: number): boolean {
     if (!this.lastUpdatedAt) return false;
     return Date.now() - this.lastUpdatedAt <= ttlMs;

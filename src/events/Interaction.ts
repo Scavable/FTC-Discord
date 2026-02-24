@@ -6,7 +6,7 @@ import logger from '../utility/Logger';
 export default {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction) {
-    // Restrict the bot to a single configured guild only
+    /** Restrict the bot to a single configured guild only */
     if (!interaction.guildId || interaction.guildId !== config.GUILD_ID) {
       if (interaction.isRepliable()) {
         try {
@@ -15,18 +15,18 @@ export default {
             flags: [MessageFlags.Ephemeral],
           });
         } catch (_) {
-          // ignore reply errors (e.g., already replied)
+          /** ignore reply errors (e.g., already replied) */
         }
       }
       return;
     }
 
-    // Handle button interactions
+    /** Handle button interactions */
     if (interaction.isButton()) {
       const btn = interaction as ButtonInteraction;
       const cid = btn.customId || '';
 
-      // Handle Pack Update messages (global/hardcoded)
+      /** Handle Pack Update messages (global/hardcoded) */
       if (cid.startsWith('packupdate:complete')) {
         try {
           await btn.deferUpdate();
@@ -41,7 +41,7 @@ export default {
         return;
       }
 
-      // Delegate to commands that have a handleButton method
+      /** Delegate to commands that have a handleButton method */
       const customClient = interaction.client as CustomClient;
       for (const command of customClient.commands.values()) {
         if (command.handleButton) {
@@ -50,11 +50,11 @@ export default {
         }
       }
 
-      // Unknown button: ignore
+      /** Unknown button: ignore */
       return;
     }
 
-    // Handle modal submissions
+    /** Handle modal submissions */
     if (interaction.isModalSubmit()) {
       const modal = interaction as ModalSubmitInteraction;
       const customClient = interaction.client as CustomClient;
@@ -67,7 +67,7 @@ export default {
       return;
     }
 
-    // Slash command handling
+    /** Slash command handling */
     if (!interaction.isChatInputCommand()) return;
 
     const customClient = interaction.client as CustomClient;

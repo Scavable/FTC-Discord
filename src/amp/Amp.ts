@@ -23,7 +23,7 @@ class Amp {
     this.rememberMe = rememberMe;
   }
 
-  // Sends POST requests to the AMP API
+  /** Sends POST requests to the AMP API */
   private async sendPostRequest(url: string, data?: any, SessionID?: string) {
     const doFetch = async (sid?: string) => {
       return await fetch(url, {
@@ -40,7 +40,7 @@ class Amp {
     try {
       let response = await doFetch(SessionID);
 
-      // If unauthorized/forbidden, try to re-login and retry once
+      /** If unauthorized/forbidden, try to re-login and retry once */
       if (response.status === 401 || response.status === 403) {
         const match = url.match(/Servers\/(.*?)\//);
         const instanceId = match?.[1];
@@ -65,7 +65,7 @@ class Amp {
     }
   }
 
-  // Checks for current login connection
+  /** Checks for current login connection */
   private async ensureAuthenticated(instanceId?: string): Promise<void> {
     if (!instanceId) {
       if (!this.baseSessionId) {
@@ -74,13 +74,13 @@ class Amp {
       return;
     }
 
-    // Check for instance session
+    /** Check for instance session */
     if (!this.instanceSessionIds.has(instanceId)) {
-      await this.login(instanceId); // Refresh instance session if not present
+      await this.login(instanceId); /** Refresh instance session if not present */
     }
   }
 
-  // Logs into the AMP container and instances.
+  /** Logs into the AMP container and instances. */
   public async login(instanceId?: string): Promise<void> {
     try {
       const json = {
@@ -100,9 +100,9 @@ class Amp {
         logger.amp(`AMP logged in successfully.`);
 
         if (instanceId) {
-          this.instanceSessionIds.set(instanceId, response.sessionID); // Cache instance session ID
+          this.instanceSessionIds.set(instanceId, response.sessionID); /** Cache instance session ID */
         } else {
-          this.baseSessionId = response.sessionID; // Cache base session ID
+          this.baseSessionId = response.sessionID; /** Cache base session ID */
         }
 
 
@@ -116,7 +116,7 @@ class Amp {
     }
   }
 
-  // Returns all AMP instances including AMP container
+  /** Returns all AMP instances including AMP container */
   async getInstances(): Promise<Instance[]> {
     await this.ensureAuthenticated();
     const json = { 'ForceIncludeSelf': false };
@@ -144,11 +144,11 @@ class Amp {
     }
   }
 
-  // Checks the instance module for the whitelist flag
+  /** Checks the instance module for the whitelist flag */
   async getConfig(server: Instance): Promise<boolean> {
     await this.ensureAuthenticated();
     const json = {
-      // @ts-ignore
+      /** @ts-ignore */
       SettingNode: 'Game',
       node: 'MinecraftModule.Game.Whitelist',
     };
@@ -162,7 +162,7 @@ class Amp {
     return JSON.parse(JSON.stringify(response)).CurrentValue;
   }
 
-  // Sends a string to a console
+  /** Sends a string to a console */
   async sendConsoleMessage(instance: Instance, message: string): Promise<void> {
     await this.ensureAuthenticated(instance.InstanceID);
     const json = {
@@ -177,9 +177,11 @@ class Amp {
     logger.info(`Sent console message to ${instance.FriendlyName}: ${message}`);
   }
 
-  // Gets changes to the server status, in addition to any notifications or
-  // console output that have occurred since the last time GetUpdates() was
-  // called by the current session.
+  /**
+   * Gets changes to the server status, in addition to any notifications or
+   * console output that have occurred since the last time GetUpdates() was
+   * called by the current session.
+   */
   async getUpdates(instanceId: string):Promise<string> {
     await this.ensureAuthenticated(instanceId);
     const json = { };
@@ -191,7 +193,7 @@ class Amp {
     return JSON.stringify(response);
   }
 
-  // Populates the server cache with the latest server info.
+  /** Populates the server cache with the latest server info. */
   async readFile(servers: Instance[]): Promise<Instance[]> {
     await this.ensureAuthenticated();
 
@@ -227,7 +229,7 @@ class Amp {
             server.CurseForgeURL = temp.CurseForgeURL;
             server.RoleName = temp.RoleName;
           } catch (error) {
-            // @ts-ignore
+            /** @ts-ignore */
             logger.error(error);
           }
         }
@@ -235,13 +237,13 @@ class Amp {
       }),
     );
 
-    // Update cache only; no file persistence
+    /** Update cache only; no file persistence */
     Servers.setAll(servers);
 
     return servers;
   }
 
-  // Work in progress for better and more accurate player counts.
+  /** Work in progress for better and more accurate player counts. */
   async getUserList(instanceId: string): Promise<string[]> {
     await this.ensureAuthenticated(instanceId);
 
@@ -267,7 +269,7 @@ class Amp {
     console.log(list2);
 
     return [];
-    //return response.map((user: { Username: string }) => user.Username);
+    /** return response.map((user: { Username: string }) => user.Username); */
   }
 
 }

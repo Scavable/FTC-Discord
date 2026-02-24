@@ -44,7 +44,7 @@ export default class DeleteChannelCommand {
       const member = interaction.member as GuildMember;
       const targetChannel = interaction.options.getChannel('channel', true);
 
-      // Optional: extra member permission guard (beyond default member permissions)
+      /** Optional: extra member permission guard (beyond default member permissions) */
       if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
         return interaction.reply({ content: '❌ Missing Manage Channels permission.', flags: [MessageFlags.Ephemeral] });
       }

@@ -2,7 +2,7 @@ import logger from '../utility/Logger';
 
 export type DailyTask = () => Promise<void> | void;
 
-// Time till next check
+/** Time till next check */
 function parseTimeToNextDelay(timeHHMM: string): number {
   const [hh, mm] = timeHHMM.split(':').map(Number);
   const now = new Date();
@@ -39,7 +39,7 @@ export function scheduleDaily(label: string, timeHHMM: string, task: DailyTask):
           err,
         );
       } finally {
-        if (!cancelled) scheduleNext(); // schedule again for the next day
+        if (!cancelled) scheduleNext(); /** schedule again for the next day */
       }
     }, delay);
   };

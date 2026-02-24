@@ -11,13 +11,13 @@ export type CfFile = {
   id: number;
   displayName: string;
   fileName: string;
-  fileDate: string; // ISO
+  fileDate: string; /** ISO */
 };
 
 export type LatestFileInfo = {
   mod: CfMod;
   latestFile: CfFile;
-  latestFileUrl: string; // Project files URL
+  latestFileUrl: string; /** Project files URL */
   matchScore?: number;
   matchType?: string;
 };

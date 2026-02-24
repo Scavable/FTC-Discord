@@ -27,14 +27,14 @@ async function cfFetch<T>(pathAndQuery: string): Promise<T> {
   return json as T;
 }
 
-// Normalize and matching helpers
+/** Normalize and matching helpers */
 function normalizeName(s: string): string {
   return s
     .toLowerCase()
     .trim()
     .replace(/[._\-()\[\]:]/g, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/\s(to the sky|skyblock)$/g, ''); // ignore common suffixes that might be missing in search
+    .replace(/\s(to the sky|skyblock)$/g, ''); /** ignore common suffixes that might be missing in search */
 }
 
 function isSlugLike(s: string): boolean {
@@ -79,7 +79,7 @@ type RankedCandidate = {
 };
 
 async function searchRanked(name: string): Promise<RankedCandidate[]> {
-  // 1. If it's a numeric ID, fetch it directly.
+  /** 1. If it's a numeric ID, fetch it directly. */
   if (/^\d+$/.test(name)) {
     try {
       const { data: m } = await cfFetch<{ data: any }>(`/v1/mods/${name}`);
@@ -97,18 +97,18 @@ async function searchRanked(name: string): Promise<RankedCandidate[]> {
           matchType: 'exactSlug',
         }];
       }
-    } catch { /* fallback to search */ }
+    } catch { /** fallback to search */ }
   }
 
   const q = new URLSearchParams({
     gameId: String(GAME_ID_MINECRAFT),
     classId: String(CLASS_ID_MODPACK),
-    sortField: '2', // popularity
+    sortField: '2', /** popularity */
     sortOrder: 'desc',
     pageSize: '50',
   });
 
-  // 2. Perform initial search (slug or name)
+  /** 2. Perform initial search (slug or name) */
   if (isSlugLike(name)) {
     q.set('slug', name);
   } else {
@@ -118,14 +118,14 @@ async function searchRanked(name: string): Promise<RankedCandidate[]> {
   type Resp = { data: any[] };
   let resp = await cfFetch<Resp>(`/v1/mods/search?${q.toString()}`);
 
-  // 3. Fallback: if slug search failed, try generic filter
+  /** 3. Fallback: if slug search failed, try generic filter */
   if (isSlugLike(name) && (!resp.data || resp.data.length === 0)) {
     q.delete('slug');
     q.set('searchFilter', name);
     resp = await cfFetch<Resp>(`/v1/mods/search?${q.toString()}`);
   }
 
-  // 4. Fallback: if still nothing, try cleaning "noisy" names (e.g., "ATM10: To the Sky - v1.0")
+  /** 4. Fallback: if still nothing, try cleaning "noisy" names (e.g., "ATM10: To the Sky - v1.0") */
   if ((!resp.data || resp.data.length === 0) && (name.includes('-') || name.includes(':'))) {
     const cleaner = name.split(/[:\-]/)[0].trim();
     if (cleaner.length > 3 && cleaner !== name) {
@@ -169,7 +169,7 @@ async function searchRanked(name: string): Promise<RankedCandidate[]> {
     } else {
       const t = new Set(tokenize(mod.name));
       const jac = jaccard(qTokens, t);
-      score = Math.floor(60 + 40 * jac); // 60..100 depending on overlap
+      score = Math.floor(60 + 40 * jac); /** 60..100 depending on overlap */
       matchType = 'tokenOverlap';
 
       const dist = levenshtein(nameNorm, qNorm);
@@ -193,8 +193,10 @@ async function searchRanked(name: string): Promise<RankedCandidate[]> {
 
 
 export async function getLatestFileForMod(modId: number): Promise<CfFile | null> {
-  // https://docs.curseforge.com/#get-mod-files
-  // We'll request a reasonable page size and pick most recent by fileDate
+  /**
+   * https://docs.curseforge.com/#get-mod-files
+   * We'll request a reasonable page size and pick most recent by fileDate
+   */
   type Resp = { data: CfFile[] };
   const q = new URLSearchParams({ pageSize: '50' });
   const resp = await cfFetch<Resp>(`/v1/mods/${modId}/files?${q.toString()}`);
@@ -215,13 +217,13 @@ async function selectBestMod(query: string, strict: boolean): Promise<RankedCand
   const ranked = await searchRanked(effectiveQuery);
   if (ranked.length === 0) return null;
 
-  // 1. If we have a slug from a URL, prioritize the exact slug match.
+  /** 1. If we have a slug from a URL, prioritize the exact slug match. */
   if (urlSlug) {
     const exactSlugMatch = ranked.find(r => r.mod.slug.toLowerCase() === urlSlug.toLowerCase());
     if (exactSlugMatch) return exactSlugMatch;
   }
 
-  // 2. In strict mode (PackName/URL provided), only accept high-confidence matches.
+  /** 2. In strict mode (PackName/URL provided), only accept high-confidence matches. */
   if (strict) {
     const strong = ranked.filter(r => 
       r.matchType === 'exactName' || 
@@ -236,7 +238,7 @@ async function selectBestMod(query: string, strict: boolean): Promise<RankedCand
     return null;
   }
 
-  // 3. Fallback for non-strict (FriendlyName search): just return the top candidate.
+  /** 3. Fallback for non-strict (FriendlyName search): just return the top candidate. */
   return ranked[0];
 }
 
@@ -244,31 +246,33 @@ export function extractSlugFromUrl(s: string): string | null {
   if (!s.includes('curseforge.com/')) return null;
   try {
     const url = new URL(s);
-    const path = url.pathname.replace(/\/$/, ''); // remove trailing slash
+    const path = url.pathname.replace(/\/$/, ''); /** remove trailing slash */
     const parts = path.split('/');
 
-    // Standard modpack URL: /minecraft/modpacks/slug
-    // Files page: /minecraft/modpacks/slug/files
-    // Specific file: /minecraft/modpacks/slug/files/12345
-    // We want the part after 'modpacks'
+    /**
+     * Standard modpack URL: /minecraft/modpacks/slug
+     * Files page: /minecraft/modpacks/slug/files
+     * Specific file: /minecraft/modpacks/slug/files/12345
+     * We want the part after 'modpacks'
+     */
     const modpacksIndex = parts.indexOf('modpacks');
     if (modpacksIndex !== -1 && parts.length > modpacksIndex + 1) {
       return parts[modpacksIndex + 1];
     }
 
-    // Projects fallback: /projects/slug or /projects/slug/files
+    /** Projects fallback: /projects/slug or /projects/slug/files */
     const projectsIndex = parts.indexOf('projects');
     if (projectsIndex !== -1 && parts.length > projectsIndex + 1) {
       return parts[projectsIndex + 1];
     }
 
-    // Generic fallback: last part if it doesn't match known subpages
+    /** Generic fallback: last part if it doesn't match known subpages */
     const lastPart = parts[parts.length - 1];
     if (lastPart && !['files', 'screenshots', 'relations', 'install', 'download'].includes(lastPart.toLowerCase())) {
       return lastPart;
     }
   } catch {
-    // maybe it's not a full URL but just contains curseforge.com
+    /** maybe it's not a full URL but just contains curseforge.com */
     const match = s.match(/curseforge\.com\/(?:minecraft\/modpacks|projects)\/([a-z0-9\-]+)/i);
     if (match) return match[1];
   }

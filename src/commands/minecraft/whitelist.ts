@@ -158,7 +158,7 @@ export default class Whitelist implements BaseCommand {
 
       await amp.sendConsoleMessage(targetServer, command);
 
-      // Wait for 2 seconds to allow the command to process and appear in logs
+      /** Wait for 2 seconds to allow the command to process and appear in logs */
       setTimeout(async () => {
         try {
           const updatesRaw = await amp.getUpdates(targetServer.InstanceID);

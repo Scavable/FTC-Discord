@@ -4,7 +4,7 @@ import { config } from './Config';
 
 export default class CustomClient extends Client {
   commands: Collection<string, any>;
-  // Single-guild state
+  /** Single-guild state */
   amp: Amp | null;
   messageCache: Map<string, any>;
   updateInterval: NodeJS.Timeout | null;
@@ -29,7 +29,7 @@ export default class CustomClient extends Client {
    */
   initializeState() {
     if (!this.amp) {
-      // AMP credentials pulled from config
+      /** AMP credentials pulled from config */
       this.amp = new Amp(config.AMP_USERNAME, config.AMP_PASS, '', false);
       this.messageCache = new Map();
       this.updateInterval = null;
@@ -54,7 +54,7 @@ export default class CustomClient extends Client {
       clearInterval(this.updateInterval);
       this.updateInterval = null;
     }
-    // Clear caches and AMP reference
+    /** Clear caches and AMP reference */
     this.messageCache.clear();
     this.amp = null;
   }

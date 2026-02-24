@@ -7,7 +7,7 @@ import { getLatestByPackNameAPI } from './CurseForgeApi';
 import Servers from '../utility/Servers';
 
 function normalizeServerName(name: string): string {
-  // Remove leading two digits and space (e.g., "01 My Pack" -> "My Pack")
+  /** Remove leading two digits and space (e.g., "01 My Pack" -> "My Pack") */
   return name.replace(/^[0-9]{2}\s/, '').trim();
 }
 
@@ -32,8 +32,10 @@ function shouldSkip(server: Instance): boolean {
 export async function checkForPackUpdates(client: CustomClient, channelId?: string): Promise<void> {
   const amp: Amp = client.getAmpInstance();
 
-  // If the cache was just populated (e.g., by Bot.ts at startup), avoid immediately refreshing again.
-  // Treat cache as fresh for 30 seconds to prevent duplicate AMP calls on startup.
+  /**
+   * If the cache was just populated (e.g., by Bot.ts at startup), avoid immediately refreshing again.
+   * Treat cache as fresh for 30 seconds to prevent duplicate AMP calls on startup.
+   */
   const FRESH_TTL_MS = 30_000;
   let servers: Instance[];
 
@@ -47,7 +49,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
     servers = Servers.getAll();
   }
 
-  // Refresh servers and pack info from AMP (updates FTCVersion, FTCIP, Hidden, Whitelisted)
+  /** Refresh servers and pack info from AMP (updates FTCVersion, FTCIP, Hidden, Whitelisted) */
   const updates: {
     server: Instance;
     packName: string;
@@ -96,15 +98,17 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
           latest.latestFile.displayName || latest.latestFile.fileName;
         let latestVersion = latestNameRaw;
 
-        // Extract version pattern (x.x.x or x.x.x.x etc.)
+        /** Extract version pattern (x.x.x or x.x.x.x etc.) */
         const versionMatch = latestNameRaw.match(/(\d+(?:\.\d+)+)/);
         if (versionMatch) {
           latestVersion = versionMatch[1];
         }
 
-        // Simple comparison heuristic: if current version string is not contained in latest file name, assume an update is available.
-        // This is intentionally conservative due to varied naming schemes.
-        // Normalize: remove 'v' prefix if present for comparison
+        /**
+         * Simple comparison heuristic: if current version string is not contained in latest file name, assume an update is available.
+         * This is intentionally conservative due to varied naming schemes.
+         * Normalize: remove 'v' prefix if present for comparison
+         */
         const normCurrent = currentVersion.toLowerCase().replace(/^v/, '');
         const normLatestName = latestNameRaw.toLowerCase();
 
@@ -113,7 +117,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
           (normLatestName.includes(normCurrent) ||
             normLatestName.includes(currentVersion.toLowerCase()))
         ) {
-          return; // up to date
+          return; /** up to date */
         }
 
         updates.push({
@@ -137,7 +141,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
     return;
   }
 
-  // Log summary
+  /** Log summary */
   logger.updates(`[PackUpdate] Updates detected (Total ${updates.length}). Posting per-pack messages...`);
 
   if (!channelId) {
@@ -157,7 +161,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
       return;
     }
 
-    // Purge previous bot messages in the channel before posting new updates
+    /** Purge previous bot messages in the channel before posting new updates */
     try {
       const fetched = await channel.messages.fetch({ limit: 100 });
       const botId = client.user?.id;
@@ -171,7 +175,7 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
       logger.warn(`[PackUpdate] Failed to purge previous messages in channel ${channelId}: ${purgeErr?.message ?? purgeErr}`);
     }
 
-    // Post individual messages with a "Completed" button
+    /** Post individual messages with a "Completed" button */
     for (const u of updates) {
       const embed = new EmbedBuilder()
         .setTitle(`Update: ${u.packName}`)

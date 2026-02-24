@@ -21,7 +21,7 @@ export default class ReloadAll {
 
         const client = interaction.client as CustomClient;
 
-        // Clear existing commands and reload from the CommandRegistry via CommandLoader
+        /** Clear existing commands and reload from the CommandRegistry via CommandLoader */
         client.commands.clear();
         await new Commands(client).updateGuildCommands();
 

@@ -21,7 +21,7 @@ export default class CreateCategoryCommand {
           .setDescription('Name of the category to create')
           .setRequired(true),
       )
-      .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels); // Restrict command to users with Manage Channels permission
+      .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels); /** Restrict command to users with Manage Channels permission */
   }
 
   createCommandFunctionality() {
@@ -38,7 +38,7 @@ export default class CreateCategoryCommand {
       const member = interaction.member;
       const categoryName = interaction.options.getString('category_name');
 
-      // Restrict command to users with the "staff" role
+      /** Restrict command to users with the "staff" role */
       if (!member?.roles.cache.some((role: Role) => role.name === 'Staff')) {
         return await interaction.editReply(
           '❌ You do not have the required role to run this command.',
@@ -52,14 +52,14 @@ export default class CreateCategoryCommand {
       }
 
       try {
-        // Create the category channel with permissions
+        /** Create the category channel with permissions */
         const category = await guild.channels.create({
           name: categoryName,
           type: ChannelType.GuildCategory,
           position: 0,
           permissionOverwrites: [
             {
-              id: guild.id, // @everyone role ID
+              id: guild.id, /** @everyone role ID */
               deny: [
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.ManageChannels,
@@ -140,13 +140,13 @@ export default class CreateCategoryCommand {
           ],
         });
 
-        // Prepend the category name to the child channel names
+        /** Prepend the category name to the child channel names */
         const announcementName = `${categoryName}-announcements`;
         const generalChatName = `${categoryName}-general-chat`;
         const supportChatName = `${categoryName}-support-chat`;
         const voiceChannelName = `${categoryName}-voice-channel`;
 
-        // Create the announcement channel
+        /** Create the announcement channel */
         await guild.channels.create({
           name: announcementName,
           type: ChannelType.GuildAnnouncement,
@@ -192,7 +192,7 @@ export default class CreateCategoryCommand {
           ],
         });
 
-        // Create two text channels
+        /** Create two text channels */
         await guild.channels.create({
           name: generalChatName,
           type: ChannelType.GuildText,
@@ -205,16 +205,16 @@ export default class CreateCategoryCommand {
           parent: category.id,
         });
 
-        // Create a voice channel
+        /** Create a voice channel */
         await guild.channels.create({
           name: voiceChannelName,
           type: ChannelType.GuildVoice,
           parent: category.id,
-          //bitrate: 64000, // Default bitrate for voice channel
-          //userLimit: 10, // Limit the number of users in the voice channel
+          /** bitrate: 64000, */ /** Default bitrate for voice channel */
+          /** userLimit: 10, */ /** Limit the number of users in the voice channel */
         });
 
-        // Respond with success message
+        /** Respond with success message */
         await interaction.editReply(
           `✅ Category **${categoryName}** created successfully with child channels!`,
         );

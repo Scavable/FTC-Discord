@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Values from environment variables
+/** Values from environment variables */
 const {
   DISCORD_TOKEN,
   CLIENT_ID,
@@ -18,7 +18,7 @@ const {
   DISBOARD_CHANNEL_ID,
 } = process.env;
 
-// Check for required environment variables
+/** Check for required environment variables */
 if (
   !DISCORD_TOKEN ||
   !CLIENT_ID ||
@@ -30,7 +30,7 @@ if (
   throw new Error('Missing environment variables');
 }
 
-// Assigned default values for optional config items
+/** Assigned default values for optional config items */
 export const config = {
   DISCORD_TOKEN,
   CLIENT_ID,

@@ -32,23 +32,23 @@ export default class ServersPanel implements BaseCommand {
 
   async createCommandFunctionality() {
     return async (interaction: ChatInputCommandInteraction) => {
-      const client = interaction.client as CustomClient; // Cast to your custom client
+      const client = interaction.client as CustomClient; /** Cast to your custom client */
       const guild = interaction.guild;
 
       if (!guild) {
         return await interaction.reply('❌ Guild not found.');
       }
 
-      // If the panel is running, stop it
+      /** If the panel is running, stop it */
       if (client.updateInterval) {
-        clearInterval(client.updateInterval); // Stop the interval
-        client.cleanupState(); // Clean up the state
+        clearInterval(client.updateInterval); /** Stop the interval */
+        client.cleanupState(); /** Clean up the state */
         return await interaction.reply(
           '✅ Server status panel has been stopped.',
         );
       }
 
-      // Initialize state and AMP instance
+      /** Initialize state and AMP instance */
       client.initializeState();
       const amp = client.getAmpInstance();
       await amp.login();
@@ -66,7 +66,7 @@ export default class ServersPanel implements BaseCommand {
           type: ChannelType.GuildText,
           permissionOverwrites: [
             {
-              id: guild.id, // @everyone role ID
+              id: guild.id, /** @everyone role ID */
               deny: [
                 PermissionFlagsBits.ManageChannels,
                 PermissionFlagsBits.ManageRoles,
@@ -113,19 +113,19 @@ export default class ServersPanel implements BaseCommand {
       await interaction.editReply('✅ Server status panel started.');
 
       const messageCache = client.messageCache!;
-      // Ensure the static server information.txt message exists as plain text (not an embed)
+      /** Ensure the static server information.txt message exists as plain text (not an embed) */
       const firstEnsure = await this.ensureOrUpdateStaticInfo(channel);
-      let forceRecreateEmbeds = firstEnsure.created; // if we just posted the static, recreate embeds to appear below it
+      let forceRecreateEmbeds = firstEnsure.created; /** if we just posted the static, recreate embeds to appear below it */
       const updateLoop = async () => {
         try {
-          // On every cycle, check if static content changed and update it in place (no reordering)
+          /** On every cycle, check if static content changed and update it in place (no reordering) */
           const ensureResult = await this.ensureOrUpdateStaticInfo(channel);
           if (ensureResult.created) {
-            // If the static had to be recreated (e.g., deleted manually), force one-time embed recreation
+            /** If the static had to be recreated (e.g., deleted manually), force one-time embed recreation */
             forceRecreateEmbeds = true;
           }
           await this.updateServerStatus(amp, channel, messageCache, forceRecreateEmbeds);
-          // Only force recreation once, after a successful update
+          /** Only force recreation once, after a successful update */
           if (forceRecreateEmbeds) forceRecreateEmbeds = false;
         } catch (error) {
           console.error(
@@ -135,14 +135,16 @@ export default class ServersPanel implements BaseCommand {
         }
       };
 
-      // Start the update loop
-      // Run every 60 seconds
+      /**
+       * Start the update loop
+       * Run every 60 seconds
+       */
       client.updateInterval = setInterval(
         updateLoop,
         60000,
       );
 
-      // Run the first update immediately
+      /** Run the first update immediately */
       await updateLoop();
     };
   }
@@ -153,17 +155,21 @@ export default class ServersPanel implements BaseCommand {
       const servers = await amp.readFile(await amp.getInstances());
       if (!servers) return;
 
-      // Update in-memory cache so commands can use fresh data
+      /** Update in-memory cache so commands can use fresh data */
       Servers.setAll(servers);
       const summary = await this.overviewEmbed(amp, servers);
       const embeds = await this.individualEmbeds(servers);
 
-      // Order: Static plain-text message (posted once, outside of embeds),
-      // then overview and individual dynamic embeds
+      /**
+       * Order: Static plain-text message (posted once, outside of embeds),
+       * then overview and individual dynamic embeds
+       */
       embeds.unshift(summary);
 
-      // Ensure static message stays at the top (older) and embeds at the bottom (newer)
-      // If the static message is newer than existing embed messages, force a one-time recreation
+      /**
+       * Ensure static message stays at the top (older) and embeds at the bottom (newer)
+       * If the static message is newer than existing embed messages, force a one-time recreation
+       */
       try {
         const filePath = path.join(process.cwd(), 'server information.txt');
         if (fs.existsSync(filePath)) {
@@ -183,7 +189,7 @@ export default class ServersPanel implements BaseCommand {
           }
         }
       } catch (_) {
-        // ignore detection errors; fall back to passed flag
+        /** ignore detection errors; fall back to passed flag */
       }
 
       await this.updateEmbeds(embeds, channel, messageCache, forceRecreateEmbeds);
@@ -227,7 +233,7 @@ export default class ServersPanel implements BaseCommand {
         return { created: true, updated: false };
       }
 
-      // Normalize both sides to avoid false positives due to CRLF vs LF differences
+      /** Normalize both sides to avoid false positives due to CRLF vs LF differences */
       const fileNorm = this.normalizeContent(displayContent);
       const msgNorm = this.normalizeContent(staticMsg.content || '');
       if (msgNorm !== fileNorm) {
@@ -242,13 +248,15 @@ export default class ServersPanel implements BaseCommand {
     }
   }
 
-  // Normalize content for reliable comparison across platforms and Discord formatting
+  /** Normalize content for reliable comparison across platforms and Discord formatting */
   private normalizeContent(s: string): string {
     return s.replace(/\r\n/g, '\n').trim();
   }
 
-  // Parse leading @silent directive from the first line if present.
-  // Returns the content to display (without the directive), whether it was silent, and the header line used to match the message.
+  /**
+   * Parse leading @silent directive from the first line if present.
+   * Returns the content to display (without the directive), whether it was silent, and the header line used to match the message.
+   */
   private parseSilentDirective(content: string): { displayContent: string; silent: boolean; headerLine: string } {
     const lines = content.split(/\r?\n/);
     if (lines.length === 0) {
@@ -262,7 +270,7 @@ export default class ServersPanel implements BaseCommand {
       return '';
     });
     if (silent && before !== first) {
-      // Trim leading spaces left after removing directive
+      /** Trim leading spaces left after removing directive */
       first = first.replace(/^\s+/, '');
     }
     lines[0] = first;
@@ -272,7 +280,7 @@ export default class ServersPanel implements BaseCommand {
   }
 
   async overviewEmbed(amp: Amp, servers: Instance[]): Promise<EmbedBuilder> {
-    // Overview of pack and player count
+    /** Overview of pack and player count */
     let summary = new EmbedBuilder().setTitle('Server Status');
     let field: string = ``;
     let count = 0;
@@ -288,9 +296,9 @@ export default class ServersPanel implements BaseCommand {
       )
         continue;
 
-      //await amp.sendConsoleMessage(server, 'list');
+      /** await amp.sendConsoleMessage(server, 'list'); */
       const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
-      //const currentPlayers = await this.messageFilter(await amp.getUpdates(server.InstanceID));
+      /** const currentPlayers = await this.messageFilter(await amp.getUpdates(server.InstanceID)); */
       const serverName = server.FriendlyName.replace(/\d\d\s/, '');
       count += currentPlayers;
 
@@ -308,13 +316,13 @@ export default class ServersPanel implements BaseCommand {
 
   async messageFilter(message: string): Promise<number> {
     let time = new Date();
-    const updates = JSON.parse(message); // Get all updates for the instance
+    const updates = JSON.parse(message); /** Get all updates for the instance */
 
     if (Array.isArray(updates.ConsoleEntries) && updates.ConsoleEntries.length > 0) {
-      // Filter console entries to only include those after the recorded time
+      /** Filter console entries to only include those after the recorded time */
       const recentEntries = updates.ConsoleEntries.filter((entry: any) => {
         const entryDate = new Date(entry.Timestamp);
-        return entryDate.getTime() > time.getTime() - 9000; // Filter based on timestamp
+        return entryDate.getTime() > time.getTime() - 9000; /** Filter based on timestamp */
       });
 
       for (const entry of recentEntries) {
@@ -329,7 +337,7 @@ export default class ServersPanel implements BaseCommand {
   }
 
   async individualEmbeds(servers: Instance[]): Promise<EmbedBuilder[]> {
-    // Individual embeds
+    /** Individual embeds */
     return servers
       .filter(
         (info: Instance) =>
@@ -416,16 +424,16 @@ export default class ServersPanel implements BaseCommand {
 
     const fetched = await channel.messages.fetch({ limit: 100 });
     const existingMessages = Array.from(fetched.values());
-    // Work only with existing embed messages, leave any plain-text (like the static info) untouched
+    /** Work only with existing embed messages, leave any plain-text (like the static info) untouched */
     let existingEmbedMessages = existingMessages.filter((m) => m.embeds && m.embeds.length > 0);
 
-    // If forced recreation, delete existing embed messages so new ones are created after the static message
+    /** If forced recreation, delete existing embed messages so new ones are created after the static message */
     if (forceRecreate && existingEmbedMessages.length > 0) {
       for (const msg of existingEmbedMessages) {
         try {
           await msg.delete();
         } catch (_) {
-          // ignore individual delete errors
+          /** ignore individual delete errors */
         }
         messageCache.delete(msg.id);
       }

@@ -13,50 +13,53 @@ import Amp from './amp/Amp';
 import Servers from './utility/Servers';
 import Commands from './utility/Commands';
 
-const client = new CustomClient(); // Use CustomClient instead of Client
+const client = new CustomClient();
 const appConfig = validateConfig(config);
 
+/** Main starting point */
 (async () => {
   try {
-    // Verify required dependencies are installed; download any missing ones and update any versions outside the limit
+    /**
+     * Verify required dependencies are installed;
+     * download any missing ones and update any versions outside the limit
+     */
     await DependencyManager.verifyDependencies();
 
-    logger.info('Starting bot...');
+    let amp = new Amp(config.AMP_USERNAME, config.AMP_PASS, "", false);
 
-    let amp = new Amp(config.AMP_USERNAME, config.AMP_PASS, '', false);
-    
-    // Start AMP initialization, event loading, and command updates in parallel
+    /**
+     * Populate the Servers cache with the current instances from AMP
+     * Must be done in sync to avoid race conditions with other operations
+     */
     await (async () => {
       let instances = await amp.readFile(await amp.getInstances());
       Servers.setAll(instances);
     })();
 
-    // Backbone Classes
+    logger.info("Starting bot...");
+
+    /** Load events and commands from files into the client. */
     const eventLoaderPromise = new EventLoader(client).loadEvents();
+    const commandUpdatePromise = new Commands(client).updateGuildCommands();
 
-    const commands = new Commands(client);
-    const commandUpdatePromise = commands.updateGuildCommands();
-
-    // Discord Bot Login (Console message located in, Ready.ts)
+    /** Discord Bot Login (Console message located in, Ready.ts) */
     const loginPromise = client.login(appConfig.DISCORD_TOKEN);
 
-    // Wait for critical startup tasks in parallel
+    /** Wait for critical startup tasks in parallel */
     await Promise.all([eventLoaderPromise, commandUpdatePromise, loginPromise]);
 
-    // Initialize Discord info
+    /** Initialize Discord info */
     const guild = await client.guilds.fetch(config.GUILD_ID);
-    const roleMapper = new RoleMapper(guild);
-    await roleMapper.initialize();
+    await new RoleMapper(guild).initialize();
 
-    // Schedule daily pack update checks
-    scheduleDaily('PackUpdate', config.UPDATE_CHECK_TIME, async () => {
+    /** Schedule daily pack update checks */
+    scheduleDaily("PackUpdate", config.UPDATE_CHECK_TIME, async () => {
       await checkForPackUpdates(client, config.UPDATE_CHANNEL_ID || undefined);
     });
 
-    // Also run once on startup
+    /** Also run once on startup */
     await checkForPackUpdates(client, config.UPDATE_CHANNEL_ID || undefined);
-
   } catch (error) {
-    console.error('Error during bot initialization:', error);
+    console.error("Error during bot initialization:", error);
   }
 })();
