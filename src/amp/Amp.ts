@@ -1,10 +1,13 @@
 import Instance from '../types/Instance';
 import logger from '../utility/Logger';
 import Servers from '../utility/Servers';
+import Core from './core/Core';
+import FileManager from './file/FileManager';
+import { IAmpClient } from './AmpModule';
 
-class Amp {
-  private readonly API_BASE_URL?: string =
-    process.env.AMP_API_BASE_URL;
+class Amp implements IAmpClient {
+  public readonly API_BASE_URL: string =
+    process.env.AMP_API_BASE_URL || '';
   private readonly username: string;
   private readonly password: string;
   private readonly token: string;
@@ -16,15 +19,27 @@ class Amp {
   private ID: string = '';
   private instances: Instance[] = [];
 
+  // Sub-modules
+  public readonly core: Core;
+  public readonly fileManager: FileManager;
+
   constructor(username: string, password: string, token = '', rememberMe = false) {
     this.username = username;
     this.password = password;
     this.token = token;
     this.rememberMe = rememberMe;
+
+    this.core = new Core(this);
+    this.fileManager = new FileManager(this);
+  }
+
+  /** Gets the session ID for the given instance, or the base session ID if none provided. */
+  public getSessionId(instanceId?: string): string {
+    return (instanceId ? this.instanceSessionIds.get(instanceId) : this.baseSessionId) || '';
   }
 
   /** Sends POST requests to the AMP API */
-  private async sendPostRequest(url: string, data?: any, SessionID?: string) {
+  public async sendPostRequest(url: string, data?: any, SessionID?: string) {
     const doFetch = async (sid?: string) => {
       return await fetch(url, {
         method: 'POST',
@@ -45,9 +60,7 @@ class Amp {
         const match = url.match(/Servers\/(.*?)\//);
         const instanceId = match?.[1];
         await this.login(instanceId);
-        const refreshedSession = instanceId
-          ? this.instanceSessionIds.get(instanceId)
-          : this.baseSessionId;
+        const refreshedSession = this.getSessionId(instanceId);
         response = await doFetch(refreshedSession);
       }
 
@@ -66,7 +79,7 @@ class Amp {
   }
 
   /** Checks for current login connection */
-  private async ensureAuthenticated(instanceId?: string): Promise<void> {
+  public async ensureAuthenticated(instanceId?: string): Promise<void> {
     if (!instanceId) {
       if (!this.baseSessionId) {
         await this.login();
@@ -147,50 +160,19 @@ class Amp {
   /** Checks the instance module for the whitelist flag */
   async getConfig(server: Instance): Promise<boolean> {
     await this.ensureAuthenticated();
-    const json = {
-      /** @ts-ignore */
-      SettingNode: 'Game',
-      node: 'MinecraftModule.Game.Whitelist',
-    };
-
-    const response = await this.sendPostRequest(
-      `${this.API_BASE_URL}API/ADSModule/Servers/${server.InstanceID}/API/Core/GetConfig`,
-      json,
-      this.instanceSessionIds.get(server.InstanceID) || '',
-    );
-
-    return JSON.parse(JSON.stringify(response)).CurrentValue;
+    return await this.core.getConfig(server.InstanceID);
   }
 
   /** Sends a string to a console */
   async sendConsoleMessage(instance: Instance, message: string): Promise<void> {
     await this.ensureAuthenticated(instance.InstanceID);
-    const json = {
-      message: message,
-    };
-    await this.sendPostRequest(
-      `${this.API_BASE_URL}API/ADSModule/Servers/${instance.InstanceID}/API/Core/SendConsoleMessage`,
-      json,
-      this.instanceSessionIds.get(instance.InstanceID) || ''
-    );
-
+    await this.core.sendConsoleMessage(instance.InstanceID, message);
     logger.info(`Sent console message to ${instance.FriendlyName}: ${message}`);
   }
 
-  /**
-   * Gets changes to the server status, in addition to any notifications or
-   * console output that have occurred since the last time GetUpdates() was
-   * called by the current session.
-   */
-  async getUpdates(instanceId: string):Promise<string> {
+  async getUpdates(instanceId: string): Promise<string> {
     await this.ensureAuthenticated(instanceId);
-    const json = { };
-    const response = await this.sendPostRequest(
-      `${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/GetUpdates`,
-      json,
-      this.instanceSessionIds.get(instanceId) || ''
-    );
-    return JSON.stringify(response);
+    return await this.core.getUpdates(instanceId);
   }
 
   /** Populates the server cache with the latest server info. */
@@ -209,15 +191,7 @@ class Amp {
 
         await this.login(server.InstanceID);
 
-        const json = {
-          Filename: `packInfo.json`,
-          offset: 0,
-        };
-        const response = await this.sendPostRequest(
-          `${this.API_BASE_URL}API/ADSModule/Servers/${server.InstanceID}/API/FileManagerPlugin/ReadFileChunk`,
-          json,
-          this.instanceSessionIds.get(server.InstanceID) || '',
-        );
+        const response = await this.fileManager.readFileChunk(server.InstanceID, 'packInfo.json');
 
         if (response.Result !== null && response.Result !== undefined) {
           try {
@@ -246,32 +220,8 @@ class Amp {
   /** Work in progress for better and more accurate player counts. */
   async getUserList(instanceId: string): Promise<string[]> {
     await this.ensureAuthenticated(instanceId);
-
-    const json = { };
-    const response = await this.sendPostRequest(
-      `${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/GetUserList`,
-      json,
-      this.instanceSessionIds.get(instanceId) || ''
-    );
-    console.log(Object.values(response));
-    let list: string[] = Object.values(response);
-    let list2: string[] = [];
-    list.forEach((value: string) => {
-      console.log(value);
-      for(let i = 0; i <= list2.length; i++) {
-        if(!list2[i].includes(value)) {
-          console.log("no match");
-          list2.push(value);
-        }
-        console.log("match");
-      }
-    });
-    console.log(list2);
-
-    return [];
-    /** return response.map((user: { Username: string }) => user.Username); */
+    return await this.core.getUserList(instanceId);
   }
-
 }
 
 export default Amp;
