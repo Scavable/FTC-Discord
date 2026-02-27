@@ -177,44 +177,7 @@ class Amp implements IAmpClient {
 
   /** Populates the server cache with the latest server info. */
   async readFile(servers: Instance[]): Promise<Instance[]> {
-    await this.ensureAuthenticated();
-
-    await Promise.all(
-      servers.map(async (server) => {
-        if (
-          server.FriendlyName.includes(`Schedule`) ||
-          server.FriendlyName.includes(`Bot`) ||
-          server.FriendlyName.includes(`ADS`) ||
-          server.Suspended
-        )
-          return;
-
-        await this.login(server.InstanceID);
-
-        const response = await this.fileManager.readFileChunk(server.InstanceID, 'packInfo.json');
-
-        if (response.Result !== null && response.Result !== undefined) {
-          try {
-            const temp = JSON.parse(atob(response.Result));
-            server.FTCIP = temp.IP;
-            server.FTCVersion = temp.Version;
-            server.Hidden = temp.Hidden;
-            server.PackName = temp.PackName;
-            server.CurseForgeURL = temp.CurseForgeURL;
-            server.RoleName = temp.RoleName;
-          } catch (error) {
-            /** @ts-ignore */
-            logger.error(error);
-          }
-        }
-        server.Whitelisted = await this.getConfig(server);
-      }),
-    );
-
-    /** Update cache only; no file persistence */
-    Servers.setAll(servers);
-
-    return servers;
+    return await this.fileManager.readPackInfoFile(servers);
   }
 
   /** Work in progress for better and more accurate player counts. */
