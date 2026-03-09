@@ -41,15 +41,26 @@ class Amp implements IAmpClient {
   /** Sends POST requests to the AMP API */
   public async sendPostRequest(url: string, data?: any, SessionID?: string) {
     const doFetch = async (sid?: string) => {
-      return await fetch(url, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${sid}`,
-        },
-        body: JSON.stringify(data),
-      });
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 15000); /** 15-second timeout for each request */
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sid}`,
+          },
+          body: JSON.stringify(data),
+          signal: controller.signal,
+        });
+        clearTimeout(id);
+        return res;
+      } catch (e) {
+        clearTimeout(id);
+        throw e;
+      }
     };
 
     try {

@@ -14,6 +14,7 @@ import Amp from '../../amp/Amp';
 import Instance from '../../types/Instance';
 import ColorText from '../../utility/ColorText';
 import CustomClient from '../../CustomClient';
+import logger from '../../utility/Logger';
 import { BaseCommand } from '../../interface/BaseCommand';
 import { AppState, MetricKey } from '../../types/AppState';
 import Servers from '../../utility/Servers';
@@ -118,18 +119,21 @@ export default class ServersPanel implements BaseCommand {
       let forceRecreateEmbeds = firstEnsure.created; /** if we just posted the static, recreate embeds to appear below it */
       const updateLoop = async () => {
         try {
+          logger.info(`[ServersPanel] Starting update cycle for guild ${guild.id}`);
           /** On every cycle, check if static content changed and update it in place (no reordering) */
           const ensureResult = await this.ensureOrUpdateStaticInfo(channel);
           if (ensureResult.created) {
             /** If the static had to be recreated (e.g., deleted manually), force one-time embed recreation */
             forceRecreateEmbeds = true;
+            logger.info(`[ServersPanel] Static info recreated, forcing embed refresh.`);
           }
           await this.updateServerStatus(amp, channel, messageCache, forceRecreateEmbeds);
           /** Only force recreation once, after a successful update */
           if (forceRecreateEmbeds) forceRecreateEmbeds = false;
+          logger.info(`[ServersPanel] Update cycle completed for guild ${guild.id}`);
         } catch (error) {
-          console.error(
-            `Error updating server status for guild ${guild.id}:`,
+          logger.error(
+            `[ServersPanel] Error updating server status for guild ${guild.id}:`,
             error,
           );
         }
@@ -137,11 +141,11 @@ export default class ServersPanel implements BaseCommand {
 
       /**
        * Start the update loop
-       * Run every 60 seconds
+       * Run every 3 minutes
        */
       client.updateInterval = setInterval(
         updateLoop,
-        60000,
+        180_000,
       );
 
       /** Run the first update immediately */
@@ -194,7 +198,7 @@ export default class ServersPanel implements BaseCommand {
 
       await this.updateEmbeds(embeds, channel, messageCache, forceRecreateEmbeds);
     } catch (error) {
-      console.error('Error updating server status:', error);
+      logger.error('[ServersPanel] Error updating server status:', error);
     }
   }
 
@@ -243,7 +247,7 @@ export default class ServersPanel implements BaseCommand {
 
       return { created: false, updated: false };
     } catch (e) {
-      console.error('Failed to ensure/update static server information.txt message:', e);
+      logger.error('[ServersPanel] Failed to ensure/update static server information.txt message:', e);
       return { created: false, updated: false };
     }
   }
