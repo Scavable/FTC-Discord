@@ -165,21 +165,50 @@ export default class Whitelist implements BaseCommand {
           const updates = JSON.parse(updatesRaw);
           const consoleEntries = updates.ConsoleEntries || [];
 
+          /** */
           const entry = consoleEntries.find(
             (e: any) =>
               new Date(e.Timestamp).getTime() > startTime - 5000 &&
-              (e.Contents.includes('whitelisted') ||
-                e.Contents.includes(`from the whitelist`)),
-          );
+              (e.Contents.includes('to the whitelist') ||
+                e.Contents.includes(`from the whitelist`) ||
+                  e.Contents.includes(`already whitelisted`) ||
+                  e.Contents.includes(`is not whitelisted`) ||
+                  e.Contents.includes(`does not exist`)
+          ));
 
-          let responseText = entry
-            ? entry.Contents
-            : `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
+          console.log(entry.Contents);
 
-          if (responseText.includes('Player is already whitelisted')) {
-            responseText = responseText.replace('Player', ign);
+          let responseText = '';
+          switch (true) {
+            case entry?.Contents.includes('to the whitelist') || entry?.Contents.includes(`from the whitelist`):
+              responseText = `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
+              break;
+            case entry?.Contents.includes('already whitelisted'):
+              responseText = `${ign} is already whitelisted.`;
+              break;
+            case entry?.Contents.includes('is not whitelisted'):
+              responseText = `${ign} is not whitelisted.`;
+              break;
+            case entry?.Contents.includes('does not exist'):
+              responseText = `${ign} does not exist.`;
+              break;
           }
+          /** Response text based on whether the entry matched above and operation type */
+          // let responseText = entry
+          //   ? entry.Contents
+          //   : `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
 
+          /** Already whitelisted exception */
+          // if (responseText.includes('Player is already whitelisted')) {
+          //   responseText = responseText.replace('Player', ign);
+          // }
+
+          /** Player does not exist exception (potentially from Microsoft/Mojang api issues) */
+          // if(responseText.includes('Player does not exist')) {
+          //   responseText = responseText.replace('Player', ign);
+          // }
+
+          /** Role assignment warning (if applicable) */
           const roleWarning = await this.updateUserRole(
             interaction,
             user,
@@ -188,6 +217,7 @@ export default class Whitelist implements BaseCommand {
           );
           responseText += roleWarning;
 
+          /** Successful outcome discord message */
           await interaction.editReply(
             `**${serverName}** (Executed by: ${interaction.user.tag}): ${responseText}`,
           );
@@ -206,6 +236,7 @@ export default class Whitelist implements BaseCommand {
     }
   }
 
+  /** Whitelist command button handler*/
   async handleButton(interaction: ButtonInteraction): Promise<any> {
     const [action, ...args] = interaction.customId.split(':');
 
