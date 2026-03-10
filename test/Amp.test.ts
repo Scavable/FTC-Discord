@@ -9,6 +9,7 @@ jest.mock('../src/utility/Logger', () => ({
   amp: jest.fn(),
 }));
 
+
 declare const global: any;
 
 describe('Amp', () => {

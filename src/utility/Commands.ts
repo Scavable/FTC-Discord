@@ -4,6 +4,7 @@ import DeleteChannelCommand from '../commands/discord/delete_channel';
 import ReloadAllCommand from '../commands/discord/reload_all';
 import WhitelistCommand from '../commands/minecraft/whitelist';
 import CommandButtons from '../commands/discord/command_buttons';
+import RankCommand from '../commands/minecraft/rank';
 import { REST, Routes } from 'discord.js';
 import { config } from '../Config';
 import logger from './Logger';
@@ -24,6 +25,7 @@ class Commands {
       new ReloadAllCommand(),
       new WhitelistCommand(),
       new CommandButtons(),
+      new RankCommand(),
     ];
   }
 
