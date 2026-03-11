@@ -13,13 +13,10 @@ import {
   MessageFlags,
   User,
   Guild,
-  Message,
-  BooleanCache,
-  CacheType, InteractionCallbackResponse,
 } from 'discord.js';
 import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
-import { BaseCommand } from '../../interface/BaseCommand';
+import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 import Servers from '../../utility/Servers';
 import RoleMapper from '../../utility/RoleMapper';
 import logger from '../../utility/Logger';
@@ -29,7 +26,7 @@ export default class Whitelist implements BaseCommand {
   static commandName: string = 'whitelist';
   static commandDescription: string = 'Add a player to the whitelist';
 
-  async createSlashCommand() {
+  async createSlashCommand(): Promise<SlashCommandData> {
     const serverChoices = this.getAvailableServers().map((server) => ({
       name: server.FriendlyName,
       value: server.FriendlyName,
@@ -70,8 +67,8 @@ export default class Whitelist implements BaseCommand {
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
   }
 
-  async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<InteractionCallbackResponse<BooleanCache<CacheType>>>> {
-    return async (interaction: ChatInputCommandInteraction) => {
+  async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>> {
+    return async (interaction) => {
       await interaction.deferReply();
       const user = interaction.options.getUser('user');
       const ign = interaction.options.getString('ign');
@@ -193,20 +190,6 @@ export default class Whitelist implements BaseCommand {
               responseText = `${ign} does not exist.`;
               break;
           }
-          /** Response text based on whether the entry matched above and operation type */
-          // let responseText = entry
-          //   ? entry.Contents
-          //   : `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
-
-          /** Already whitelisted exception */
-          // if (responseText.includes('Player is already whitelisted')) {
-          //   responseText = responseText.replace('Player', ign);
-          // }
-
-          /** Player does not exist exception (potentially from Microsoft/Mojang api issues) */
-          // if(responseText.includes('Player does not exist')) {
-          //   responseText = responseText.replace('Player', ign);
-          // }
 
           /** Role assignment warning (if applicable) */
           const roleWarning = await this.updateUserRole(
@@ -321,7 +304,7 @@ export default class Whitelist implements BaseCommand {
     );
   }
 
-  async createObject() {
+  async createObject(): Promise<CommandObject> {
     return {
       data: await this.createSlashCommand(),
       execute: await this.createCommandFunctionality(),

@@ -15,7 +15,7 @@ import Instance from '../../types/Instance';
 import ColorText from '../../utility/ColorText';
 import CustomClient from '../../CustomClient';
 import logger from '../../utility/Logger';
-import { BaseCommand } from '../../interface/BaseCommand';
+import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 import { AppState, MetricKey } from '../../types/AppState';
 import Servers from '../../utility/Servers';
 
@@ -24,14 +24,14 @@ export default class ServersPanel implements BaseCommand {
   static commandName: string = 'server_information';
   static commandDescription: string = 'Display AMP server information.txt';
 
-  async createSlashCommand() {
+  async createSlashCommand(): Promise<SlashCommandData> {
     return new SlashCommandBuilder()
       .setName(ServersPanel.commandName)
       .setDescription(ServersPanel.commandDescription)
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
   }
 
-  async createCommandFunctionality() {
+  async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>> {
     return async (interaction: ChatInputCommandInteraction) => {
       const client = interaction.client as CustomClient; /** Cast to your custom client */
       const guild = interaction.guild;
@@ -467,7 +467,7 @@ export default class ServersPanel implements BaseCommand {
     }
   }
 
-  async createObject() {
+  async createObject(): Promise<CommandObject> {
     return {
       data: await this.createSlashCommand(),
       execute: await this.createCommandFunctionality(),

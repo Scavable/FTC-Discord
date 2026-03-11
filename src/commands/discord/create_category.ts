@@ -1,17 +1,19 @@
 import {
   ChannelType,
+  ChatInputCommandInteraction,
   PermissionFlagsBits,
   Role,
   SlashCommandBuilder,
 } from 'discord.js';
 import RoleMapper from '../../utility/RoleMapper';
+import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 
-export default class CreateCategoryCommand {
+export default class CreateCategoryCommand implements BaseCommand {
   enabled: boolean = false;
   static commandName: string = 'discord_create_category';
   static commandDescription: string = 'Create a category with child channels';
 
-  async createSlashCommand() {
+  async createSlashCommand(): Promise<SlashCommandData> {
     return new SlashCommandBuilder()
       .setName(CreateCategoryCommand.commandName)
       .setDescription(CreateCategoryCommand.commandDescription)
@@ -24,8 +26,8 @@ export default class CreateCategoryCommand {
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels); /** Restrict command to users with Manage Channels permission */
   }
 
-  createCommandFunctionality() {
-    return async (interaction: any) => {
+  async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>> {
+    return async (interaction: ChatInputCommandInteraction) => {
       await interaction.deferReply();
 
       const guild = interaction.guild;
@@ -227,7 +229,7 @@ export default class CreateCategoryCommand {
     };
   }
 
-  async createObject() {
+  async createObject(): Promise<CommandObject> {
     return {
       data: await this.createSlashCommand(),
       execute: this.createCommandFunctionality(),

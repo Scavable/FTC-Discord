@@ -10,14 +10,15 @@ import {
   MessageFlags,
 } from 'discord.js';
 import Logger from '../../utility/Logger';
+import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 
-export default class DeleteChannelCommand {
+export default class DeleteChannelCommand implements BaseCommand {
   enabled: boolean = false;
   static commandName: string = 'delete_channel';
   static commandDescription: string =
     'Delete a category with child channels or a single channel';
 
-  async createSlashCommand() {
+  async createSlashCommand(): Promise<SlashCommandData> {
     return new SlashCommandBuilder()
       .setName(DeleteChannelCommand.commandName)
       .setDescription(DeleteChannelCommand.commandDescription)
@@ -34,7 +35,7 @@ export default class DeleteChannelCommand {
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
   }
 
-  createCommandFunctionality() {
+  async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>> {
     return async (interaction: ChatInputCommandInteraction) => {
       if (!interaction.inGuild()) {
         return interaction.reply({ content: '❌ Guild context required.', flags: [MessageFlags.Ephemeral] });
@@ -100,7 +101,7 @@ export default class DeleteChannelCommand {
     };
   }
 
-  async createObject() {
+  async createObject(): Promise<CommandObject> {
     return {
       data: await this.createSlashCommand(),
       execute: this.createCommandFunctionality(),

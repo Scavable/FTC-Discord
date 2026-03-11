@@ -1,9 +1,10 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import Amp from './amp/Amp';
 import { config } from './Config';
+import { CommandObject } from './interface/BaseCommand';
 
 export default class CustomClient extends Client {
-  commands: Collection<string, any>;
+  commands: Collection<string, CommandObject>;
   /** Single-guild state */
   amp: Amp | null;
   messageCache: Map<string, any>;
@@ -17,7 +18,7 @@ export default class CustomClient extends Client {
         GatewayIntentBits.GuildMessages,
       ],
     });
-    this.commands = new Collection<string, any>();
+    this.commands = new Collection<string, CommandObject>();
     this.amp = null;
     this.messageCache = new Map();
     this.updateInterval = null;

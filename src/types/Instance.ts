@@ -91,7 +91,6 @@ type Instance = {
   CurseForgeURL: string;
   Whitelisted: boolean;
   RoleName: string;
-  ServerChatChannel: number;
 };
 
 export default Instance;

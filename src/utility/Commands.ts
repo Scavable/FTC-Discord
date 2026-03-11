@@ -9,11 +9,12 @@ import { REST, Routes } from 'discord.js';
 import { config } from '../Config';
 import logger from './Logger';
 import ServerInformationCommand from '../commands/amp/server_information';
+import { BaseCommand, CommandObject } from '../interface/BaseCommand';
 
 class Commands {
   private client: CustomClient;
   private rest: REST;
-  private readonly commands: Array<any>;
+  private readonly commands: Array<BaseCommand>;
 
   constructor(client: CustomClient) {
     this.client = client;
@@ -35,14 +36,10 @@ class Commands {
     let commandsArray: any[] = [];
     for(const command of this.commands) {
       if(command.enabled){
-        const commandObject = await command.createObject();
+        const commandObject: CommandObject = await command.createObject();
         commandsArray.push(commandObject.data.toJSON());
-        if ('data' in commandObject && 'execute' in commandObject) {
-          this.client.commands.set(commandObject.data.name, commandObject);
-          logger.commands(`Loaded command: ${commandObject.data.name}`);
-        } else {
-          console.warn(`[WARNING] Command is missing required properties.`);
-        }
+        this.client.commands.set(commandObject.data.name, commandObject);
+        logger.commands(`Loaded command: ${commandObject.data.name}`);
       }
     }
     await this.rest.put(

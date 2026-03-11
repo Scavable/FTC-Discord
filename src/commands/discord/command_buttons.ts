@@ -11,7 +11,7 @@ import {
   BooleanCache,
   CacheType, InteractionCallbackResponse,
 } from 'discord.js';
-import { BaseCommand } from '../../interface/BaseCommand';
+import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 import CustomClient from '../../CustomClient';
 
 export default class CommandButtons implements BaseCommand {
@@ -20,7 +20,7 @@ export default class CommandButtons implements BaseCommand {
   commandDescription: string =
     'Creates a row of buttons which execute commands';
 
-  async createSlashCommand() {
+  async createSlashCommand(): Promise<SlashCommandData> {
     return new SlashCommandBuilder()
       .setName(this.commandName)
       .setDescription(this.commandDescription)
@@ -80,11 +80,7 @@ export default class CommandButtons implements BaseCommand {
     }
   }
 
-  async createObject(): Promise<{
-    data: any;
-    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
-    handleButton: (interaction: ButtonInteraction) => Promise<any>;
-  }> {
+  async createObject(): Promise<CommandObject> {
     return {
       data: await this.createSlashCommand(),
       execute: await this.createCommandFunctionality(),
