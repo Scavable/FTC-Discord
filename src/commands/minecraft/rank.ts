@@ -4,6 +4,7 @@ import Instance from "../../types/Instance";
 import Servers from "../../utility/Servers";
 import logger from "../../utility/Logger";
 import fs from "fs";
+import CustomClient from "../../CustomClient";
 
 export default class Rank implements BaseCommand {
   enabled: boolean = true;
@@ -29,7 +30,7 @@ export default class Rank implements BaseCommand {
       )
       .addStringOption((option) =>
         option
-          .setName("option")
+          .setName("operation")
           .setDescription("Add or remove")
           .addChoices(
             { name: "Add", value: "add" },
@@ -63,10 +64,107 @@ export default class Rank implements BaseCommand {
 
   async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>> {
     return async (interaction: ChatInputCommandInteraction) => {
-      //TODO: Implement this command and update instance type to include server chat channel
-      await interaction.reply("This command is not yet implemented.");
 
+      await interaction.deferReply();
 
+      const ign = interaction.options.getString("ign");
+      const operation = interaction.options.getString("operation");
+      const rank = interaction.options.getString("rank");
+      const server = interaction.options.getString("server");
+
+      if (!ign || !operation || !rank || !server) {
+        await interaction.followUp("Missing required parameters");
+        return;
+      }
+
+      const client = interaction.client as CustomClient;
+      client.initializeState();
+      const amp = client.getAmpInstance();
+
+      try {
+        await amp.login();
+
+        if (!interaction.guild) return interaction.editReply('Guild not found.');
+
+        const targetServer = Servers.get(server);
+        if (!targetServer) return interaction.editReply('Server not found.');
+
+        const otherOperation = operation === "add" ? "remove" : "add";
+        const otherServers = this.getAvailableServers().filter(s => s.InstanceID !== targetServer.InstanceID);
+
+        const command = `ftbranks ${operation} ${ign} ${rank}`;
+        const otherCommand = `ftbranks ${otherOperation} ${ign} ${rank}`;
+        const startTime = Date.now();
+
+        await amp.sendConsoleMessage(targetServer, command);
+
+        if(operation === 'add'){
+          for (const otherServer of otherServers) {
+            try {
+              await amp.sendConsoleMessage(otherServer, otherCommand);
+            } catch (e: any) {
+              logger.error(
+                `Error sending rank command for ${ign} to ${otherServer.FriendlyName}: ${e.message}`,
+              );
+            }
+          }
+        }
+
+        /** Wait for 2 seconds to allow the command to process and appear in logs */
+        setTimeout(async () => {
+          try {
+            const updatesRaw = await amp.getUpdates(targetServer.InstanceID);
+            const updates = JSON.parse(updatesRaw);
+            const consoleEntries = updates.ConsoleEntries || [];
+
+            /** The messages to look for in the console entries*/
+            const entry = consoleEntries.find(
+              (e: any) =>
+                new Date(e.Timestamp).getTime() > startTime - 5000 &&
+                (e.Contents.includes('added to rank') ||
+                    e.Contents.includes(`removed from rank`) ||
+                  e.Contents.includes(`unknown rank`) ||
+                  e.Contents.includes(`does not exist`)
+                ));
+
+            let responseText = '';
+            if (!entry) {
+              responseText = `Command executed, but no response was found in the server logs for ${ign}.`;
+            } else {
+              console.log(entry.Contents);
+
+              switch (true) {
+                case entry.Contents.includes('added to rank') || entry.Contents.includes(`removed from rank`):
+                  responseText = `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} rank ${rank}.`;
+                  break;
+                case entry.Contents.includes('unknown rank'):
+                  responseText = `${rank} does not exist or unknown.`;
+                  break;
+                case entry.Contents.includes('does not exist'):
+                  responseText = `${ign} does not exist.`;
+                  break;
+                default:
+                  responseText = `An error occurred while processing the rank command for ${ign}.`;
+                  break;
+              }
+            }
+
+            await interaction.editReply(
+              `**${server}** (Executed by: ${interaction.user.tag}): ${responseText}`,
+            );
+          }catch(e: any){
+            logger.error(`Error processing rank command for ${ign}: ${e.message}`);
+            await interaction.editReply(
+              `**${server}** (Executed by: ${interaction.user.tag}): An error occurred while processing the rank command.`,
+            );
+          }
+        })
+      }catch(e: any){
+        logger.error(`Error sending rank command for ${ign}: ${e.message}`);
+        await interaction.editReply(
+          `**${server}** (Executed by: ${interaction.user.tag}): An error occurred while sending the rank command.`,
+        );
+      }
     }
   }
 
@@ -80,7 +178,7 @@ export default class Rank implements BaseCommand {
   private getAvailableServers(): Instance[] {
     return Array.from(Servers.getMap().values()).filter(
       (s) =>
-        !["Scheduler", "ADS", "Bot"].some((keyword) =>
+        !["Scheduler", "ADS", "Bot", "Hytale"].some((keyword) =>
           s.FriendlyName.includes(keyword),
         ) && !s.Suspended,
     );
