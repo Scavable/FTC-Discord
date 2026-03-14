@@ -58,6 +58,13 @@ export default class Rank implements BaseCommand {
           .setRequired(true),
       );
     }
+    
+    builder.addBooleanOption((option) =>
+      option
+        .setName("patreon")
+        .setDescription("Add or remove rank to all servers")
+        .setRequired(false),
+      );
 
     return builder;
   }
@@ -71,6 +78,7 @@ export default class Rank implements BaseCommand {
       const operation = interaction.options.getString("operation");
       const rank = interaction.options.getString("rank");
       const server = interaction.options.getString("server");
+      const isPatreon = interaction.options.getBoolean("patreon") || false;
 
       if (!ign || !operation || !rank || !server) {
         await interaction.followUp("Missing required parameters");
@@ -89,7 +97,7 @@ export default class Rank implements BaseCommand {
         const targetServer = Servers.get(server);
         if (!targetServer) return interaction.editReply('Server not found.');
 
-        const otherOperation = operation === "add" ? "remove" : "add";
+        const otherOperation = isPatreon ? operation : (operation === "add" ? "remove" : "add");
         const otherServers = this.getAvailableServers().filter(s => s.InstanceID !== targetServer.InstanceID);
 
         const command = `ftbranks ${operation} ${ign} ${rank}`;
@@ -98,7 +106,7 @@ export default class Rank implements BaseCommand {
 
         await amp.sendConsoleMessage(targetServer, command);
 
-        if(operation === 'add'){
+        if(isPatreon || operation === 'add'){
           for (const otherServer of otherServers) {
             try {
               await amp.sendConsoleMessage(otherServer, otherCommand);
