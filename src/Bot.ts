@@ -9,9 +9,10 @@ import DependencyManager from './utility/DependencyManager';
 import child_process from 'child_process';
 import { scheduleDaily } from './packs/Scheduler';
 import { checkForPackUpdates } from './packs/PackUpdateChecker';
-import Amp from './amp/Amp';
+import Amp from './amp/ads/Amp';
 import Servers from './utility/Servers';
 import Commands from './utility/Commands';
+import Instances from "./utility/Instances";
 
 const client = new CustomClient();
 const appConfig = validateConfig(config);

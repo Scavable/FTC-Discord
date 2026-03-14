@@ -1,4 +1,4 @@
-import Amp from '../src/amp/Amp';
+import Amp from '../src/amp/ads/Amp';
 import logger from '../src/utility/Logger';
 import type Instance from '../src/types/Instance';
 

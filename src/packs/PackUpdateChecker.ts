@@ -1,10 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel } from 'discord.js';
 import CustomClient from '../CustomClient';
-import Amp from '../amp/Amp';
+import Amp from '../amp/ads/Amp';
 import Instance from '../types/Instance';
 import logger from '../utility/Logger';
 import { getLatestByPackNameAPI } from './CurseForgeApi';
 import Servers from '../utility/Servers';
+import Instances from '../utility/Instances';
 
 function normalizeServerName(name: string): string {
   /** Remove leading two digits and space (e.g., "01 My Pack" -> "My Pack") */
@@ -44,7 +45,8 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
     servers = Servers.getAll();
   } else {
     await amp.login();
-    const refreshed = await amp.readFile(await amp.getInstances());
+    const minecraftServers = await new Instances(amp).getMinecraftInstances();
+    const refreshed = await amp.readFile(minecraftServers);
     Servers.setAll(refreshed);
     servers = Servers.getAll();
   }

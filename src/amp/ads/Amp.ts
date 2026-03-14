@@ -1,9 +1,9 @@
-import Instance from '../types/Instance';
-import logger from '../utility/Logger';
-import Servers from '../utility/Servers';
-import Core from './core/Core';
-import FileManager from './file/FileManager';
-import { IAmpClient } from './AmpModule';
+import Instance from '../../types/Instance';
+import logger from '../../utility/Logger';
+import Servers from '../../utility/Servers';
+import Core from '../core/Core';
+import FileManager from '../file/FileManager';
+import { IAmpClient } from '../AmpModule';
 
 class Amp implements IAmpClient {
   public readonly API_BASE_URL: string =
@@ -141,7 +141,7 @@ class Amp implements IAmpClient {
   }
 
   /** Returns all AMP instances including AMP container */
-  async getInstances(): Promise<Instance[]> {
+  public async getInstances(): Promise<Instance[]> {
     await this.ensureAuthenticated();
     const json = { 'ForceIncludeSelf': false };
 

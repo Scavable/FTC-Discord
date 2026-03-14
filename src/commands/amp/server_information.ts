@@ -10,7 +10,7 @@ import {
 } from 'discord.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import Amp from '../../amp/Amp';
+import Amp from '../../amp/ads/Amp';
 import Instance from '../../types/Instance';
 import ColorText from '../../utility/ColorText';
 import CustomClient from '../../CustomClient';
@@ -18,6 +18,7 @@ import logger from '../../utility/Logger';
 import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 import { AppState, MetricKey } from '../../types/AppState';
 import Servers from '../../utility/Servers';
+import Instances from '../../utility/Instances';
 
 export default class ServersPanel implements BaseCommand {
   enabled: boolean = true;
@@ -156,7 +157,11 @@ export default class ServersPanel implements BaseCommand {
   private async updateServerStatus(amp: Amp, channel: TextChannel,
     messageCache: Map<string, string>, forceRecreateEmbeds: boolean = false) {
     try {
-      const servers = await amp.readFile(await amp.getInstances());
+      const instancesService = new Instances(amp);
+      const minecraftServers = await instancesService.getMinecraftInstances();
+      const hytaleServers = await instancesService.getHytaleInstances();
+      
+      const servers = await amp.readFile([...minecraftServers, ...hytaleServers]);
       if (!servers) return;
 
       /** Update in-memory cache so commands can use fresh data */

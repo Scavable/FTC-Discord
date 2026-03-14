@@ -90,11 +90,13 @@ export default class Whitelist implements BaseCommand {
   }
 
   private getAvailableServers(): Instance[] {
-    return Array.from(Servers.getMap().values()).filter(
+    return Servers.getAll().filter(
       (s) =>
+        s.Group === 'Minecraft' &&
         !['Scheduler', 'ADS', 'Bot'].some((keyword) =>
           s.FriendlyName.includes(keyword),
-        ) && !s.Suspended,
+        ) &&
+        !s.Suspended,
     );
   }
 

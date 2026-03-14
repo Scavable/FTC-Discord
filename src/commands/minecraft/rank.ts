@@ -5,6 +5,7 @@ import Servers from "../../utility/Servers";
 import logger from "../../utility/Logger";
 import fs from "fs";
 import CustomClient from "../../CustomClient";
+import Instances from "../../utility/Instances";
 
 export default class Rank implements BaseCommand {
   enabled: boolean = true;
@@ -184,11 +185,13 @@ export default class Rank implements BaseCommand {
   }
 
   private getAvailableServers(): Instance[] {
-    return Array.from(Servers.getMap().values()).filter(
+    return Servers.getAll().filter(
       (s) =>
-        !["Scheduler", "ADS", "Bot", "Hytale"].some((keyword) =>
+        s.Group === "Minecraft" &&
+        !["Scheduler", "ADS", "Bot"].some((keyword) =>
           s.FriendlyName.includes(keyword),
-        ) && !s.Suspended,
+        ) &&
+        !s.Suspended,
     );
   }
 

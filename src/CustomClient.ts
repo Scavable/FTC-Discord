@@ -1,5 +1,5 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
-import Amp from './amp/Amp';
+import Amp from './amp/ads/Amp';
 import { config } from './Config';
 import { CommandObject } from './interface/BaseCommand';
 
