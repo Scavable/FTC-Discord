@@ -347,10 +347,11 @@ export default class ServersPanel implements BaseCommand {
       let players = await amp.getUserList(server.InstanceID);
       let currentPlayers = [];
       let regex = new RegExp(".*]");
+
       for (const player of players) {
         if (regex.test(player)) currentPlayers.push(player);
       }
-      console.log(currentPlayers);
+
       players = players.filter((list) => regex.test(list));
       //const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
       /** const currentPlayers = await this.messageFilter(await amp.getUpdates(server.InstanceID)); */
