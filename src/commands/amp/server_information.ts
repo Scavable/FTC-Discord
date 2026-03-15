@@ -181,6 +181,7 @@ export default class ServersPanel implements BaseCommand {
         ...minecraftServers,
         ...hytaleServers,
       ]);
+
       if (!servers) return;
 
       /** Update in-memory cache so commands can use fresh data */
@@ -407,7 +408,7 @@ export default class ServersPanel implements BaseCommand {
 
     for (const instance of minecraftInstances) {
 
-      if(instance.Suspended)
+      if(instance.Suspended || instance.Hidden)
         continue;
 
       let players = await amp.getUserList(instance.InstanceID);
