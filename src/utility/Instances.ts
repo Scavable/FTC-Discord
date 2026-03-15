@@ -13,7 +13,8 @@ export default class Instances {
    */
   async getMinecraftInstances(): Promise<Instance[]> {
     // Accessing Amp getInstances method
-    const instances = await this.amp.getInstances();
+    let instances = await this.amp.getInstances();
+    instances = await this.amp.readFile(instances);
     
     // Filtering instances by 'MinecraftModule'
     return instances.filter(instance => instance.Group === 'Minecraft');
