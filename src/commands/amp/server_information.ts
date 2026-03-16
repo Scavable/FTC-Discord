@@ -352,7 +352,7 @@ export default class ServersPanel implements BaseCommand {
       // Deduplicate currentPlayers by normalizing names (removing [prefix] at the start)
       const normalizedPlayersMap = new Map();
       for (const player of players) {
-        const normalized = player.replace(/^\[.*?\]\s*/, "");
+        const normalized = player.replace(/^\[.*?\]:\s*/, "");
         if (!normalizedPlayersMap.has(normalized)) {
           normalizedPlayersMap.set(normalized, player);
         }
@@ -426,7 +426,7 @@ export default class ServersPanel implements BaseCommand {
       // Deduplicate currentPlayers by normalizing names (removing [prefix] at the start)
       const normalizedPlayersMap = new Map();
       for (const player of players) {
-        const normalized = player.replace(/^\[.*?\]\s*/, "");
+        const normalized = player.replace(/^\[.*?\]:\s*/, "");
         if (!normalizedPlayersMap.has(normalized)) {
           normalizedPlayersMap.set(normalized, player);
         }

@@ -17,6 +17,7 @@ export default defineConfig({
       'package.json',
       'package-lock.json',
       'LicenseAgreement.md',
+      'ranks.json',
     ];
 
     filesToCopy.forEach((file) => {
