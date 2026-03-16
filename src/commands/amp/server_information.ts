@@ -349,9 +349,16 @@ export default class ServersPanel implements BaseCommand {
       let currentPlayers = [];
       let regex = new RegExp(".*]");
 
+      // Deduplicate currentPlayers by normalizing names (removing [prefix] at the start)
+      const normalizedPlayersMap = new Map();
       for (const player of players) {
-        if (regex.test(player)) currentPlayers.push(player);
+        const normalized = player.replace(/^\[.*?\]\s*/, "");
+        if (!normalizedPlayersMap.has(normalized)) {
+          normalizedPlayersMap.set(normalized, player);
+        }
       }
+      currentPlayers = Array.from(normalizedPlayersMap.values());
+      console.log(currentPlayers);
 
       players = players.filter((list) => regex.test(list));
       //const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
@@ -415,9 +422,16 @@ export default class ServersPanel implements BaseCommand {
       let currentPlayers = [];
       let regex = new RegExp(".*]");
 
+
+      // Deduplicate currentPlayers by normalizing names (removing [prefix] at the start)
+      const normalizedPlayersMap = new Map();
       for (const player of players) {
-        if (regex.test(player)) currentPlayers.push(player);
+        const normalized = player.replace(/^\[.*?\]\s*/, "");
+        if (!normalizedPlayersMap.has(normalized)) {
+          normalizedPlayersMap.set(normalized, player);
+        }
       }
+      currentPlayers = Array.from(normalizedPlayersMap.values());
 
       const isOnline = instance.AppState === AppState.Online;
       const embedColor = isOnline ? Colors.Green : Colors.Red;
