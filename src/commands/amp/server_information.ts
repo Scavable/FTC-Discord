@@ -358,7 +358,6 @@ export default class ServersPanel implements BaseCommand {
         }
       }
       currentPlayers = Array.from(normalizedPlayersMap.values());
-      console.log(currentPlayers);
 
       players = players.filter((list) => regex.test(list));
       //const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;

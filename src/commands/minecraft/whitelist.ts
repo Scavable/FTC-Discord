@@ -167,28 +167,35 @@ export default class Whitelist implements BaseCommand {
           /** */
           const entry = consoleEntries.find(
             (e: any) =>
-              new Date(e.Timestamp).getTime() > startTime - 5000 &&
+              new Date(e.Timestamp).getTime() >= startTime - 6000 &&
               (e.Contents.includes('to the whitelist') ||
                 e.Contents.includes(`from the whitelist`) ||
-                  e.Contents.includes(`already whitelisted`) ||
-                  e.Contents.includes(`is not whitelisted`) ||
-                  e.Contents.includes(`does not exist`)
-          ));
+                e.Contents.includes(`already whitelisted`) ||
+                e.Contents.includes(`is not whitelisted`) ||
+                e.Contents.includes(`does not exist`)),
+          );
+
+          if (!entry) {
+            return interaction.editReply(
+              `**${serverName}** (Executed by: ${interaction.user.tag}): Failed to find whitelist result in logs.`,
+            );
+          }
 
           console.log(entry.Contents);
 
           let responseText = '';
           switch (true) {
-            case entry?.Contents.includes('to the whitelist') || entry?.Contents.includes(`from the whitelist`):
+            case entry.Contents.includes('to the whitelist') ||
+              entry.Contents.includes(`from the whitelist`):
               responseText = `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
               break;
-            case entry?.Contents.includes('already whitelisted'):
+            case entry.Contents.includes('already whitelisted'):
               responseText = `${ign} is already whitelisted.`;
               break;
-            case entry?.Contents.includes('is not whitelisted'):
+            case entry.Contents.includes('is not whitelisted'):
               responseText = `${ign} is not whitelisted.`;
               break;
-            case entry?.Contents.includes('does not exist'):
+            case entry.Contents.includes('does not exist'):
               responseText = `${ign} does not exist.`;
               break;
           }
