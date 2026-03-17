@@ -1,0 +1,1 @@
+var e=class{amp;constructor(t){this.amp=t}async getMinecraftInstances(){let t=await this.amp.getInstances();return t=await this.amp.readFile(t),t.filter(a=>a.Group==="Minecraft")}async getHytaleInstances(){return(await this.amp.getInstances()).filter(a=>a.Group==="Hytale")}};export{e as default};
