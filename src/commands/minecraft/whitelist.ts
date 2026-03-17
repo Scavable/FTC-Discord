@@ -168,11 +168,11 @@ export default class Whitelist implements BaseCommand {
           const entry = consoleEntries.find(
             (e: any) =>
               new Date(e.Timestamp).getTime() >= startTime - 6000 &&
-              (e.Contents.includes('to the whitelist') ||
-                e.Contents.includes(`from the whitelist`) ||
-                e.Contents.includes(`already whitelisted`) ||
-                e.Contents.includes(`is not whitelisted`) ||
-                e.Contents.includes(`does not exist`)),
+              (e.Contents.includes(`${ign} to the whitelist`) ||
+                e.Contents.includes(`${ign} from the whitelist`) ||
+                e.Contents.includes(`${ign}is already whitelisted`) ||
+                e.Contents.includes(`${ign} is not whitelisted`) ||
+                e.Contents.includes(`${ign} does not exist`)),
           );
 
           if (!entry) {
