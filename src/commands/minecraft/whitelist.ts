@@ -170,9 +170,9 @@ export default class Whitelist implements BaseCommand {
               new Date(e.Timestamp).getTime() >= startTime - 6000 &&
               (e.Contents.includes(`${ign} to the whitelist`) ||
                 e.Contents.includes(`${ign} from the whitelist`) ||
-                e.Contents.includes(`${ign}is already whitelisted`) ||
-                e.Contents.includes(`${ign} is not whitelisted`) ||
-                e.Contents.includes(`${ign} does not exist`)),
+                e.Contents.includes(`Player is already whitelisted`) ||
+                e.Contents.includes(`Player is not whitelisted`) ||
+                e.Contents.includes(`That player does not exist`)),
           );
 
           if (!entry) {
