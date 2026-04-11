@@ -49,11 +49,7 @@ export default class CreateCategoryCommand implements BaseCommand {
       }
 
       /** Restrict command to users with the "staff" role */
-      if (
-        !member?.roles.cache.some(
-          (role: Role) => role.name.toLowerCase() === 'staff',
-        )
-      ) {
+      if (!member || (Array.isArray(member.roles) ? !member.roles.includes(staffRoleId) : !member.roles.cache.has(staffRoleId))) {
         return await interaction.editReply(
           '❌ You do not have the required role to run this command.',
         );
