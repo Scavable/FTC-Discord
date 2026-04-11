@@ -9,8 +9,7 @@ import RoleMapper from '../../utility/RoleMapper';
 import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 
 export default class CreateCategoryCommand implements BaseCommand {
-  enabled: boolean = false;
-  static commandName: string = 'discord_create_category';
+  static commandName: string = 'create_category';
   static commandDescription: string = 'Create a category with child channels';
 
   async createSlashCommand(): Promise<SlashCommandData> {
@@ -40,8 +39,21 @@ export default class CreateCategoryCommand implements BaseCommand {
       const member = interaction.member;
       const categoryName = interaction.options.getString('category_name');
 
+      const staffRoleId = roleMapper.getRoleId('Staff');
+      const rulesRoleId = roleMapper.getRoleId('Rules');
+
+      if (!staffRoleId || !rulesRoleId) {
+        return await interaction.editReply(
+          '❌ Could not find required roles (Staff/Rules). Please ensure they exist.',
+        );
+      }
+
       /** Restrict command to users with the "staff" role */
-      if (!member?.roles.cache.some((role: Role) => role.name === 'Staff')) {
+      if (
+        !member?.roles.cache.some(
+          (role: Role) => role.name.toLowerCase() === 'staff',
+        )
+      ) {
         return await interaction.editReply(
           '❌ You do not have the required role to run this command.',
         );
@@ -103,7 +115,7 @@ export default class CreateCategoryCommand implements BaseCommand {
               ],
             },
             {
-              id: roleMapper.getRoleId('Staff'),
+              id: staffRoleId,
               allow: [
                 PermissionFlagsBits.MentionEveryone,
                 PermissionFlagsBits.ManageMessages,
@@ -117,7 +129,7 @@ export default class CreateCategoryCommand implements BaseCommand {
               ],
             },
             {
-              id: roleMapper.getRoleId('Rules'),
+              id: rulesRoleId,
               allow: [
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.SendMessages,
@@ -183,7 +195,7 @@ export default class CreateCategoryCommand implements BaseCommand {
               ],
             },
             {
-              id: roleMapper.getRoleId('Rules'),
+              id: rulesRoleId,
               allow: [
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.AddReactions,
@@ -232,7 +244,7 @@ export default class CreateCategoryCommand implements BaseCommand {
   async createObject(): Promise<CommandObject> {
     return {
       data: await this.createSlashCommand(),
-      execute: this.createCommandFunctionality(),
+      execute: await this.createCommandFunctionality(),
     };
   }
 }

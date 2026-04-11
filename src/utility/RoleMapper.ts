@@ -16,7 +16,7 @@ export default class RoleMapper {
     try {
       const roles = await this.guild.roles.fetch();
       roles?.forEach((role) => {
-        this.roleMap.set(role.name, role);
+        this.roleMap.set(role.name.toLowerCase(), role);
       });
       this.initialized = true;
     } catch (error) {
@@ -27,23 +27,23 @@ export default class RoleMapper {
   /**
    * Get the role ID by name (case-insensitive).
    */
-  getRoleId(roleName: string): string | null {
-    const role = this.roleMap.get(roleName);
-    return role ? role.id : null;
+  getRoleId(roleName: string): string {
+    const role = this.roleMap.get(roleName.toLowerCase());
+    return role ? role.id : '';
   }
 
   /**
    * Get the Role object by name (case-insensitive).
    */
   getRole(roleName: string): Role | null {
-    return this.roleMap.get(roleName) || null;
+    return this.roleMap.get(roleName.toLowerCase()) || null;
   }
 
   /**
    * Check if a role exists in the map.
    */
   hasRole(roleName: string): boolean {
-    return this.roleMap.has(roleName);
+    return this.roleMap.has(roleName.toLowerCase());
   }
 
   /**

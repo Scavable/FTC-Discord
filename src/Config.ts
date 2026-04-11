@@ -16,6 +16,7 @@ const {
   AUTO_UPDATE_DEPS,
   NODE_ENV,
   DISBOARD_CHANNEL_ID,
+  DISABLED_COMMANDS,
 } = process.env;
 
 /** Check for required environment variables */
@@ -44,4 +45,5 @@ export const config = {
   AUTO_UPDATE_DEPS: (AUTO_UPDATE_DEPS || '').toLowerCase() === 'true',
   IS_PROD: (NODE_ENV || '').toLowerCase() === 'production',
   DISBOARD_CHANNEL_ID: DISBOARD_CHANNEL_ID || '',
+  DISABLED_COMMANDS: (DISABLED_COMMANDS || '').split(',').map(name => name.trim()).filter(name => name.length > 0),
 };

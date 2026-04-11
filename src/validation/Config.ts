@@ -13,6 +13,7 @@ const configSchema = z.object({
   CURSEFORGE_API_KEY: z.string().min(10),
   AUTO_UPDATE_DEPS: z.boolean(),
   IS_PROD: z.boolean(),
+  DISABLED_COMMANDS: z.array(z.string()).optional(),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

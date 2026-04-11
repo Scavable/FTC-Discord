@@ -21,7 +21,6 @@ import { AppState, MetricKey } from '../../types/AppState';
 import Instances from '../../utility/Instances';
 
 export default class ServersPanel implements BaseCommand {
-  enabled: boolean = true;
   static commandName: string = "server_information";
   static commandDescription: string = "Display AMP server information.txt";
 

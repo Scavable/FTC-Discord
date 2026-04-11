@@ -20,7 +20,6 @@ export interface CommandObject {
 }
 
 export interface BaseCommand {
-  enabled: boolean;
   commandName?: string;
   commandDescription?: string;
 

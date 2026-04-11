@@ -5,7 +5,6 @@ import Commands from '../../utility/Commands';
 import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 
 export default class ReloadAll implements BaseCommand {
-  enabled: boolean = true;
   static commandName: string = 'reload_all';
   static description: string = 'Reloads all commands';
 

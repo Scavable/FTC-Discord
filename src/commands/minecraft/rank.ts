@@ -11,7 +11,6 @@ import Servers from "../../utility/Servers";
 const sleep = promisify(setTimeout);
 
 export default class Rank implements BaseCommand {
-  enabled: boolean = true;
   commandName: string = "rank";
   commandDescription: string = "Add or Remove player rank in the server";
 

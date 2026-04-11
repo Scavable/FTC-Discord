@@ -22,7 +22,6 @@ import RoleMapper from '../../utility/RoleMapper';
 import logger from '../../utility/Logger';
 
 export default class Whitelist implements BaseCommand {
-  enabled: boolean = true;
   static commandName: string = 'whitelist';
   static commandDescription: string = 'Add a player to the whitelist';
 

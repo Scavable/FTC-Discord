@@ -15,7 +15,6 @@ import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/Ba
 import CustomClient from '../../CustomClient';
 
 export default class CommandButtons implements BaseCommand {
-  enabled: boolean = true;
   commandName: string = 'command_console';
   commandDescription: string =
     'Creates a row of buttons which execute commands';

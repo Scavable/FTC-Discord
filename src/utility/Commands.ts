@@ -34,12 +34,17 @@ class Commands {
     const commandsArray: any[] = [];
     
     await Promise.all(this.commands.map(async (command) => {
-      if (command.enabled) {
-        const commandObject: CommandObject = await command.createObject();
-        commandsArray.push(commandObject.data.toJSON());
-        this.client.commands.set(commandObject.data.name, commandObject);
-        logger.commands(`Loaded command: ${commandObject.data.name} for guild ${guildId}`);
+      const commandObject: CommandObject = await command.createObject();
+      const commandName = commandObject.data.name;
+
+      if (config.DISABLED_COMMANDS.includes(commandName)) {
+        logger.commands(`Skipping disabled command: ${commandName} for guild ${guildId}`);
+        return;
       }
+
+      commandsArray.push(commandObject.data.toJSON());
+      this.client.commands.set(commandName, commandObject);
+      logger.commands(`Loaded command: ${commandName} for guild ${guildId}`);
     }));
 
     await this.rest.put(

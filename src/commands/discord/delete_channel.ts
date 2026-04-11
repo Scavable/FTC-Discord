@@ -17,7 +17,6 @@ import Logger from '../../utility/Logger';
 import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 
 export default class DeleteChannelCommand implements BaseCommand {
-  enabled: boolean = true;
   static commandName: string = 'delete_channel';
   static commandDescription: string =
     'Delete a category with child channels or a single channel';
