@@ -1,4 +1,8 @@
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
   ChannelType,
   PermissionFlagsBits,
   SlashCommandBuilder,
@@ -13,7 +17,7 @@ import Logger from '../../utility/Logger';
 import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 
 export default class DeleteChannelCommand implements BaseCommand {
-  enabled: boolean = false;
+  enabled: boolean = true;
   static commandName: string = 'delete_channel';
   static commandDescription: string =
     'Delete a category with child channels or a single channel';
@@ -38,73 +42,137 @@ export default class DeleteChannelCommand implements BaseCommand {
   async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>> {
     return async (interaction: ChatInputCommandInteraction) => {
       if (!interaction.inGuild()) {
-        return interaction.reply({ content: '❌ Guild context required.', flags: [MessageFlags.Ephemeral] });
+        return interaction.reply({
+          content: '❌ Guild context required.',
+          flags: [MessageFlags.Ephemeral],
+        });
       }
 
       const guild = interaction.guild!;
       const member = interaction.member as GuildMember;
       const targetChannel = interaction.options.getChannel('channel', true);
 
-      /** Optional: extra member permission guard (beyond default member permissions) */
+      /** Permission checks */
       if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-        return interaction.reply({ content: '❌ Missing Manage Channels permission.', flags: [MessageFlags.Ephemeral] });
+        return interaction.reply({
+          content: '❌ Missing Manage Channels permission.',
+          flags: [MessageFlags.Ephemeral],
+        });
       }
 
       const me = guild.members.me;
       if (!me || !me.permissions.has(PermissionFlagsBits.ManageChannels)) {
-        return interaction.reply({ content: "❌ I don't have permission to manage channels.", flags: [MessageFlags.Ephemeral] });
+        return interaction.reply({
+          content: "❌ I don't have permission to manage channels.",
+          flags: [MessageFlags.Ephemeral],
+        });
       }
 
-      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+      const confirm = new ButtonBuilder()
+        .setCustomId('confirm_delete')
+        .setLabel('Confirm')
+        .setStyle(ButtonStyle.Success);
 
-      try {
-        if (targetChannel instanceof CategoryChannel) {
-          const allChannels = await guild.channels.fetch();
-          const childChannels = allChannels.filter(c => c?.parentId === targetChannel.id) as Collection<string, GuildChannel>;
+      const cancel = new ButtonBuilder()
+        .setCustomId('cancel_delete')
+        .setLabel('Cancel')
+        .setStyle(ButtonStyle.Danger);
 
-          const failures: string[] = [];
-          for (const channel of childChannels.values()) {
-            if (!('deletable' in channel) || !channel.deletable) {
-              failures.push(`#${channel.name}`);
-              continue;
-            }
-            try {
-              await channel.delete(`Deleted by ${interaction.user.tag}`);
-            } catch {
-              failures.push(`#${channel.name}`);
-            }
-          }
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirm, cancel);
 
-          if (!targetChannel.deletable) {
-            return interaction.editReply(`❌ Cannot delete category ${targetChannel.name} due to permissions.`);
-          }
+      const response = await interaction.reply({
+        content: `Are you sure you want to delete ${
+          targetChannel instanceof CategoryChannel ? 'category' : 'channel'
+        } **${targetChannel.name}**?`,
+        components: [row],
+        flags: [MessageFlags.Ephemeral],
+      });
 
-          await targetChannel.delete(`Deleted by ${interaction.user.tag}`);
+      const collector = response.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: 30_000,
+        filter: (i) => i.user.id === interaction.user.id,
+      });
 
-          const baseMsg = `✅ Category **${targetChannel.name}** and its channels have been deleted.`;
-          return interaction.editReply(
-            failures.length ? `${baseMsg} However, could not delete: ${failures.join(', ')}` : baseMsg
-          );
+      collector.on('collect', async (i) => {
+        if (i.customId === 'cancel_delete') {
+          await i.update({
+            content: '❌ Deletion cancelled.',
+            components: [],
+          });
+          return collector.stop();
         }
 
-        if ('deletable' in targetChannel && (targetChannel as any).deletable) {
-          await (targetChannel as any).delete(`Deleted by ${interaction.user.tag}`);
-          return interaction.editReply(`✅ Deleted <#${targetChannel.id}>.`);
+        if (i.customId === 'confirm_delete') {
+          await i.update({
+            content: 'Deleting channel(s)...',
+            components: [],
+          });
+
+          try {
+            if (targetChannel instanceof CategoryChannel) {
+              const allChannels = await guild.channels.fetch();
+              const childChannels = allChannels.filter(
+                (c) => c?.parentId === targetChannel.id
+              ) as Collection<string, GuildChannel>;
+
+              const failures: string[] = [];
+              for (const channel of childChannels.values()) {
+                if (!('deletable' in channel) || !channel.deletable) {
+                  failures.push(`#${channel.name}`);
+                  continue;
+                }
+                try {
+                  await channel.delete(`Deleted by ${interaction.user.tag}`);
+                } catch {
+                  failures.push(`#${channel.name}`);
+                }
+              }
+
+              if (!targetChannel.deletable) {
+                return i.editReply(
+                  `❌ Cannot delete category **${targetChannel.name}** due to permissions.`
+                );
+              }
+
+              await targetChannel.delete(`Deleted by ${interaction.user.tag}`);
+
+              const baseMsg = `✅ Category **${targetChannel.name}** and its channels have been deleted.`;
+              await i.editReply(
+                failures.length
+                  ? `${baseMsg} However, could not delete: ${failures.join(', ')}`
+                  : baseMsg
+              );
+            } else if ('deletable' in targetChannel && (targetChannel as any).deletable) {
+              await (targetChannel as any).delete(`Deleted by ${interaction.user.tag}`);
+              await i.editReply(`✅ Deleted **${targetChannel.name}**.`);
+            } else {
+              await i.editReply('❌ This type of channel cannot be deleted.');
+            }
+          } catch (error) {
+            Logger.error(`Error deleting channel(s): ${error}`);
+            await i.editReply('❌ An unexpected error occurred while deleting.');
+          } finally {
+            collector.stop();
+          }
         }
+      });
 
-        return interaction.editReply('❌ This type of channel cannot be deleted.');
-      } catch (error) {
-
-        Logger.error(`Error deleting channel(s): ${error}`);
-        return interaction.editReply('❌ An unexpected error occurred while deleting.');
-      }
+      collector.on('end', async (collected, reason) => {
+        if (reason === 'time' && collected.size === 0) {
+          await interaction.editReply({
+            content: '❌ Deletion timed out.',
+            components: [],
+          });
+        }
+      });
     };
   }
 
   async createObject(): Promise<CommandObject> {
     return {
       data: await this.createSlashCommand(),
-      execute: this.createCommandFunctionality(),
+      execute: await this.createCommandFunctionality(),
     };
   }
 }

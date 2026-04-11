@@ -1,4 +1,5 @@
-import fs from 'node:fs';
+import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Client, ClientEvents } from 'discord.js';
@@ -27,16 +28,15 @@ class EventLoader {
     const eventsPath = path.join(__root, 'events');
 
     /** Ensure the events directory exists */
-    if (!fs.existsSync(eventsPath)) {
+    if (!existsSync(eventsPath)) {
       console.error(`Events directory does not exist: ${eventsPath}`);
       return;
     }
 
-    const eventFiles = fs
-      .readdirSync(eventsPath)
+    const eventFiles = (await fs.readdir(eventsPath))
       .filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
 
-    for (const file of eventFiles) {
+    await Promise.all(eventFiles.map(async (file) => {
       const filePath = path.join(eventsPath, file);
 
       /** Dynamically import the event file */
@@ -57,7 +57,7 @@ class EventLoader {
       } else {
         this.client.on(event.name, handler);
       }
-    }
+    }));
   }
 }
 

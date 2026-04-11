@@ -23,8 +23,8 @@ export default class ReloadAll implements BaseCommand {
         const client = interaction.client as CustomClient;
 
         /** Clear existing commands and reload from the CommandRegistry via CommandLoader */
-        client.commands.clear();
-        await new Commands(client).updateGuildCommands();
+        if (!interaction.guildId) return interaction.followUp('Guild not found.');
+        await new Commands(client).updateGuildCommands(interaction.guildId);
 
         const reloadCount = client.commands.size;
         logger.info(`✅ Reloaded ${reloadCount} commands via Commands class.`);

@@ -34,7 +34,7 @@ if (
 export const config = {
   DISCORD_TOKEN,
   CLIENT_ID,
-  GUILD_ID,
+  GUILD_IDS: (GUILD_ID || '').split(',').map(id => id.trim()).filter(id => id.length > 0),
   AMP_USERNAME,
   AMP_PASS,
   AMP_API_BASE_URL,

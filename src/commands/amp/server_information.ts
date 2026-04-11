@@ -8,7 +8,8 @@ import {
   TextChannel,
   MessageFlags,
 } from 'discord.js';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
+import { existsSync } from 'fs';
 import * as path from 'path';
 import Amp from '../../amp/ads/Amp';
 import Instance from '../../types/Instance';
@@ -17,7 +18,6 @@ import CustomClient from '../../CustomClient';
 import logger from '../../utility/Logger';
 import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
 import { AppState, MetricKey } from '../../types/AppState';
-import Servers from '../../utility/Servers';
 import Instances from '../../utility/Instances';
 
 export default class ServersPanel implements BaseCommand {
@@ -40,22 +40,24 @@ export default class ServersPanel implements BaseCommand {
         interaction.client as CustomClient; /** Cast to your custom client */
       const guild = interaction.guild;
 
-      if (!guild) {
+      if (!guild || !interaction.guildId) {
         return await interaction.reply("❌ Guild not found.");
       }
 
+      const state = await client.initializeGuildState(interaction.guildId);
+
       /** If the panel is running, stop it */
-      if (client.updateInterval) {
-        clearInterval(client.updateInterval); /** Stop the interval */
-        client.cleanupState(); /** Clean up the state */
+      if (state.updateInterval) {
+        clearInterval(state.updateInterval); /** Stop the interval */
+        state.updateInterval = null;
+        state.messageCache.clear();
         return await interaction.reply(
           "✅ Server status panel has been stopped.",
         );
       }
 
-      /** Initialize state and AMP instance */
-      client.initializeState();
-      const amp = client.getAmpInstance();
+      /** Initialize AMP instance */
+      const amp = state.amp;
       await amp.login();
 
       await interaction.deferReply();
@@ -117,7 +119,7 @@ export default class ServersPanel implements BaseCommand {
 
       await interaction.editReply("✅ Server status panel started.");
 
-      const messageCache = client.messageCache!;
+      const messageCache = state.messageCache;
       /** Ensure the static server information.txt message exists as plain text (not an embed) */
       const firstEnsure = await this.ensureOrUpdateStaticInfo(channel);
       let forceRecreateEmbeds =
@@ -159,7 +161,7 @@ export default class ServersPanel implements BaseCommand {
        * Start the update loop
        * Run every 3 minutes
        */
-      client.updateInterval = setInterval(updateLoop, 180_000);
+      state.updateInterval = setInterval(updateLoop, 180_000);
 
       /** Run the first update immediately */
       await updateLoop();
@@ -185,7 +187,12 @@ export default class ServersPanel implements BaseCommand {
       if (!servers) return;
 
       /** Update in-memory cache so commands can use fresh data */
-      Servers.setAll(servers);
+      const customClient = channel.client as CustomClient;
+      if (channel.guildId) {
+        const state = await customClient.initializeGuildState(channel.guildId);
+        state.servers.setAll(servers);
+      }
+      
       const summary = await this.overviewEmbed(amp, servers);
       const embeds = await this.individualEmbeds(amp, servers);
 
@@ -249,9 +256,9 @@ export default class ServersPanel implements BaseCommand {
   ): Promise<{ created: boolean; updated: boolean }> {
     try {
       const filePath = path.join(process.cwd(), "server information.txt");
-      if (!fs.existsSync(filePath)) return { created: false, updated: false };
+      if (!existsSync(filePath)) return { created: false, updated: false };
 
-      const original = fs.readFileSync(filePath, "utf8");
+      const original = await fs.readFile(filePath, "utf8");
       if (!original || original.trim().length === 0)
         return { created: false, updated: false };
 

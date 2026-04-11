@@ -6,17 +6,43 @@ import logger from '../utility/Logger';
 export default {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction) {
-    /** Restrict the bot to a single configured guild only */
-    if (!interaction.guildId || interaction.guildId !== config.GUILD_ID) {
+    /** Restrict the bot to configured guilds only */
+    if (!interaction.guildId || !config.GUILD_IDS.includes(interaction.guildId)) {
       if (interaction.isRepliable()) {
         try {
           await interaction.reply({
-            content: 'This bot is restricted to a specific server and cannot be used here.',
+            content: 'This bot is restricted to specific servers and cannot be used here.',
             flags: [MessageFlags.Ephemeral],
           });
         } catch (_) {
           /** ignore reply errors (e.g., already replied) */
         }
+      }
+      return;
+    }
+
+    const customClient = interaction.client as CustomClient;
+    const guildState = await customClient.initializeGuildState(interaction.guildId);
+
+    /** Handle autocomplete */
+    if (interaction.isAutocomplete()) {
+      const command = customClient.commands.get(interaction.commandName);
+      if (interaction.commandName === 'rank' || interaction.commandName === 'whitelist') {
+        const focusedValue = interaction.options.getFocused();
+        const servers = guildState.servers.getAll().filter(
+          (s) =>
+            s.Group === "Minecraft" &&
+            !["Scheduler", "ADS", "Bot"].some((keyword) =>
+              s.FriendlyName.includes(keyword),
+            ) &&
+            !s.Suspended,
+        );
+        const filtered = servers.filter((choice) =>
+          choice.FriendlyName.toLowerCase().includes(focusedValue.toLowerCase()),
+        );
+        await interaction.respond(
+          filtered.slice(0, 25).map((choice) => ({ name: choice.FriendlyName, value: choice.FriendlyName })),
+        );
       }
       return;
     }
@@ -42,7 +68,6 @@ export default {
       }
 
       /** Delegate to commands that have a handleButton method */
-      const customClient = interaction.client as CustomClient;
       for (const command of customClient.commands.values()) {
         if (command.handleButton) {
           await command.handleButton(btn);
@@ -57,7 +82,6 @@ export default {
     /** Handle modal submissions */
     if (interaction.isModalSubmit()) {
       const modal = interaction as ModalSubmitInteraction;
-      const customClient = interaction.client as CustomClient;
       for (const command of customClient.commands.values()) {
         if (command.handleModal) {
           await command.handleModal(modal);
@@ -70,7 +94,6 @@ export default {
     /** Slash command handling */
     if (!interaction.isChatInputCommand()) return;
 
-    const customClient = interaction.client as CustomClient;
     const command = customClient.commands.get(interaction.commandName);
 
     if (!command) {

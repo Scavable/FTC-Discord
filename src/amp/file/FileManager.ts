@@ -1,5 +1,4 @@
 import Instance from '../../types/Instance';
-import Servers from '../../utility/Servers';
 import logger from '../../utility/Logger';
 import { AmpModule } from '../AmpModule';
 
@@ -69,9 +68,6 @@ class FileManager extends AmpModule {
         server.Whitelisted = configResponse?.CurrentValue ?? false;
       }),
     );
-
-    /** Update cache only; no file persistence */
-    Servers.setAll(servers);
 
     return servers;
   }

@@ -30,20 +30,20 @@ class Commands {
     ];
   }
 
-  async updateGuildCommands() {
-    this.client.commands.clear();
-
-    let commandsArray: any[] = [];
-    for(const command of this.commands) {
-      if(command.enabled){
+  async updateGuildCommands(guildId: string) {
+    const commandsArray: any[] = [];
+    
+    await Promise.all(this.commands.map(async (command) => {
+      if (command.enabled) {
         const commandObject: CommandObject = await command.createObject();
         commandsArray.push(commandObject.data.toJSON());
         this.client.commands.set(commandObject.data.name, commandObject);
-        logger.commands(`Loaded command: ${commandObject.data.name}`);
+        logger.commands(`Loaded command: ${commandObject.data.name} for guild ${guildId}`);
       }
-    }
+    }));
+
     await this.rest.put(
-      Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID),
+      Routes.applicationGuildCommands(config.CLIENT_ID, guildId),
       {
         body: commandsArray,
       },

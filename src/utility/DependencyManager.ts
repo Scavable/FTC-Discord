@@ -1,8 +1,12 @@
-import { execSync } from 'child_process';
+import { exec, execSync } from 'child_process';
 import logger from './Logger';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
+import { existsSync } from 'fs';
 import * as path from 'path';
 import { config } from '../Config';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 class DependencyManager {
   private packageJsonPath: string;
@@ -12,15 +16,16 @@ class DependencyManager {
   }
 
   public async verifyDependencies(): Promise<void> {
-    if (!fs.existsSync(this.packageJsonPath)) {
+    if (!existsSync(this.packageJsonPath)) {
       logger.warn('package.json not found. Skipping dependency verification.');
       return;
     }
 
     try {
-      this.checkNodeVersion();
+      await this.checkNodeVersion();
 
-      const packageJson = JSON.parse(fs.readFileSync(this.packageJsonPath, 'utf8'));
+      const packageJsonContent = await fs.readFile(this.packageJsonPath, 'utf8');
+      const packageJson = JSON.parse(packageJsonContent);
       const dependencies = {
         ...(packageJson.dependencies || {}),
         ...(packageJson.devDependencies || {}),
@@ -33,7 +38,7 @@ class DependencyManager {
       /** Basic check: is everything in node_modules? */
       for (const dep in dependencies) {
         const depPath = path.resolve(process.cwd(), 'node_modules', dep);
-        if (!fs.existsSync(depPath)) {
+        if (!existsSync(depPath)) {
           logger.warn(`Missing dependency: ${dep}`);
           needsInstall = true;
           break; 
@@ -48,11 +53,11 @@ class DependencyManager {
        */
       
       if (needsInstall) {
-        this.installDependencies();
+        await this.installDependencies();
       } else {
         logger.info('All dependencies seem to be present.');
         if (config.AUTO_UPDATE_DEPS && !config.IS_PROD) {
-          this.updateIfOutdated();
+          await this.updateIfOutdated();
         } else if (config.AUTO_UPDATE_DEPS && config.IS_PROD) {
           logger.info('AUTO_UPDATE_DEPS is enabled, but suppressed because environment is set to production.');
         }
@@ -62,10 +67,10 @@ class DependencyManager {
     }
   }
 
-  private installDependencies(): void {
+  private async installDependencies(): Promise<void> {
     logger.info('Attempting to install/update dependencies...');
     try {
-      execSync('npm install --no-audit --no-fund', { stdio: 'inherit' });
+      await execAsync('npm install --no-audit --no-fund');
       logger.info('Dependencies installed successfully.');
     } catch (error) {
       logger.error('Failed to install dependencies. Please run "npm install" manually.', error);
@@ -73,7 +78,7 @@ class DependencyManager {
     }
   }
 
-  private updateIfOutdated(): void {
+  private async updateIfOutdated(): Promise<void> {
     logger.info('AUTO_UPDATE_DEPS enabled. Checking for outdated packages...');
     try {
       /**
@@ -82,7 +87,8 @@ class DependencyManager {
        */
       let json = '';
       try {
-        json = execSync('npm outdated --json', { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
+        const { stdout } = await execAsync('npm outdated --json');
+        json = stdout;
       } catch (e: any) {
         /** When outdated packages exist, npm throws with code 1 but still prints JSON to stdout */
         if (e && e.stdout) {
@@ -95,7 +101,7 @@ class DependencyManager {
       const data = json ? JSON.parse(json) : {};
       
       const packagesToUpdate = Object.keys(data).filter(pkg => {
-        const { current, wanted, latest } = data[pkg];
+        const { current, latest } = data[pkg];
         /**
          * In dev, we can push all the way to 'latest' if we want.
          * The user asked "Is it ideal to keep all deps up to the latest version... only the dev environment"
@@ -113,7 +119,7 @@ class DependencyManager {
          * However, a simpler way is 'npm install' of the names from the list.
          */
         const names = packagesToUpdate.map(name => `${name}@latest`).join(' ');
-        execSync(`npm install ${names} --no-audit --no-fund`, { stdio: 'inherit' });
+        await execAsync(`npm install ${names} --no-audit --no-fund`);
         logger.info('Update to latest complete.');
       } else {
         logger.info('All packages are already at the absolute latest version. No update necessary.');
@@ -123,7 +129,7 @@ class DependencyManager {
     }
   }
 
-  private checkNodeVersion(): void {
+  private async checkNodeVersion(): Promise<void> {
     try {
       const currentVersion = process.version;
       /**
@@ -132,8 +138,8 @@ class DependencyManager {
        * Using a quick web check or just notifying if they are behind a known stable version.
        * Better: Use `npm view node versions --json` and pick the last one.
        */
-      const versionsJson = execSync('npm view node versions --json', { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
-      const versions = JSON.parse(versionsJson);
+      const { stdout } = await execAsync('npm view node versions --json');
+      const versions = JSON.parse(stdout);
       const latestVersion = `v${versions[versions.length - 1]}`;
 
       if (currentVersion !== latestVersion) {

@@ -30,8 +30,10 @@ function shouldSkip(server: Instance): boolean {
   );
 }
 
-export async function checkForPackUpdates(client: CustomClient, channelId?: string): Promise<void> {
-  const amp: Amp = client.getAmpInstance();
+export async function checkForPackUpdates(client: CustomClient, guildId: string, channelId?: string): Promise<void> {
+  const state = await client.initializeGuildState(guildId);
+  const amp = state.amp;
+  const serversCache = state.servers;
 
   /**
    * If the cache was just populated (e.g., by Bot.ts at startup), avoid immediately refreshing again.
@@ -40,15 +42,15 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
   const FRESH_TTL_MS = 30_000;
   let servers: Instance[];
 
-  if (Servers.getAll().length > 0 && Servers.isFresh(FRESH_TTL_MS)) {
-    logger.info('[PackUpdate] Using fresh servers cache; skipping AMP refresh.');
-    servers = Servers.getAll();
+  if (serversCache.getAll().length > 0 && serversCache.isFresh(FRESH_TTL_MS)) {
+    logger.info(`[PackUpdate] [${guildId}] Using fresh servers cache; skipping AMP refresh.`);
+    servers = serversCache.getAll();
   } else {
     await amp.login();
     const minecraftServers = await new Instances(amp).getMinecraftInstances();
     const refreshed = await amp.readFile(minecraftServers);
-    Servers.setAll(refreshed);
-    servers = Servers.getAll();
+    serversCache.setAll(refreshed);
+    servers = serversCache.getAll();
   }
 
   /** Refresh servers and pack info from AMP (updates FTCVersion, FTCIP, Hidden, Whitelisted) */
@@ -177,8 +179,8 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
       logger.warn(`[PackUpdate] Failed to purge previous messages in channel ${channelId}: ${purgeErr?.message ?? purgeErr}`);
     }
 
-    /** Post individual messages with a "Completed" button */
-    for (const u of updates) {
+    /** Post individual messages with a "Completed" button in parallel */
+    await Promise.allSettled(updates.map(async (u) => {
       const embed = new EmbedBuilder()
         .setTitle(`Update: ${u.packName}`)
         .setDescription(`**Current:** ${u.currentVersion}\n**Latest:** ${u.latestVersion}\n**Uploaded:** ${formatDate(u.uploadedAt)}`)
@@ -191,8 +193,8 @@ export async function checkForPackUpdates(client: CustomClient, channelId?: stri
           .setStyle(ButtonStyle.Success)
       );
 
-      await channel.send({ embeds: [embed], components: [row] });
-    }
+      return (channel as TextChannel).send({ embeds: [embed], components: [row] });
+    }));
   } catch (err: any) {
     logger.warn(`[PackUpdate] Failed to send messages to channel ${channelId}: ${err?.message ?? err}`);
     for (const u of updates) {

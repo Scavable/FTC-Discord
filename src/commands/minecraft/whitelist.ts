@@ -27,11 +27,6 @@ export default class Whitelist implements BaseCommand {
   static commandDescription: string = 'Add a player to the whitelist';
 
   async createSlashCommand(): Promise<SlashCommandData> {
-    const serverChoices = this.getAvailableServers().map((server) => ({
-      name: server.FriendlyName,
-      value: server.FriendlyName,
-    }));
-
     return new SlashCommandBuilder()
       .setName(Whitelist.commandName)
       .setDescription(Whitelist.commandDescription)
@@ -61,8 +56,8 @@ export default class Whitelist implements BaseCommand {
         option
           .setName('server')
           .setDescription('The server')
-          .setRequired(true)
-          .addChoices(...serverChoices),
+          .setAutocomplete(true)
+          .setRequired(true),
       )
       .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
   }
@@ -89,8 +84,9 @@ export default class Whitelist implements BaseCommand {
     };
   }
 
-  private getAvailableServers(): Instance[] {
-    return Servers.getAll().filter(
+  private getAvailableServers(serversCache?: Servers): Instance[] {
+    if (!serversCache) return [];
+    return serversCache.getAll().filter(
       (s) =>
         s.Group === 'Minecraft' &&
         !['Scheduler', 'ADS', 'Bot'].some((keyword) =>
@@ -106,14 +102,15 @@ export default class Whitelist implements BaseCommand {
     targetServer: Instance,
     operation: string,
   ): Promise<string> {
-    if (!targetServer.RoleName || !interaction.guild) return '';
+    if (!targetServer.RoleName || !interaction.guildId || !interaction.guild) return '';
+    const customClient = interaction.client as CustomClient;
+    const state = await customClient.initializeGuildState(interaction.guildId);
+    const roleMapper = state.roleMapper;
 
     try {
       const member = await interaction.guild.members.fetch(user.id);
       if (!member) return '';
 
-      const roleMapper = new RoleMapper(interaction.guild as Guild);
-      await roleMapper.initialize();
       const role = roleMapper.getRole(targetServer.RoleName);
 
       if (!role) {
@@ -140,16 +137,16 @@ export default class Whitelist implements BaseCommand {
     ign: string,
     user: User,
   ) {
-    const client = interaction.client as CustomClient;
-    client.initializeState();
-    const amp = client.getAmpInstance();
+    if (!interaction.guildId) return interaction.editReply('Guild not found.');
+    const customClient = interaction.client as CustomClient;
+    const state = await customClient.initializeGuildState(interaction.guildId);
+    const amp = state.amp;
+    const serversCache = state.servers;
 
     try {
       await amp.login();
 
-      if (!interaction.guild) return interaction.editReply('Guild not found.');
-
-      const targetServer = Servers.get(serverName);
+      const targetServer = serversCache.get(serverName);
       if (!targetServer) return interaction.editReply('Server not found.');
 
       const command = `whitelist ${operation} ${ign}`;
@@ -170,9 +167,9 @@ export default class Whitelist implements BaseCommand {
               new Date(e.Timestamp).getTime() >= startTime - 6000 &&
               (e.Contents.includes(`${ign} to the whitelist`) ||
                 e.Contents.includes(`${ign} from the whitelist`) ||
-                e.Contents.includes(`${ign}is already whitelisted`) ||
-                e.Contents.includes(`${ign} is not whitelisted`) ||
-                e.Contents.includes(`${ign} does not exist`)),
+                e.Contents.includes(`Player is already whitelisted`) ||
+                e.Contents.includes(`Player is not whitelisted`) ||
+                e.Contents.includes(`That player does not exist`)),
           );
 
           if (!entry) {
@@ -233,7 +230,12 @@ export default class Whitelist implements BaseCommand {
     const [action, ...args] = interaction.customId.split(':');
 
     if (action === 'whitelist') {
-      const availableServers = this.getAvailableServers();
+      if (!interaction.guildId) return;
+      const customClient = interaction.client as CustomClient;
+      const state = await customClient.initializeGuildState(interaction.guildId);
+      const serversCache = state.servers;
+
+      const availableServers = this.getAvailableServers(serversCache);
       if (!availableServers.length) {
         return interaction.reply({
           content: 'No servers available.',

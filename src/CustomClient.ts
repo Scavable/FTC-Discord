@@ -2,13 +2,20 @@ import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import Amp from './amp/ads/Amp';
 import { config } from './Config';
 import { CommandObject } from './interface/BaseCommand';
+import Servers from './utility/Servers';
+import RoleMapper from './utility/RoleMapper';
+
+export interface GuildState {
+  amp: Amp;
+  servers: Servers;
+  roleMapper: RoleMapper;
+  messageCache: Map<string, any>;
+  updateInterval: NodeJS.Timeout | null;
+}
 
 export default class CustomClient extends Client {
   commands: Collection<string, CommandObject>;
-  /** Single-guild state */
-  amp: Amp | null;
-  messageCache: Map<string, any>;
-  updateInterval: NodeJS.Timeout | null;
+  private guildStates: Map<string, GuildState>;
   disboardTimer: NodeJS.Timeout | null;
 
   constructor() {
@@ -19,44 +26,58 @@ export default class CustomClient extends Client {
       ],
     });
     this.commands = new Collection<string, CommandObject>();
-    this.amp = null;
-    this.messageCache = new Map();
-    this.updateInterval = null;
+    this.guildStates = new Map();
     this.disboardTimer = null;
   }
 
   /**
-   * Initialize the state for the single configured guild and create a new Amp instance.
+   * Initialize the state for a specific guild.
    */
-  initializeState() {
-    if (!this.amp) {
-      /** AMP credentials pulled from config */
-      this.amp = new Amp(config.AMP_USERNAME, config.AMP_PASS, '', false);
-      this.messageCache = new Map();
-      this.updateInterval = null;
+  async initializeGuildState(guildId: string): Promise<GuildState> {
+    if (this.guildStates.has(guildId)) {
+      return this.guildStates.get(guildId)!;
     }
+
+    const guild = await this.guilds.fetch(guildId);
+    if (!guild) {
+      throw new Error(`Guild ${guildId} not found.`);
+    }
+
+    const amp = new Amp(config.AMP_USERNAME, config.AMP_PASS, '', false);
+    const servers = new Servers();
+    const roleMapper = new RoleMapper(guild);
+    await roleMapper.initialize();
+
+    const state: GuildState = {
+      amp,
+      servers,
+      roleMapper,
+      messageCache: new Map(),
+      updateInterval: null,
+    };
+
+    this.guildStates.set(guildId, state);
+    return state;
   }
 
   /**
-   * Get the Amp instance for the single guild. Initializes the state if it doesn't exist.
+   * Get the state for a specific guild.
    */
-  getAmpInstance(): Amp {
-    if (!this.amp) {
-      this.initializeState();
-    }
-    return this.amp!;
+  getGuildState(guildId: string): GuildState | undefined {
+    return this.guildStates.get(guildId);
   }
 
   /**
-   * Clean up the state for the single guild.
+   * Clean up the state for a specific guild.
    */
-  cleanupState() {
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-      this.updateInterval = null;
+  cleanupGuildState(guildId: string) {
+    const state = this.guildStates.get(guildId);
+    if (state) {
+      if (state.updateInterval) {
+        clearInterval(state.updateInterval);
+      }
+      state.messageCache.clear();
+      this.guildStates.delete(guildId);
     }
-    /** Clear caches and AMP reference */
-    this.messageCache.clear();
-    this.amp = null;
   }
 }
