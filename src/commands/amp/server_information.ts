@@ -191,7 +191,7 @@ export default class ServersPanel implements BaseCommand {
         const state = await customClient.initializeGuildState(channel.guildId);
         state.servers.setAll(servers);
       }
-      
+
       const summary = await this.overviewEmbed(amp, servers);
       const embeds = await this.individualEmbeds(amp, servers);
 
@@ -207,25 +207,23 @@ export default class ServersPanel implements BaseCommand {
        */
       try {
         const filePath = path.join(process.cwd(), "server information.txt");
-        if (fs.existsSync(filePath)) {
-          const content = fs.readFileSync(filePath, "utf8");
-          const parsed = this.parseSilentDirective(content);
-          const headerLine = parsed.headerLine;
-          const fetched = await channel.messages.fetch({ limit: 100 });
-          const msgs = Array.from(fetched.values());
-          const staticMsg = msgs.find(
-            (m) => !!m.content && m.content.trim().startsWith(headerLine),
+        const content = await fs.readFile(filePath, "utf8");
+        const parsed = this.parseSilentDirective(content);
+        const headerLine = parsed.headerLine;
+        const fetched = await channel.messages.fetch({ limit: 100 });
+        const msgs = Array.from(fetched.values());
+        const staticMsg = msgs.find(
+          (m) => !!m.content && m.content.trim().startsWith(headerLine),
+        );
+        const embedMsgs = msgs.filter((m) => m.embeds && m.embeds.length > 0);
+        if (staticMsg && embedMsgs.length > 0) {
+          const oldestEmbedTs = Math.min(
+            ...embedMsgs.map((m) => m.createdTimestamp),
           );
-          const embedMsgs = msgs.filter((m) => m.embeds && m.embeds.length > 0);
-          if (staticMsg && embedMsgs.length > 0) {
-            const oldestEmbedTs = Math.min(
-              ...embedMsgs.map((m) => m.createdTimestamp),
-            );
-            const staticIsNewerThanEmbeds =
-              staticMsg.createdTimestamp > oldestEmbedTs;
-            if (staticIsNewerThanEmbeds) {
-              forceRecreateEmbeds = true;
-            }
+          const staticIsNewerThanEmbeds =
+            staticMsg.createdTimestamp > oldestEmbedTs;
+          if (staticIsNewerThanEmbeds) {
+            forceRecreateEmbeds = true;
           }
         }
       } catch (_) {
@@ -352,19 +350,9 @@ export default class ServersPanel implements BaseCommand {
         continue;
 
       let players = await amp.getUserList(server.InstanceID);
-      let currentPlayers = [];
+      const currentPlayers = this.dedupePlayers(players);
+
       let regex = new RegExp(".*]");
-
-      // Deduplicate currentPlayers by normalizing names (removing [prefix] at the start)
-      const normalizedPlayersMap = new Map();
-      for (const player of players) {
-        const normalized = player.replace(/^\[.*?\]:\s*/, "");
-        if (!normalizedPlayersMap.has(normalized)) {
-          normalizedPlayersMap.set(normalized, player);
-        }
-      }
-      currentPlayers = Array.from(normalizedPlayersMap.values());
-
       players = players.filter((list) => regex.test(list));
       //const currentPlayers = server.Metrics?.[MetricKey.ActiveUsers]?.RawValue || 0;
       /** const currentPlayers = await this.messageFilter(await amp.getUpdates(server.InstanceID)); */
@@ -383,60 +371,48 @@ export default class ServersPanel implements BaseCommand {
     return summary;
   }
 
-  async messageFilter(message: string): Promise<number> {
-    let time = new Date();
-    const updates = JSON.parse(message); /** Get all updates for the instance */
+  // async messageFilter(message: string): Promise<number> {
+  //   let time = new Date();
+  //   const updates = JSON.parse(message); /** Get all updates for the instance */
+  //
+  //   if (
+  //     Array.isArray(updates.ConsoleEntries) &&
+  //     updates.ConsoleEntries.length > 0
+  //   ) {
+  //     /** Filter console entries to only include those after the recorded time */
+  //     const recentEntries = updates.ConsoleEntries.filter((entry: any) => {
+  //       const entryDate = new Date(entry.Timestamp);
+  //       return (
+  //         entryDate.getTime() > time.getTime() - 9000
+  //       ); /** Filter based on timestamp */
+  //     });
+  //
+  //     for (const entry of recentEntries) {
+  //       const match = entry.Contents.match(
+  //         /There are (\d+) of a max of (\d+) players online/i,
+  //       );
+  //       if (match) {
+  //         return parseInt(match[1], 10);
+  //       }
+  //     }
+  //   }
+  //
+  //   return 0;
+  // }
 
-    if (
-      Array.isArray(updates.ConsoleEntries) &&
-      updates.ConsoleEntries.length > 0
-    ) {
-      /** Filter console entries to only include those after the recorded time */
-      const recentEntries = updates.ConsoleEntries.filter((entry: any) => {
-        const entryDate = new Date(entry.Timestamp);
-        return (
-          entryDate.getTime() > time.getTime() - 9000
-        ); /** Filter based on timestamp */
-      });
-
-      for (const entry of recentEntries) {
-        const match = entry.Contents.match(
-          /There are (\d+) of a max of (\d+) players online/i,
-        );
-        if (match) {
-          return parseInt(match[1], 10);
-        }
-      }
-    }
-
-    return 0;
-  }
-
-  async individualEmbeds(amp: Amp, servers: Instance[]): Promise<EmbedBuilder[]> {
+  async individualEmbeds(
+    amp: Amp,
+    servers: Instance[],
+  ): Promise<EmbedBuilder[]> {
     /** Individual embeds */
     const minecraftInstances = await new Instances(amp).getMinecraftInstances();
-    const hytaleInstances = await new Instances(amp).getHytaleInstances();
     let embeds: EmbedBuilder[] = [];
 
     for (const instance of minecraftInstances) {
-
-      if(instance.Suspended || instance.Hidden)
-        continue;
+      if (instance.Suspended || instance.Hidden) continue;
 
       let players = await amp.getUserList(instance.InstanceID);
-      let currentPlayers = [];
-      let regex = new RegExp(".*]");
-
-
-      // Deduplicate currentPlayers by normalizing names (removing [prefix] at the start)
-      const normalizedPlayersMap = new Map();
-      for (const player of players) {
-        const normalized = player.replace(/^\[.*?\]:\s*/, "");
-        if (!normalizedPlayersMap.has(normalized)) {
-          normalizedPlayersMap.set(normalized, player);
-        }
-      }
-      currentPlayers = Array.from(normalizedPlayersMap.values());
+      const currentPlayers = this.dedupePlayers(players);
 
       const isOnline = instance.AppState === AppState.Online;
       const embedColor = isOnline ? Colors.Green : Colors.Red;
@@ -496,13 +472,7 @@ export default class ServersPanel implements BaseCommand {
           )
           .setTimestamp(),
       );
-
     }
-
-    // TODO: Implement for Hytale servers later
-    // for (const instance of hytaleInstances) {
-    //
-    // }
 
     return embeds;
   }
@@ -559,6 +529,19 @@ export default class ServersPanel implements BaseCommand {
       await existingEmbedMessages[i].delete();
       messageCache.delete(existingEmbedMessages[i].id);
     }
+  }
+
+  private dedupePlayers(players: string[]) {
+
+    // Deduplicate currentPlayers by normalizing names (removing [prefix] at the start)
+    const normalizedPlayersMap = new Map();
+    for (const player of players) {
+      const normalized = player.replace(/^\[.*?\]:\s*/, "");
+      if (!normalizedPlayersMap.has(normalized)) {
+        normalizedPlayersMap.set(normalized, player);
+      }
+    }
+    return Array.from(normalizedPlayersMap.values());
   }
 
   async createObject(): Promise<CommandObject> {

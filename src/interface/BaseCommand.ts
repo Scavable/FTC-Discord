@@ -15,8 +15,6 @@ export type SlashCommandData =
 export interface CommandObject {
   data: SlashCommandData;
   execute: (interaction: ChatInputCommandInteraction) => Promise<any>;
-  handleButton?: (interaction: ButtonInteraction) => Promise<any>;
-  handleModal?: (interaction: ModalSubmitInteraction) => Promise<any>;
 }
 
 export interface BaseCommand {
@@ -26,6 +24,4 @@ export interface BaseCommand {
   createSlashCommand(): Promise<SlashCommandData>;
   createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>>;
   createObject(): Promise<CommandObject>;
-  handleButton?(interaction: ButtonInteraction): Promise<any>;
-  handleModal?(interaction: ModalSubmitInteraction): Promise<any>;
 }

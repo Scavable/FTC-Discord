@@ -25,6 +25,19 @@ export default class Whitelist implements BaseCommand {
   static commandName: string = 'whitelist';
   static commandDescription: string = 'Add a player to the whitelist';
 
+  private static readonly pollIntervalMs = 500;
+  private static readonly maxWaitMs = 12000;
+
+  private static readonly whitelistResultPhrases = [
+    'Player is already whitelisted',
+    'Player is not whitelisted',
+    'That player does not exist',
+  ];
+
+  private static wait(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   async createSlashCommand(): Promise<SlashCommandData> {
     return new SlashCommandBuilder()
       .setName(Whitelist.commandName)
@@ -81,18 +94,6 @@ export default class Whitelist implements BaseCommand {
         user,
       );
     };
-  }
-
-  private getAvailableServers(serversCache?: Servers): Instance[] {
-    if (!serversCache) return [];
-    return serversCache.getAll().filter(
-      (s) =>
-        s.Group === 'Minecraft' &&
-        !['Scheduler', 'ADS', 'Bot'].some((keyword) =>
-          s.FriendlyName.includes(keyword),
-        ) &&
-        !s.Suspended,
-    );
   }
 
   private async updateUserRole(
@@ -153,69 +154,29 @@ export default class Whitelist implements BaseCommand {
 
       await amp.sendConsoleMessage(targetServer, command);
 
-      /** Wait for 2 seconds to allow the command to process and appear in logs */
-      setTimeout(async () => {
-        try {
-          const updatesRaw = await amp.getUpdates(targetServer.InstanceID);
-          const updates = JSON.parse(updatesRaw);
-          const consoleEntries = updates.ConsoleEntries || [];
+      const entry = await this.findWhitelistResultEntry(
+        amp,
+        targetServer.InstanceID,
+        ign,
+        startTime,
+      );
 
-          /** */
-          const entry = consoleEntries.find(
-            (e: any) =>
-              new Date(e.Timestamp).getTime() >= startTime - 6000 &&
-              (e.Contents.includes(`${ign} to the whitelist`) ||
-                e.Contents.includes(`${ign} from the whitelist`) ||
-                e.Contents.includes(`Player is already whitelisted`) ||
-                e.Contents.includes(`Player is not whitelisted`) ||
-                e.Contents.includes(`That player does not exist`)),
-          );
+      if (!entry) {
+        return interaction.editReply(
+          `**${serverName}** (Executed by: ${interaction.user.tag}): Failed to find whitelist result in logs.`,
+        );
+      }
 
-          if (!entry) {
-            return interaction.editReply(
-              `**${serverName}** (Executed by: ${interaction.user.tag}): Failed to find whitelist result in logs.`,
-            );
-          }
+      let responseText = this.getWhitelistResponseText(entry.Contents, ign, operation);
 
-          console.log(entry.Contents);
+      /** Role assignment warning (if applicable) */
+      const roleWarning = await this.updateUserRole(interaction, user, targetServer, operation);
+      responseText += roleWarning;
 
-          let responseText = '';
-          switch (true) {
-            case entry.Contents.includes('to the whitelist') ||
-              entry.Contents.includes(`from the whitelist`):
-              responseText = `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
-              break;
-            case entry.Contents.includes('already whitelisted'):
-              responseText = `${ign} is already whitelisted.`;
-              break;
-            case entry.Contents.includes('is not whitelisted'):
-              responseText = `${ign} is not whitelisted.`;
-              break;
-            case entry.Contents.includes('does not exist'):
-              responseText = `${ign} does not exist.`;
-              break;
-          }
-
-          /** Role assignment warning (if applicable) */
-          const roleWarning = await this.updateUserRole(
-            interaction,
-            user,
-            targetServer,
-            operation,
-          );
-          responseText += roleWarning;
-
-          /** Successful outcome discord message */
-          await interaction.editReply(
-            `**${serverName}** (Executed by: ${interaction.user.tag}): ${responseText}`,
-          );
-        } catch (e) {
-          logger.error('Error confirming whitelist result:', e);
-          await interaction.editReply(
-            `**${serverName}** (Executed by: ${interaction.user.tag}): Failed to confirm result from logs.`,
-          );
-        }
-      }, 2000);
+      /** Successful outcome discord message */
+      await interaction.editReply(
+        `**${serverName}** (Executed by: ${interaction.user.tag}): ${responseText}`,
+      );
     } catch (e) {
       logger.error('Error sending whitelist command:', e);
       await interaction.editReply(
@@ -224,102 +185,71 @@ export default class Whitelist implements BaseCommand {
     }
   }
 
-  /** Whitelist command button handler*/
-  async handleButton(interaction: ButtonInteraction): Promise<any> {
-    const [action, ...args] = interaction.customId.split(':');
+  private async findWhitelistResultEntry(
+    amp: CustomClient['amp'],
+    instanceId: string,
+    ign: string,
+    startTime: number,
+  ): Promise<{ Timestamp: string; Contents: string } | undefined> {
+    const seenEntries = new Set<string>();
 
-    if (action === 'whitelist') {
-      if (!interaction.guildId) return;
-      const customClient = interaction.client as CustomClient;
-      const state = await customClient.initializeGuildState(interaction.guildId);
-      const serversCache = state.servers;
+    for (
+      let elapsed = 0;
+      elapsed <= Whitelist.maxWaitMs;
+      elapsed += Whitelist.pollIntervalMs
+    ) {
+      const updatesRaw = await amp.getUpdates(instanceId);
+      const updates = JSON.parse(updatesRaw) as { ConsoleEntries?: Array<{ Timestamp: string; Contents: string }> };
+      const consoleEntries = updates.ConsoleEntries || [];
 
-      const availableServers = this.getAvailableServers(serversCache);
-      if (!availableServers.length) {
-        return interaction.reply({
-          content: 'No servers available.',
-          flags: [MessageFlags.Ephemeral],
-        });
-      }
-
-      const buttons = availableServers.map((s) =>
-        new ButtonBuilder()
-          .setCustomId(`whitelist_server:${s.FriendlyName}`)
-          .setLabel(s.FriendlyName)
-          .setStyle(ButtonStyle.Secondary),
+      const entry = consoleEntries.find((consoleEntry) =>
+        this.isMatchingWhitelistEntry(consoleEntry, ign, startTime, seenEntries),
       );
 
-      const rows = [];
-      for (let i = 0; i < buttons.length; i += 5) {
-        rows.push(
-          new ActionRowBuilder<ButtonBuilder>().addComponents(
-            buttons.slice(i, i + 5),
-          ),
-        );
-      }
-      return interaction.reply({
-        content: 'Select server:',
-        components: rows,
-        flags: [MessageFlags.Ephemeral],
-      });
+      if (entry) return entry;
+      await Whitelist.wait(Whitelist.pollIntervalMs);
     }
 
-    if (action === 'whitelist_server') {
-      const [serverName] = args;
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`whitelist_op:${serverName}:add`)
-          .setLabel('Add')
-          .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId(`whitelist_op:${serverName}:remove`)
-          .setLabel('Remove')
-          .setStyle(ButtonStyle.Danger),
-      );
-      return interaction.update({
-        content: `Server: **${serverName}**`,
-        components: [row],
-      });
-    }
-
-    if (action === 'whitelist_op') {
-      const [serverName, operation] = args;
-      const modal = new ModalBuilder()
-        .setCustomId(`whitelist_modal:${serverName}:${operation}`)
-        .setTitle(`Whitelist ${operation}`);
-      const input = new TextInputBuilder()
-        .setCustomId('ign')
-        .setLabel('IGN')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-      modal.addComponents(
-        new ActionRowBuilder<TextInputBuilder>().addComponents(input),
-      );
-      await interaction.showModal(modal);
-    }
+    return undefined;
   }
 
-  async handleModal(interaction: ModalSubmitInteraction) {
-    if (!interaction.customId.startsWith('whitelist_modal:')) return;
+  private isMatchingWhitelistEntry(
+    entry: { Timestamp: string; Contents: string },
+    ign: string,
+    startTime: number,
+    seenEntries: Set<string>,
+  ): boolean {
+    const key = `${entry.Timestamp}-${entry.Contents}`;
+    if (seenEntries.has(key)) return false;
+    seenEntries.add(key);
 
-    const [, server, op] = interaction.customId.split(':');
-    await interaction.deferReply();
-    const ign = interaction.fields.getTextInputValue('ign');
-    await this.executeWhitelistCommand(
-      interaction,
-      server,
-      op,
-      ign,
-      interaction.user,
-    );
+    const matchesMessage =
+      entry.Contents.includes(`Added ${ign} to the whitelist`) ||
+      entry.Contents.includes(`Removed ${ign} from the whitelist`) ||
+      Whitelist.whitelistResultPhrases.some((phrase) => entry.Contents.includes(phrase));
+
+    if (!matchesMessage) return false;
+    return new Date(entry.Timestamp).getTime() >= startTime - 2000;
+  }
+
+  private getWhitelistResponseText(entryContents: string, ign: string, operation: string): string {
+    if (
+      entryContents.includes('to the whitelist') ||
+      entryContents.includes('from the whitelist')
+    ) {
+      return `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} the whitelist.`;
+    }
+
+    if (entryContents.includes('already whitelisted')) return `${ign} is already whitelisted.`;
+    if (entryContents.includes('is not whitelisted')) return `${ign} is not whitelisted.`;
+    if (entryContents.includes('does not exist')) return `${ign} does not exist.`;
+    return 'Whitelist command executed.';
   }
 
   async createObject(): Promise<CommandObject> {
     return {
       data: await this.createSlashCommand(),
       execute: await this.createCommandFunctionality(),
-      handleButton: this.handleButton.bind(this),
-      handleModal: this.handleModal.bind(this),
     };
   }
 }

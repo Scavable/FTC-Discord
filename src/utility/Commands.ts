@@ -3,7 +3,6 @@ import CreateCategoryCommand from '../commands/discord/create_category';
 import DeleteChannelCommand from '../commands/discord/delete_channel';
 import ReloadAllCommand from '../commands/discord/reload_all';
 import WhitelistCommand from '../commands/minecraft/whitelist';
-import CommandButtons from '../commands/discord/command_buttons';
 import RankCommand from '../commands/minecraft/rank';
 import { REST, Routes } from 'discord.js';
 import { config } from '../Config';
@@ -25,7 +24,6 @@ class Commands {
       new DeleteChannelCommand(),
       new ReloadAllCommand(),
       new WhitelistCommand(),
-      new CommandButtons(),
       new RankCommand(),
     ];
   }
