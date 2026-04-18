@@ -1,25 +1,15 @@
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   ChatInputCommandInteraction,
-  ModalBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
-  TextInputBuilder,
-  TextInputStyle,
-  ButtonInteraction,
   ModalSubmitInteraction,
-  MessageFlags,
   User,
-  Guild,
 } from 'discord.js';
 import Instance from '../../types/Instance';
 import CustomClient from '../../CustomClient';
 import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
-import Servers from '../../utility/Servers';
-import RoleMapper from '../../utility/RoleMapper';
 import logger from '../../utility/Logger';
+import {GuildState} from '../../CustomClient';
 
 export default class Whitelist implements BaseCommand {
   static commandName: string = 'whitelist';
@@ -186,7 +176,7 @@ export default class Whitelist implements BaseCommand {
   }
 
   private async findWhitelistResultEntry(
-    amp: CustomClient['amp'],
+    amp: GuildState['amp'],
     instanceId: string,
     ign: string,
     startTime: number,
