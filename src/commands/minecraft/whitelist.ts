@@ -104,7 +104,8 @@ export default class Whitelist implements BaseCommand {
       const role = roleMapper.getRole(targetServer.RoleName);
 
       if (!role) {
-        console.error(`Role not found: ${targetServer.RoleName}`);
+        logger.error(`Role not found: ${targetServer.RoleName}`);
+        //console.error(`Role not found: ${targetServer.RoleName}`);
         return `\n(Warning: Role "${targetServer.RoleName}" not found)`;
       }
 
@@ -115,7 +116,8 @@ export default class Whitelist implements BaseCommand {
       }
       return '';
     } catch (roleError) {
-      console.error(`Failed to ${operation} role:`, roleError);
+      logger.error(`Failed to ${operation} role:`, roleError);
+      //console.error(`Failed to ${operation} role:`, roleError);
       return `\n(Warning: Failed to ${operation === 'add' ? 'assign' : 'remove'} role: ${targetServer.RoleName})`;
     }
   }
