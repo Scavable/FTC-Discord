@@ -66,8 +66,25 @@ export default class Rank implements BaseCommand {
 
   async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>> {
     return async (interaction: ChatInputCommandInteraction) => {
-
       await interaction.deferReply();
+
+      const guild = interaction.guild;
+      const member = interaction.member;
+
+      if (!guild || !member) {
+        await interaction.editReply('This command can only be used in a server.');
+        return;
+      }
+
+      const client = interaction.client as CustomClient;
+      const state = await client.initializeGuildState(guild.id);
+      const roleMapper = state.roleMapper;
+
+      /** Security Check: Ensure the user has the 'Staff' role */
+      if (!roleMapper.isMemberInRole(member as any, 'Staff')) {
+        await interaction.editReply('You do not have permission to use this command (Staff role required).');
+        return;
+      }
 
       const ign = interaction.options.getString("ign");
       const operation = interaction.options.getString("operation");
@@ -80,9 +97,7 @@ export default class Rank implements BaseCommand {
         return;
       }
 
-    const client = interaction.client as CustomClient;
     if (!interaction.guildId) return interaction.editReply('Guild not found.');
-    const state = await client.initializeGuildState(interaction.guildId);
     const amp = state.amp;
     const serversCache = state.servers;
 

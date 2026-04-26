@@ -8,7 +8,6 @@ import DependencyManager from './utility/DependencyManager';
 import { scheduleDaily } from './packs/Scheduler';
 import { checkForPackUpdates } from './packs/PackUpdateChecker';
 import Commands from './utility/Commands';
-import Servers from "./utility/Servers";
 
 const client = new CustomClient();
 const appConfig = validateConfig(config);

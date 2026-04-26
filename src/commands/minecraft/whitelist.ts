@@ -67,6 +67,23 @@ export default class Whitelist implements BaseCommand {
   async createCommandFunctionality(): Promise<(interaction: ChatInputCommandInteraction) => Promise<any>> {
     return async (interaction) => {
       await interaction.deferReply();
+
+      const guild = interaction.guild;
+      const member = interaction.member;
+
+      if (!guild || !member) {
+        return interaction.editReply('This command can only be used in a server.');
+      }
+
+      const client = interaction.client as CustomClient;
+      const state = await client.initializeGuildState(guild.id);
+      const roleMapper = state.roleMapper;
+
+      /** Security Check: Ensure the user has the 'Staff' role */
+      if (!roleMapper.isMemberInRole(member as any, 'Staff')) {
+        return interaction.editReply('You do not have permission to use this command (Staff role required).');
+      }
+
       const user = interaction.options.getUser('user');
       const ign = interaction.options.getString('ign');
       const option = interaction.options.getString('option');

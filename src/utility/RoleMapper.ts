@@ -1,4 +1,4 @@
-import { Guild, Role } from 'discord.js';
+import { Guild, Role, GuildMember } from 'discord.js';
 
 export default class RoleMapper {
   private roleMap: Map<string, Role> = new Map();
@@ -22,6 +22,15 @@ export default class RoleMapper {
     } catch (error) {
       console.error('Failed to fetch roles:', error);
     }
+  }
+
+  /**
+   * Check if a member has a specific role by name (case-insensitive).
+   */
+  isMemberInRole(member: GuildMember, roleName: string): boolean {
+    const role = this.getRole(roleName);
+    if (!role) return false;
+    return member.roles.cache.has(role.id);
   }
 
   /**

@@ -2,7 +2,7 @@ import Instance from '../types/Instance';
 
 class Servers {
   /** In-memory cache of servers keyed by FriendlyName */
-  public servers: Map<string, Instance> = new Map<string, Instance>();
+  private servers: Map<string, Instance> = new Map<string, Instance>();
   private lastUpdatedAt: number | null = null;
 
   public clear(): void {
@@ -14,17 +14,8 @@ class Servers {
     return this.servers.get(name);
   }
 
-  public getMap(): Map<string, Instance> {
-    return this.servers;
-  }
-
   public getAll(): Instance[] {
     return Array.from(this.servers.values());
-  }
-
-  public upsert(instance: Instance): void {
-    this.servers.set(instance.FriendlyName, instance);
-    this.lastUpdatedAt = Date.now();
   }
 
   public setAll(instances: Instance[] | Map<string, Instance>): void {
@@ -43,10 +34,6 @@ class Servers {
   public isFresh(ttlMs: number): boolean {
     if (!this.lastUpdatedAt) return false;
     return Date.now() - this.lastUpdatedAt <= ttlMs;
-  }
-
-  public getLastUpdated(): number | null {
-    return this.lastUpdatedAt;
   }
 }
 
