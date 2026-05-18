@@ -25,7 +25,8 @@ class FileManager extends AmpModule {
           server.FriendlyName.includes(`Schedule`) ||
           server.FriendlyName.includes(`Bot`) ||
           server.FriendlyName.includes(`ADS`) ||
-          server.Suspended
+          server.Suspended ||
+          server.Hidden
         )
           return;
 

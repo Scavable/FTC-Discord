@@ -1,4 +1,12 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, ButtonInteraction, ModalSubmitInteraction } from "discord.js";
+import {
+  SlashCommandBuilder,
+  ChatInputCommandInteraction,
+  ButtonInteraction,
+  ModalSubmitInteraction,
+  Guild, GuildMember,
+  APIInteractionGuildMember,
+  CacheType
+} from "discord.js";
 import { BaseCommand, CommandObject, SlashCommandData } from "../../interface/BaseCommand";
 import Instance from "../../types/Instance";
 import logger from "../../utility/Logger";
@@ -7,6 +15,7 @@ import CustomClient from "../../CustomClient";
 import Instances from "../../utility/Instances";
 import { promisify } from "util";
 import Servers from "../../utility/Servers";
+import RoleMapper from "../../utility/RoleMapper";
 
 const sleep = promisify(setTimeout);
 
@@ -22,7 +31,7 @@ export default class Rank implements BaseCommand {
         option
           .setName("ign")
           .setDescription("Player to add or remove rank")
-          .setRequired(true),
+          .setRequired(true)
       )
       .addStringOption((option) =>
         option
@@ -30,9 +39,9 @@ export default class Rank implements BaseCommand {
           .setDescription("Add or remove")
           .addChoices(
             { name: "Add", value: "add" },
-            { name: "Remove", value: "remove" },
+            { name: "Remove", value: "remove" }
           )
-          .setRequired(true),
+          .setRequired(true)
       );
 
     const ranks = await this.getRankChoices();
@@ -42,7 +51,7 @@ export default class Rank implements BaseCommand {
           .setName("rank")
           .setDescription("Rank to add or remove")
           .addChoices(...ranks.slice(0, 25))
-          .setRequired(true),
+          .setRequired(true)
       );
     }
 
@@ -51,15 +60,15 @@ export default class Rank implements BaseCommand {
         .setName("server")
         .setDescription("Server to add or remove rank")
         .setAutocomplete(true)
-        .setRequired(true),
+        .setRequired(true)
     );
-    
+
     builder.addBooleanOption((option) =>
       option
         .setName("patreon")
         .setDescription("Add or remove rank to all servers")
-        .setRequired(false),
-      );
+        .setRequired(false)
+    );
 
     return builder;
   }
@@ -68,23 +77,12 @@ export default class Rank implements BaseCommand {
     return async (interaction: ChatInputCommandInteraction) => {
       await interaction.deferReply();
 
-      const guild = interaction.guild;
-      const member = interaction.member;
-
-      if (!guild || !member) {
-        await interaction.editReply('This command can only be used in a server.');
-        return;
-      }
-
       const client = interaction.client as CustomClient;
-      const state = await client.initializeGuildState(guild.id);
+      const state = await client.initializeGuildState(interaction.guild.id);
       const roleMapper = state.roleMapper;
+      const role = "Staff";
 
-      /** Security Check: Ensure the user has the 'Staff' role */
-      if (!roleMapper.isMemberInRole(member as any, 'Staff')) {
-        await interaction.editReply('You do not have permission to use this command (Staff role required).');
-        return;
-      }
+      if (!await this.validation(interaction, roleMapper, role)) return;
 
       const ign = interaction.options.getString("ign");
       const operation = interaction.options.getString("operation");
@@ -97,15 +95,15 @@ export default class Rank implements BaseCommand {
         return;
       }
 
-    if (!interaction.guildId) return interaction.editReply('Guild not found.');
-    const amp = state.amp;
-    const serversCache = state.servers;
+      if (!interaction.guildId) return interaction.editReply("Guild not found.");
+      const amp = state.amp;
+      const serversCache = state.servers;
 
-    try {
-      await amp.login();
+      try {
+        await amp.login();
 
-      const targetServer = serversCache.get(server);
-      if (!targetServer) return interaction.editReply('Server not found.');
+        const targetServer = serversCache.get(server);
+        if (!targetServer) return interaction.editReply("Server not found.");
 
         const otherOperation = isPatreon ? operation : (operation === "add" ? "remove" : "add");
         const otherServers = this.getAvailableServers(serversCache).filter(s => s.InstanceID !== targetServer.InstanceID);
@@ -116,13 +114,13 @@ export default class Rank implements BaseCommand {
 
         await amp.sendConsoleMessage(targetServer, command);
 
-        if(isPatreon || operation === 'add'){
+        if (isPatreon || operation === "add") {
           for (const otherServer of otherServers) {
             try {
               await amp.sendConsoleMessage(otherServer, otherCommand);
             } catch (e: any) {
               logger.error(
-                `Error sending rank command for ${ign} to ${otherServer.FriendlyName}: ${e.message}`,
+                `Error sending rank command for ${ign} to ${otherServer.FriendlyName}: ${e.message}`
               );
             }
           }
@@ -139,26 +137,26 @@ export default class Rank implements BaseCommand {
           const entry = consoleEntries.find(
             (e: any) =>
               new Date(e.Timestamp).getTime() > startTime - 5000 &&
-              (e.Contents.includes('added to rank') ||
-                  e.Contents.includes(`removed from rank`) ||
+              (e.Contents.includes("added to rank") ||
+                e.Contents.includes(`removed from rank`) ||
                 e.Contents.includes(`unknown rank`) ||
                 e.Contents.includes(`does not exist`)
               ));
 
-          let responseText = '';
+          let responseText = "";
           if (!entry) {
             responseText = `Command executed, but no response was found in the server logs for ${ign}.`;
           } else {
             console.log(entry.Contents);
 
             switch (true) {
-              case entry.Contents.includes('added to rank') || entry.Contents.includes(`removed from rank`):
-                responseText = `${ign} was ${operation === 'add' ? 'added to' : 'removed from'} rank ${rank}.`;
+              case entry.Contents.includes("added to rank") || entry.Contents.includes(`removed from rank`):
+                responseText = `${ign} was ${operation === "add" ? "added to" : "removed from"} rank ${rank}.`;
                 break;
-              case entry.Contents.includes('unknown rank'):
+              case entry.Contents.includes("unknown rank"):
                 responseText = `${rank} does not exist or unknown.`;
                 break;
-              case entry.Contents.includes('does not exist'):
+              case entry.Contents.includes("does not exist"):
                 responseText = `${ign} does not exist.`;
                 break;
               default:
@@ -168,21 +166,37 @@ export default class Rank implements BaseCommand {
           }
 
           await interaction.editReply(
-            `**${server}** (Executed by: ${interaction.user.tag}): ${responseText}`,
+            `**${server}** (Executed by: ${interaction.user.tag}): ${responseText}`
           );
         } catch (e: any) {
           logger.error(`Error processing rank command for ${ign}: ${e.message}`);
           await interaction.editReply(
-            `**${server}** (Executed by: ${interaction.user.tag}): An error occurred while processing the rank command.`,
+            `**${server}** (Executed by: ${interaction.user.tag}): An error occurred while processing the rank command.`
           );
         }
       } catch (e: any) {
         logger.error(`Error sending rank command for ${ign}: ${e.message}`);
         await interaction.editReply(
-          `**${server}** (Executed by: ${interaction.user.tag}): An error occurred while sending the rank command.`,
+          `**${server}** (Executed by: ${interaction.user.tag}): An error occurred while sending the rank command.`
         );
       }
+    };
+  }
+
+  private async validation(interaction: ChatInputCommandInteraction<CacheType>, roleMapper: RoleMapper, role: string): Promise<boolean> {
+    if (!interaction.guild) {
+      await interaction.editReply("This command can only be used in a server.");
+      return false;
+    }else if(!interaction.member){
+      await interaction.editReply("This command can only be used by a member.");
+      return false;
+    }else if (!roleMapper.isMemberInRole(interaction.member as any, "Staff")) {
+    /** Security Check: Ensure the user has the 'Staff' role */
+      await interaction.editReply("You do not have permission to use this command (Staff role required).");
+      return false;
     }
+
+    return true
   }
 
   async createObject(): Promise<CommandObject> {
