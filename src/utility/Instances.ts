@@ -1,5 +1,5 @@
-import Amp from "../amp/ads/Amp";
-import Instance from "../types/Instance";
+import Amp from "../amp/ads/Amp.js";
+import type { Instance } from "../types/Instance.js";
 
 export default class Instances {
   private amp: Amp;
@@ -25,3 +25,4 @@ export default class Instances {
     return instances.filter(instance => instance.Group === 'Hytale');
   }
 }
+

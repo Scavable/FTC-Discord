@@ -1,9 +1,9 @@
-import Instance from '../../types/Instance';
-import logger from '../../utility/Logger';
-import Servers from '../../utility/Servers';
-import Core from '../core/Core';
-import FileManager from '../file/FileManager';
-import { IAmpClient } from '../AmpModule';
+import type { Instance } from "../../types/Instance.js";
+import logger from '../../utility/Logger.js';
+import Servers from '../../utility/Servers.js';
+import Core from '../core/Core.js';
+import FileManager from '../file/FileManager.js';
+import type { IAmpClient } from '../AmpModule.js';
 
 class Amp implements IAmpClient {
   public readonly API_BASE_URL: string =
@@ -118,7 +118,7 @@ class Amp implements IAmpClient {
         ? `${this.API_BASE_URL}API/ADSModule/Servers/${instanceId}/API/Core/Login`
         : `${this.API_BASE_URL}API/Core/Login`;
 
-      const response = await this.sendPostRequest(endpoint, json);
+      const response: any = await this.sendPostRequest(endpoint, json);
 
       if (response.success) {
         logger.amp(`AMP logged in successfully.`);
@@ -199,3 +199,4 @@ class Amp implements IAmpClient {
 }
 
 export default Amp;
+

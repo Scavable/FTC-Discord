@@ -1,9 +1,9 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
-import Amp from './amp/ads/Amp';
-import { config } from './Config';
-import { CommandObject } from './interface/BaseCommand';
-import Servers from './utility/Servers';
-import RoleMapper from './utility/RoleMapper';
+import Amp from './amp/ads/Amp.js';
+import { config } from './Config.js';
+import type { CommandObject } from './interface/BaseCommand.js';
+import Servers from './utility/Servers.js';
+import RoleMapper from './utility/RoleMapper.js';
 
 export interface GuildState {
   amp: Amp;

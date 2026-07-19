@@ -4,18 +4,18 @@ import {
   ButtonInteraction,
   ModalSubmitInteraction,
   Guild, GuildMember,
-  APIInteractionGuildMember,
-  CacheType
+  type APIInteractionGuildMember,
+  type CacheType
 } from "discord.js";
-import { BaseCommand, CommandObject, SlashCommandData } from "../../interface/BaseCommand";
-import Instance from "../../types/Instance";
-import logger from "../../utility/Logger";
+import type { BaseCommand, CommandObject, SlashCommandData } from "../../interface/BaseCommand.js";
+import type { Instance } from "../../types/Instance.js";
+import logger from "../../utility/Logger.js";
 import fs from "fs/promises";
-import CustomClient from "../../CustomClient";
-import Instances from "../../utility/Instances";
+import CustomClient from "../../CustomClient.js";
+import Instances from "../../utility/Instances.js";
 import { promisify } from "util";
-import Servers from "../../utility/Servers";
-import RoleMapper from "../../utility/RoleMapper";
+import Servers from "../../utility/Servers.js";
+import RoleMapper from "../../utility/RoleMapper.js";
 
 const sleep = promisify(setTimeout);
 
@@ -232,3 +232,4 @@ export default class Rank implements BaseCommand {
     }
   }
 }
+

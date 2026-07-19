@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel } from 'discord.js';
-import CustomClient from '../CustomClient';
-import Amp from '../amp/ads/Amp';
-import Instance from '../types/Instance';
-import logger from '../utility/Logger';
-import { getLatestByPackNameAPI } from './CurseForgeApi';
-import Servers from '../utility/Servers';
-import Instances from '../utility/Instances';
+import CustomClient from '../CustomClient.js';
+import Amp from '../amp/ads/Amp.js';
+import {type Instance } from "../types/Instance.js";
+import logger from '../utility/Logger.js';
+import { getLatestByPackNameAPI } from './CurseForgeApi.js';
+import Servers from '../utility/Servers.js';
+import Instances from '../utility/Instances.js';
 
 function normalizeServerName(name: string): string {
   /** Remove leading two digits and space (e.g., "01 My Pack" -> "My Pack") */
@@ -202,3 +202,4 @@ export async function checkForPackUpdates(client: CustomClient, guildId: string,
     }
   }
 }
+

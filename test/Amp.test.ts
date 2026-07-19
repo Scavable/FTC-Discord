@@ -1,6 +1,6 @@
 import Amp from '../src/amp/ads/Amp';
 import logger from '../src/utility/Logger';
-import type Instance from '../src/types/Instance';
+import type { Instance } from "../src/types/Instance";
 
 jest.mock('../src/utility/Logger', () => ({
   info: jest.fn(),

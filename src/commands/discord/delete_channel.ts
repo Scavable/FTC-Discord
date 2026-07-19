@@ -13,8 +13,8 @@ import {
   GuildMember,
   MessageFlags,
 } from 'discord.js';
-import Logger from '../../utility/Logger';
-import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
+import Logger from '../../utility/Logger.js';
+import type { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand.js';
 
 export default class DeleteChannelCommand implements BaseCommand {
   static commandName: string = 'delete_channel';
@@ -175,3 +175,4 @@ export default class DeleteChannelCommand implements BaseCommand {
     };
   }
 }
+

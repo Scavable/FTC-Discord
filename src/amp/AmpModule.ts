@@ -1,5 +1,4 @@
-import Instance from '../types/Instance';
-import logger from '../utility/Logger';
+
 
 /**
  * Interface for the API Client that modules will use.
@@ -18,3 +17,4 @@ export interface IAmpClient {
 export abstract class AmpModule {
   protected constructor(protected readonly client: IAmpClient) {}
 }
+

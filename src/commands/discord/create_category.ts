@@ -5,8 +5,8 @@ import {
   Role,
   SlashCommandBuilder,
 } from 'discord.js';
-import RoleMapper from '../../utility/RoleMapper';
-import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
+import RoleMapper from '../../utility/RoleMapper.js';
+import type { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand.js';
 
 export default class CreateCategoryCommand implements BaseCommand {
   static commandName: string = 'create_category';
@@ -244,3 +244,4 @@ export default class CreateCategoryCommand implements BaseCommand {
     };
   }
 }
+

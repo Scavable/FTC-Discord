@@ -1,8 +1,5 @@
-import fs from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { Client, ClientEvents } from 'discord.js';
+import { Client, type ClientEvents } from 'discord.js';
+import events from '../events/index.js';
 
 /** Define Event module interface */
 type EventModule = {
@@ -19,30 +16,7 @@ class EventLoader {
   }
 
   async loadEvents() {
-    /** Correctly resolve the directory path in ESM */
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const __root = __dirname.includes('src')
-      ? path.resolve(__dirname, '..')
-      : __dirname;
-    const eventsPath = path.join(__root, 'events');
-
-    /** Ensure the events directory exists */
-    if (!existsSync(eventsPath)) {
-      console.error(`Events directory does not exist: ${eventsPath}`);
-      return;
-    }
-
-    const eventFiles = (await fs.readdir(eventsPath))
-      .filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
-
-    await Promise.all(eventFiles.map(async (file) => {
-      const filePath = path.join(eventsPath, file);
-
-      /** Dynamically import the event file */
-      const event: EventModule = (await import(pathToFileURL(filePath).href))
-        .default;
-
+    for (const event of events as EventModule[]) {
       const handler = (...args: any[]) => {
         try {
           event.execute(...args);
@@ -57,7 +31,7 @@ class EventLoader {
       } else {
         this.client.on(event.name, handler);
       }
-    }));
+    }
   }
 }
 

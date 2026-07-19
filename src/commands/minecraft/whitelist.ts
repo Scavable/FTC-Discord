@@ -5,11 +5,11 @@ import {
   ModalSubmitInteraction,
   User,
 } from 'discord.js';
-import Instance from '../../types/Instance';
-import CustomClient from '../../CustomClient';
-import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
-import logger from '../../utility/Logger';
-import {GuildState} from '../../CustomClient';
+import type { Instance } from "../../types/Instance.js";
+import CustomClient from '../../CustomClient.js';
+import type { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand.js';
+import logger from '../../utility/Logger.js';
+import type {GuildState} from '../../CustomClient.js';
 
 export default class Whitelist implements BaseCommand {
   static commandName: string = 'whitelist';
@@ -262,3 +262,4 @@ export default class Whitelist implements BaseCommand {
     };
   }
 }
+

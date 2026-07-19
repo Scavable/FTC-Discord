@@ -1,13 +1,12 @@
-import { config } from './Config';
-import EventLoader from './utility/EventLoader';
-import CustomClient from './CustomClient';
-import { validateConfig } from './validation/Config';
+import {config} from './Config.js';
+import EventLoader from './utility/EventLoader.js';
+import CustomClient from './CustomClient.js';
+import { validateConfig } from './validation/Config.js';
 
-import logger from './utility/Logger';
-import DependencyManager from './utility/DependencyManager';
-import { scheduleDaily } from './packs/Scheduler';
-import { checkForPackUpdates } from './packs/PackUpdateChecker';
-import Commands from './utility/Commands';
+import logger from './utility/Logger.js';
+import { scheduleDaily } from './packs/Scheduler.js';
+import { checkForPackUpdates } from './packs/PackUpdateChecker.js';
+import Commands from './utility/Commands.js';
 
 const client = new CustomClient();
 const appConfig = validateConfig(config);
@@ -19,19 +18,13 @@ const appConfig = validateConfig(config);
   try {
     logger.info("Starting bot...");
 
-    /**
-     * Verify required dependencies are installed;
-     * download any missing ones and update any versions outside the limit
-     */
-    const dependencyPromise = DependencyManager.verifyDependencies();
-
     /** Load events and commands from files into the client. */
     const eventLoaderPromise = new EventLoader(client).loadEvents();
 
     /** Discord Bot Login (Console message located in, Ready.ts) */
     const loginPromise = client.login(appConfig.DISCORD_TOKEN);
 
-    await startupCheck(dependencyPromise, eventLoaderPromise, loginPromise);
+    await startupCheck(eventLoaderPromise, loginPromise);
 
     await initializeGuilds();
 
@@ -43,26 +36,24 @@ const appConfig = validateConfig(config);
   // console.log(await state?.amp.getInstances());
 
   async function startupCheck(
-    dependencyPromise: Promise<void>,
     eventLoaderPromise: Promise<void>,
     loginPromise: Promise<string>,
   ) {
     /** Wait for critical startup tasks in parallel */
     const results = await Promise.allSettled([
-      dependencyPromise,
       eventLoaderPromise,
       loginPromise,
     ]);
 
     results.forEach((result, index) => {
       if (result.status === "rejected") {
-        const taskName = ["Dependencies", "Event Loader", "Login"][index];
+        const taskName = ["Event Loader", "Login"][index];
         logger.error(`${taskName} failed during startup:`, result.reason);
       }
     });
 
     /** If login failed, we must stop */
-    if (results[2].status === "rejected") {
+    if (results[1].status === "rejected") {
       throw new Error("Critical failure: Discord login failed.");
     }
   }
@@ -117,3 +108,4 @@ const appConfig = validateConfig(config);
   }
 
 })();
+

@@ -1,14 +1,14 @@
-import CustomClient from '../CustomClient';
-import CreateCategoryCommand from '../commands/discord/create_category';
-import DeleteChannelCommand from '../commands/discord/delete_channel';
-import ReloadAllCommand from '../commands/discord/reload_all';
-import WhitelistCommand from '../commands/minecraft/whitelist';
-import RankCommand from '../commands/minecraft/rank';
+import CustomClient from '../CustomClient.js';
+import CreateCategoryCommand from '../commands/discord/create_category.js';
+import DeleteChannelCommand from '../commands/discord/delete_channel.js';
+import ReloadAllCommand from '../commands/discord/reload_all.js';
+import WhitelistCommand from '../commands/minecraft/whitelist.js';
+import RankCommand from '../commands/minecraft/rank.js';
 import { REST, Routes } from 'discord.js';
-import { config } from '../Config';
-import logger from './Logger';
-import ServerInformationCommand from '../commands/amp/server_information';
-import { BaseCommand, CommandObject } from '../interface/BaseCommand';
+import { config } from '../Config.js';
+import logger from './Logger.js';
+import ServerInformationCommand from '../commands/amp/server_information.js';
+import type { BaseCommand, CommandObject } from '../interface/BaseCommand.js';
 
 class Commands {
   private client: CustomClient;
@@ -55,3 +55,4 @@ class Commands {
 
 
 }export default Commands;
+

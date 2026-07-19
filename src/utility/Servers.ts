@@ -1,4 +1,4 @@
-import Instance from '../types/Instance';
+import type { Instance } from "../types/Instance.js";
 
 class Servers {
   /** In-memory cache of servers keyed by FriendlyName */

@@ -1,6 +1,6 @@
-import logger from '../utility/Logger';
-import { config } from '../Config';
-import { CfFile, CfMod, LatestFileInfo } from '../types/CurseForge';
+import logger from '../utility/Logger.js';
+import { config } from '../Config.js';
+import type { CfFile, CfMod, LatestFileInfo } from '../types/CurseForge.js';
 
 const CF_BASE = 'https://api.curseforge.com';
 const GAME_ID_MINECRAFT = 432;
@@ -300,3 +300,4 @@ export async function getLatestByPackNameAPI(packName: string, opts?: { strict?:
     return null;
   }
 }
+

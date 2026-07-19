@@ -1,20 +1,28 @@
 {
   "name": "ftc-discord",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "private": true,
   "type": "module",
   "description": "Multipurpose discord bot for FTC.",
-  "main": "dist/Bot.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "tsx watch src/Bot.ts",
+    "start": "node release/dist/Bot.js",
     "start:prod": "node release/dist/Bot.js",
-    "build": "tsup",
+    "build": "tsup --config tsup.config.ts",
+    "build:prod": "cross-env NODE_ENV=production tsup --config tsup.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check": "npm run lint && npm run typecheck",
     "test": "jest",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint . --ext .ts --cache",
     "format": "prettier --write .",
     "deploy:prod": "powershell -ExecutionPolicy Bypass -File deploy.ps1"
   },
   "author": "Scavable",
   "license": "ISC",
+  "sideEffects": false,
   "dependencies": {
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
@@ -27,15 +35,17 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
-    "eslint": "^10.4.0",
+    "@types/node": "^26.1.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.5",
-    "globals": "^17.6.0",
+    "globals": "^17.7.0",
     "jest": "^30.4.2",
-    "prettier": "^3.8.3",
-    "ts-jest": "^29.4.9",
+    "prettier": "^3.9.4",
+    "ts-jest": "^29.4.11",
     "tsup": "^8.4.0",
-    "tsx": "^4.22.2",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.4"
+    "typescript-eslint": "^8.63.0"
   }
 }

@@ -1,7 +1,7 @@
 import { Events, Interaction, ButtonInteraction, ModalSubmitInteraction, MessageFlags } from 'discord.js';
-import CustomClient from '../CustomClient';
-import { config } from '../Config';
-import logger from '../utility/Logger';
+import CustomClient from '../CustomClient.js';
+import { config } from '../Config.js';
+import logger from '../utility/Logger.js';
 
 export default {
   name: Events.InteractionCreate,
@@ -115,3 +115,4 @@ export default {
     }
   },
 };
+

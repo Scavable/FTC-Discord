@@ -1,8 +1,8 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import logger from '../../utility/Logger';
-import CustomClient from '../../CustomClient';
-import Commands from '../../utility/Commands';
-import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
+import logger from '../../utility/Logger.js';
+import CustomClient from '../../CustomClient.js';
+import Commands from '../../utility/Commands.js';
+import type { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand.js';
 
 export default class ReloadAll implements BaseCommand {
   static commandName: string = 'reload_all';
@@ -47,3 +47,4 @@ export default class ReloadAll implements BaseCommand {
     };
   }
 }
+

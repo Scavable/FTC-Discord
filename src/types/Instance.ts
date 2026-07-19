@@ -1,4 +1,4 @@
-type Instance = {
+export type Instance = {
   InstanceID: string;
   TargetID: string;
   InstanceName: string;
@@ -93,4 +93,4 @@ type Instance = {
   RoleName: string;
 };
 
-export default Instance;
+

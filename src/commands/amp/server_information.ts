@@ -11,14 +11,14 @@ import {
 import * as fs from 'fs/promises';
 import { existsSync } from 'fs';
 import * as path from 'path';
-import Amp from '../../amp/ads/Amp';
-import Instance from '../../types/Instance';
-import ColorText from '../../utility/ColorText';
-import CustomClient from '../../CustomClient';
-import logger from '../../utility/Logger';
-import { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand';
-import { AppState, MetricKey } from '../../types/AppState';
-import Instances from '../../utility/Instances';
+import Amp from '../../amp/ads/Amp.js';
+import type { Instance } from "../../types/Instance.js";
+import ColorText from '../../utility/ColorText.js';
+import CustomClient from '../../CustomClient.js';
+import logger from '../../utility/Logger.js';
+import type { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand.js';
+import { AppState, MetricKey } from '../../types/AppState.js';
+import Instances from '../../utility/Instances.js';
 
 export default class ServersPanel implements BaseCommand {
   static commandName: string = "server_information";
@@ -371,35 +371,6 @@ export default class ServersPanel implements BaseCommand {
     return summary;
   }
 
-  // async messageFilter(message: string): Promise<number> {
-  //   let time = new Date();
-  //   const updates = JSON.parse(message); /** Get all updates for the instance */
-  //
-  //   if (
-  //     Array.isArray(updates.ConsoleEntries) &&
-  //     updates.ConsoleEntries.length > 0
-  //   ) {
-  //     /** Filter console entries to only include those after the recorded time */
-  //     const recentEntries = updates.ConsoleEntries.filter((entry: any) => {
-  //       const entryDate = new Date(entry.Timestamp);
-  //       return (
-  //         entryDate.getTime() > time.getTime() - 9000
-  //       ); /** Filter based on timestamp */
-  //     });
-  //
-  //     for (const entry of recentEntries) {
-  //       const match = entry.Contents.match(
-  //         /There are (\d+) of a max of (\d+) players online/i,
-  //       );
-  //       if (match) {
-  //         return parseInt(match[1], 10);
-  //       }
-  //     }
-  //   }
-  //
-  //   return 0;
-  // }
-
   async individualEmbeds(
     amp: Amp,
     servers: Instance[],
@@ -536,7 +507,7 @@ export default class ServersPanel implements BaseCommand {
     // Deduplicate currentPlayers by normalizing names (removing [prefix] at the start)
     const normalizedPlayersMap = new Map();
     for (const player of players) {
-      const normalized = player.replace(/^\[.*?\]:\s*/, "");
+      const normalized = player.replace(/:\s*/, "");
       if (!normalizedPlayersMap.has(normalized)) {
         normalizedPlayersMap.set(normalized, player);
       }
@@ -551,3 +522,4 @@ export default class ServersPanel implements BaseCommand {
     };
   }
 }
+

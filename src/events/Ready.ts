@@ -1,6 +1,6 @@
 import { Events } from 'discord.js';
-import CustomClient from '../CustomClient';
-import logger from '../utility/Logger';
+import CustomClient from '../CustomClient.js';
+import logger from '../utility/Logger.js';
 
 export default {
   name: Events.ClientReady,
@@ -10,3 +10,4 @@ export default {
     if (!!client.user) logger.info(`Logged in as ${client.user.tag}`);
   },
 };
+

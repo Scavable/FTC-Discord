@@ -1,4 +1,4 @@
-import logger from '../utility/Logger';
+import logger from '../utility/Logger.js';
 
 export type DailyTask = () => Promise<void> | void;
 
@@ -52,3 +52,4 @@ export function scheduleDaily(label: string, timeHHMM: string, task: DailyTask):
     if (interval) clearInterval(interval);
   };
 }
+

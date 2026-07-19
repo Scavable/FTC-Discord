@@ -1,6 +1,6 @@
-import Instance from '../../types/Instance';
-import logger from '../../utility/Logger';
-import { AmpModule } from '../AmpModule';
+import type { Instance } from "../../types/Instance.js";
+import logger from "../../utility/Logger.js";
+import { AmpModule } from "../AmpModule.js";
 
 class FileManager extends AmpModule {
   async readFileChunk(instanceId: string, filename: string, offset: number = 0): Promise<any> {
@@ -75,3 +75,4 @@ class FileManager extends AmpModule {
 }
 
 export default FileManager;
+
