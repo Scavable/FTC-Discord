@@ -13,7 +13,6 @@ import { existsSync } from 'fs';
 import * as path from 'path';
 import Amp from '../../amp/ads/Amp.js';
 import type { Instance } from "../../types/Instance.js";
-import ColorText from '../../utility/ColorText.js';
 import CustomClient from '../../CustomClient.js';
 import logger from '../../utility/Logger.js';
 import type { BaseCommand, CommandObject, SlashCommandData } from '../../interface/BaseCommand.js';
@@ -174,21 +173,23 @@ export default class ServersPanel implements BaseCommand {
     forceRecreateEmbeds: boolean = false,
   ) {
     try {
-      const instancesService = new Instances(amp);
-      const minecraftServers = await instancesService.getMinecraftInstances();
-      const hytaleServers = await instancesService.getHytaleInstances();
-
-      const servers = await amp.readFile([
-        ...minecraftServers,
-        ...hytaleServers,
-      ]);
-
-      if (!servers) return;
-
-      /** Update in-memory cache so commands can use fresh data */
       const customClient = channel.client as CustomClient;
-      if (channel.guildId) {
-        const state = await customClient.initializeGuildState(channel.guildId);
+      const state = await customClient.initializeGuildState(channel.guildId!);
+
+      // Use short-TTL caching to reduce redundant AMP calls
+      const ttlMs = 60_000; // 60s cache window
+      let servers: Instance[];
+      if (state.servers.isFresh(ttlMs)) {
+        servers = state.servers.getAll();
+      } else {
+        const instancesService = new Instances(amp);
+        const minecraftServers = await instancesService.getMinecraftInstances();
+        const hytaleServers = await instancesService.getHytaleInstances();
+        servers = await amp.readFile([
+          ...minecraftServers,
+          ...hytaleServers,
+        ]);
+        if (!servers) return;
         state.servers.setAll(servers);
       }
 
@@ -319,7 +320,7 @@ export default class ServersPanel implements BaseCommand {
     let first = lines[0] ?? "";
     let silent = false;
     const before = first;
-    first = first.replace(/^@\s*silent\b[:\s-]*/i, (m) => {
+    first = first.replace(/^@\s*silent\b[:\s-]*/i, () => {
       silent = true;
       return "";
     });
@@ -376,7 +377,7 @@ export default class ServersPanel implements BaseCommand {
     servers: Instance[],
   ): Promise<EmbedBuilder[]> {
     /** Individual embeds */
-    const minecraftInstances = await new Instances(amp).getMinecraftInstances();
+    const minecraftInstances = servers.filter(s => s.Group === 'Minecraft');
     let embeds: EmbedBuilder[] = [];
 
     for (const instance of minecraftInstances) {
@@ -390,21 +391,7 @@ export default class ServersPanel implements BaseCommand {
 
       const status = isOnline ? "Online" : "Offline";
 
-      let statusMessage;
-      if (status === "Offline")
-        statusMessage = ColorText.colorText(
-          status,
-          undefined,
-          undefined,
-          ColorText.enums.foreground.red,
-        );
-      else
-        statusMessage = ColorText.colorText(
-          status,
-          undefined,
-          undefined,
-          ColorText.enums.foreground.green,
-        );
+      // Removed unused formatted statusMessage
 
       embeds.push(
         new EmbedBuilder()
@@ -437,6 +424,18 @@ export default class ServersPanel implements BaseCommand {
               inline: true,
             },
             {
+              name: "__TPS__",
+              value: `\`\`\`${(() => {
+                const tpsMetric = instance.Metrics?.TPS;
+                if (!tpsMetric || typeof tpsMetric.RawValue !== 'number') return 'N/A';
+                const max = typeof tpsMetric.MaxValue === 'number' && tpsMetric.MaxValue > 0 ? tpsMetric.MaxValue : 20;
+                const cur = Math.max(0, Math.min(max, tpsMetric.RawValue));
+                const curStr = Number.isFinite(cur) ? cur.toFixed(1) : 'N/A';
+                return `${curStr}`;
+              })()}\`\`\``,
+              inline: true,
+            },
+            {
               name: "__Players__",
               value: `\`\`\`\n${currentPlayers.length} of ${instance.Metrics?.[MetricKey.ActiveUsers]?.MaxValue || 0} online\n\`\`\``,
             },
@@ -462,43 +461,65 @@ export default class ServersPanel implements BaseCommand {
     const fetched = await channel.messages.fetch({ limit: 100 });
     const existingMessages = Array.from(fetched.values());
     /** Work only with existing embed messages, leave any plain-text (like the static info) untouched */
-    let existingEmbedMessages = existingMessages.filter(
+    const allEmbedMessages = existingMessages.filter(
       (m) => m.embeds && m.embeds.length > 0,
     );
 
-    /** If forced recreation, delete existing embed messages so new ones are created after the static message */
-    if (forceRecreate && existingEmbedMessages.length > 0) {
-      for (const msg of existingEmbedMessages) {
-        try {
-          await msg.delete();
-        } catch (_) {
-          /** ignore individual delete errors */
-        }
-        messageCache.delete(msg.id);
-      }
-      existingEmbedMessages = [];
-    }
+    // In recreate mode, we will create new messages first and only delete old ones after success.
+    const oldEmbedMessages: typeof allEmbedMessages = forceRecreate ? allEmbedMessages : [];
+    let workingEmbedMessages: typeof allEmbedMessages = forceRecreate ? [] : allEmbedMessages;
 
+    let allSucceeded = true;
+    let touched = false;
+
+    // Create or edit messages for each chunk
     for (let i = 0; i < embedChunks.length; i++) {
-      const newContent = JSON.stringify(
-        embedChunks[i].map((embed) => embed.toJSON()),
-      );
+      const chunk = embedChunks[i];
+      if (!chunk) continue;
+      const newContent = JSON.stringify(chunk.map((embed) => embed.toJSON()));
 
-      if (existingEmbedMessages[i]) {
-        const messageId = existingEmbedMessages[i].id;
-        if (messageCache.get(messageId) !== newContent) {
-          await existingEmbedMessages[i].edit({ embeds: embedChunks[i] });
-          messageCache.set(messageId, newContent);
+      try {
+        if (workingEmbedMessages[i]) {
+          const messageId = workingEmbedMessages[i].id;
+          if (messageCache.get(messageId) !== newContent) {
+            await workingEmbedMessages[i].edit({ embeds: chunk });
+            messageCache.set(messageId, newContent);
+          }
+          touched = true;
+        } else {
+          const sentMessage = await channel.send({ embeds: chunk });
+          messageCache.set(sentMessage.id, newContent);
+          touched = true;
         }
-      } else {
-        const sentMessage = await channel.send({ embeds: embedChunks[i] });
-        messageCache.set(sentMessage.id, newContent);
+      } catch (_) {
+        allSucceeded = false;
+        // Do not throw; keep existing messages intact on failure
+        break;
       }
     }
 
-    for (let i = embedChunks.length; i < existingEmbedMessages.length; i++) {
-      await existingEmbedMessages[i].delete();
-      messageCache.delete(existingEmbedMessages[i].id);
+    // Only prune/delete when we actually succeeded updating/sending the new state
+    if (allSucceeded) {
+      if (forceRecreate && oldEmbedMessages.length > 0 && touched) {
+        for (const msg of oldEmbedMessages) {
+          try {
+            await msg.delete();
+          } catch (_) {
+            // ignore individual delete errors
+          }
+          messageCache.delete(msg.id);
+        }
+      } else if (!forceRecreate) {
+        // Delete surplus messages only if we produced at least one embed this run and we have >0 chunks
+        if (touched && embedChunks.length > 0) {
+          for (let i = embedChunks.length; i < workingEmbedMessages.length; i++) {
+            try {
+              await workingEmbedMessages[i].delete();
+            } catch (_) { /* ignore */ }
+            messageCache.delete(workingEmbedMessages[i].id);
+          }
+        }
+      }
     }
   }
 
@@ -522,4 +543,3 @@ export default class ServersPanel implements BaseCommand {
     };
   }
 }
-

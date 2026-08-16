@@ -15,7 +15,7 @@ export interface GuildState {
 
 export default class CustomClient extends Client {
   commands: Collection<string, CommandObject>;
-  private guildStates: Map<string, GuildState>;
+  private singleState: GuildState | null;
   disboardTimer: NodeJS.Timeout | null;
 
   constructor() {
@@ -26,7 +26,7 @@ export default class CustomClient extends Client {
       ],
     });
     this.commands = new Collection<string, CommandObject>();
-    this.guildStates = new Map();
+    this.singleState = null;
     this.disboardTimer = null;
   }
 
@@ -34,9 +34,7 @@ export default class CustomClient extends Client {
    * Initialize the state for a specific guild.
    */
   async initializeGuildState(guildId: string): Promise<GuildState> {
-    if (this.guildStates.has(guildId)) {
-      return this.guildStates.get(guildId)!;
-    }
+    if (this.singleState) return this.singleState;
 
     const guild = await this.guilds.fetch(guildId);
     if (!guild) {
@@ -56,7 +54,7 @@ export default class CustomClient extends Client {
       updateInterval: null,
     };
 
-    this.guildStates.set(guildId, state);
+    this.singleState = state;
     return state;
   }
 
@@ -64,20 +62,22 @@ export default class CustomClient extends Client {
    * Get the state for a specific guild.
    */
   getGuildState(guildId: string): GuildState | undefined {
-    return this.guildStates.get(guildId);
+    void guildId; // parameter kept for API compatibility
+    return this.singleState ?? undefined;
   }
 
   /**
    * Clean up the state for a specific guild.
    */
   cleanupGuildState(guildId: string) {
-    const state = this.guildStates.get(guildId);
+    void guildId; // parameter kept for API compatibility
+    const state = this.singleState;
     if (state) {
       if (state.updateInterval) {
         clearInterval(state.updateInterval);
       }
       state.messageCache.clear();
-      this.guildStates.delete(guildId);
+      this.singleState = null;
     }
   }
 }

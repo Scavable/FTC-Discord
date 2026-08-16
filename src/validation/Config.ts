@@ -3,7 +3,7 @@ import { z } from 'zod';
 const configSchema = z.object({
   DISCORD_TOKEN: z.string().min(59),
   CLIENT_ID: z.string().min(18),
-  GUILD_IDS: z.array(z.string().min(18)),
+  GUILD_ID: z.string().min(18),
   AMP_USERNAME: z.string().min(1),
   AMP_PASS: z.string().min(1),
   AMP_API_BASE_URL: z.string().url().optional(),

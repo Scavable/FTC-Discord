@@ -1,4 +1,4 @@
-import { AmpModule } from '../AmpModule';
+import { AmpModule } from '../AmpModule.js';
 
 class Core extends AmpModule {
   /**

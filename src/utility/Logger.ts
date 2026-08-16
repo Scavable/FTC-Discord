@@ -34,33 +34,39 @@ class Logger {
   private logger: WinstonLogger;
 
   constructor() {
+    const mode = (process.env.LOG_LEVEL || 'log').toLowerCase();
+
+    // Per-mode allowed levels: 'log' = success/failure only; 'debug' = typical detail; 'deep' = all
+    const allowedSets: Record<string, Set<string> | null> = {
+      log: new Set(['info', 'error']),
+      debug: new Set(['error', 'warn', 'info', 'debug', 'commands', 'updates', 'amp']),
+      deep: null, // allow all
+    };
+    const allowed = allowedSets[mode] ?? allowedSets.log;
+
+    const filterByMode = format((info) => {
+      if (!allowed) return info; // deep
+      return allowed.has(String(info.level)) ? info : false;
+    });
+
+    const consoleFormat = format.combine(
+      filterByMode(),
+      format.colorize({ all: true }),
+      format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+      format.printf(({ timestamp, level, message }) => `[${timestamp}] [${level}] ${message}`),
+    );
+
+    const fileFormat = format.combine(
+      filterByMode(),
+      format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+      format.printf(({ timestamp, level, message }) => `[${timestamp}] [${level.toUpperCase()}] ${message}`),
+    );
+
     this.logger = createLogger({
       levels: customLevels.levels, /** Use custom levels */
-      level: 'info', /** Default logging level */
-      format: format.combine(
-        format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), /** Add timestamp to logs */
-        format.printf(
-          ({ timestamp, level, message }) =>
-            `[${timestamp}] [${level.toUpperCase()}] ${message}`,
-        ),
-      ),
+      level: 'info', /** Keep highest to allow filter to decide */
       transports: [
-        /** Log messages to the console with colorization */
-        new transports.Console({
-          format: format.combine(
-            format.colorize({
-              all: true, /** Enable colorization for all levels */
-            }),
-            format.timestamp({
-              format: 'YYYY-MM-DD HH:mm:ss',
-            }),
-            format.printf(
-              ({ timestamp, level, message }) =>
-                `[${timestamp}] [${level}] ${message}`,
-            ),
-          ),
-        }),
-        /** Log messages to a daily rotating file */
+        new transports.Console({ format: consoleFormat }),
         new DailyRotateFile({
           filename: 'logs/app-%DATE%.log',
           datePattern: 'YYYY-MM-DD',
@@ -68,6 +74,7 @@ class Logger {
           maxSize: '20m',
           maxFiles: '14d',
           level: 'info',
+          format: fileFormat,
         }),
       ],
     });
@@ -85,11 +92,18 @@ class Logger {
 
   /** Log an error message */
   public error(message: string, e?: any): void {
-    this.logger.error(message);
+    const extra = e ? (e?.message ?? String(e)) : '';
+    this.logger.error(extra ? `${message} | ${extra}` : message);
   }
 
   /** Log a debug message */
   public debug(message: string): void {
+    this.logger.debug(message);
+  }
+
+  /** Log a very verbose message (deep debug) */
+  public deepDebug(message: string): void {
+    // Use existing 'debug' channel; filtered in 'log' mode and shown in 'debug/deep'
     this.logger.debug(message);
   }
 

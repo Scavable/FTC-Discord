@@ -1,10 +1,6 @@
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
-  ButtonInteraction,
-  ModalSubmitInteraction,
-  Guild, GuildMember,
-  type APIInteractionGuildMember,
   type CacheType
 } from "discord.js";
 import type { BaseCommand, CommandObject, SlashCommandData } from "../../interface/BaseCommand.js";
@@ -12,9 +8,8 @@ import type { Instance } from "../../types/Instance.js";
 import logger from "../../utility/Logger.js";
 import fs from "fs/promises";
 import CustomClient from "../../CustomClient.js";
-import Instances from "../../utility/Instances.js";
 import { promisify } from "util";
-import Servers from "../../utility/Servers.js";
+import type Servers from "../../utility/Servers.js";
 import RoleMapper from "../../utility/RoleMapper.js";
 
 const sleep = promisify(setTimeout);
@@ -80,9 +75,7 @@ export default class Rank implements BaseCommand {
       const client = interaction.client as CustomClient;
       const state = await client.initializeGuildState(interaction.guild.id);
       const roleMapper = state.roleMapper;
-      const role = "Staff";
-
-      if (!await this.validation(interaction, roleMapper, role)) return;
+      if (!await this.validation(interaction, roleMapper)) return;
 
       const ign = interaction.options.getString("ign");
       const operation = interaction.options.getString("operation");
@@ -183,7 +176,7 @@ export default class Rank implements BaseCommand {
     };
   }
 
-  private async validation(interaction: ChatInputCommandInteraction<CacheType>, roleMapper: RoleMapper, role: string): Promise<boolean> {
+  private async validation(interaction: ChatInputCommandInteraction<CacheType>, roleMapper: RoleMapper): Promise<boolean> {
     if (!interaction.guild) {
       await interaction.editReply("This command can only be used in a server.");
       return false;
@@ -232,4 +225,3 @@ export default class Rank implements BaseCommand {
     }
   }
 }
-

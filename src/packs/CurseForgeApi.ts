@@ -1,12 +1,15 @@
 import logger from '../utility/Logger.js';
 import { config } from '../Config.js';
 import type { CfFile, CfMod, LatestFileInfo } from '../types/CurseForge.js';
+import { rankCandidatesInWorker } from '../workers/cf-rank-dispatcher.js';
+import { KEEP_ALIVE_INITIALIZED } from '../utility/http.js';
+import { cfHttpLimit } from '../utility/limiters.js';
 
 const CF_BASE = 'https://api.curseforge.com';
 const GAME_ID_MINECRAFT = 432;
 const CLASS_ID_MODPACK = 4471;
 
-function getHeaders(): HeadersInit {
+function getHeaders(): Record<string, string> {
   if (!config.CURSEFORGE_API_KEY) {
     throw new Error('CURSEFORGE_API_KEY is required but missing.');
   }
@@ -17,8 +20,10 @@ function getHeaders(): HeadersInit {
 }
 
 async function cfFetch<T>(pathAndQuery: string): Promise<T> {
+  // Touch symbol so bundlers keep the module
+  if (!KEEP_ALIVE_INITIALIZED) { /* no-op */ }
   const url = `${CF_BASE}${pathAndQuery}`;
-  const res = await fetch(url, { headers: getHeaders() });
+  const res = await cfHttpLimit(() => fetch(url, { headers: getHeaders() }));
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`CurseForge API ${res.status} ${res.statusText} on ${url}: ${body}`);
@@ -27,50 +32,11 @@ async function cfFetch<T>(pathAndQuery: string): Promise<T> {
   return json as T;
 }
 
-/** Normalize and matching helpers */
-function normalizeName(s: string): string {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/[._\-()\[\]:]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/\s(to the sky|skyblock)$/g, ''); /** ignore common suffixes that might be missing in search */
-}
-
 function isSlugLike(s: string): boolean {
   return /^[a-z0-9\-]+$/.test(s);
 }
 
-function tokenize(s: string): string[] {
-  const stop = new Set(['the', 'and', 'of', 'minecraft', 'modpack', 'pack']);
-  return normalizeName(s)
-    .split(' ')
-    .filter(t => t.length > 0 && !stop.has(t));
-}
-
-function jaccard(a: Set<string>, b: Set<string>): number {
-  const inter = new Set([...a].filter(x => b.has(x))).size;
-  const union = new Set([...a, ...b]).size;
-  return union === 0 ? 0 : inter / union;
-}
-
-function levenshtein(a: string, b: string): number {
-  const m = a.length, n = b.length;
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost,
-      );
-    }
-  }
-  return dp[m][n];
-}
+// Removed local ranking helpers; ranking is handled by the worker
 
 type RankedCandidate = {
   mod: CfMod;
@@ -78,7 +44,41 @@ type RankedCandidate = {
   matchType: 'exactName' | 'exactSlug' | 'startsWith' | 'contains' | 'tokenOverlap' | 'levenshtein' | 'unknown';
 };
 
+// Lightweight TTL LRU cache
+type CacheEntry<V> = { v: V; expires: number };
+function makeCache<K, V>(max: number, ttlMs: number) {
+  const map = new Map<K, CacheEntry<V>>();
+  return {
+    get(key: K): V | undefined {
+      const e = map.get(key);
+      if (!e) return undefined;
+      if (Date.now() > e.expires) {
+        map.delete(key);
+        return undefined;
+      }
+      // LRU bump
+      map.delete(key);
+      map.set(key, e);
+      return e.v;
+    },
+    set(key: K, v: V) {
+      if (map.size >= max) {
+        // evict least recently used
+        const firstKey = map.keys().next().value as K | undefined;
+        if (firstKey !== undefined) map.delete(firstKey);
+      }
+      map.set(key, { v, expires: Date.now() + ttlMs });
+    },
+    clear() { map.clear(); },
+  };
+}
+
+const searchCache = makeCache<string, RankedCandidate[]>(100, 10 * 60 * 1000); // 10 min
+const latestFileCache = makeCache<number, CfFile | null>(200, 2 * 60 * 1000); // 2 min
+
 async function searchRanked(name: string): Promise<RankedCandidate[]> {
+  const cached = searchCache.get(name);
+  if (cached) return cached;
   /** 1. If it's a numeric ID, fetch it directly. */
   if (/^\d+$/.test(name)) {
     try {
@@ -116,6 +116,7 @@ async function searchRanked(name: string): Promise<RankedCandidate[]> {
   }
 
   type Resp = { data: any[] };
+  logger.debug(`[CurseForgeAPI] Searching modpacks for "${name}" (${isSlugLike(name) ? 'slug' : 'filter'})`);
   let resp = await cfFetch<Resp>(`/v1/mods/search?${q.toString()}`);
 
   /** 3. Fallback: if slug search failed, try generic filter */
@@ -135,64 +136,29 @@ async function searchRanked(name: string): Promise<RankedCandidate[]> {
     }
   }
 
-  const items = (resp.data || []).filter((m: any) => typeof m?.name === 'string');
-  const qNorm = normalizeName(name);
-  const qTokens = new Set(tokenize(name));
-  const slugLike = isSlugLike(name);
-
-  const ranked: RankedCandidate[] = items.map((m: any) => {
-    const mod: CfMod = {
+  const items = (resp.data || [])
+    .filter((m: any) => typeof m?.name === 'string')
+    .map((m: any) => ({
       id: m.id,
       name: m.name,
       slug: m.slug ?? '',
       links: m.links,
       dateModified: m.dateModified,
       downloadCount: m.downloadCount,
-    };
+    }));
 
-    const nameNorm = normalizeName(mod.name);
-    let score = 0;
-    let matchType: RankedCandidate['matchType'] = 'unknown';
-
-    if (nameNorm === qNorm) {
-      score = 100;
-      matchType = 'exactName';
-    } else if (slugLike && mod.slug?.toLowerCase() === name.toLowerCase()) {
-      score = 100;
-      matchType = 'exactSlug';
-    } else if (nameNorm.startsWith(qNorm)) {
-      score = 80;
-      matchType = 'startsWith';
-    } else if (nameNorm.includes(qNorm)) {
-      score = 65;
-      matchType = 'contains';
-    } else {
-      const t = new Set(tokenize(mod.name));
-      const jac = jaccard(qTokens, t);
-      score = Math.floor(60 + 40 * jac); /** 60..100 depending on overlap */
-      matchType = 'tokenOverlap';
-
-      const dist = levenshtein(nameNorm, qNorm);
-      const maxLen = Math.max(nameNorm.length, qNorm.length) || 1;
-      const penalty = Math.min(20, Math.round((dist / maxLen) * 20));
-      score -= penalty;
-
-      if (dist <= 2 && jac >= 0.6) matchType = 'levenshtein';
-    }
-
-    return { mod, score, matchType };
-  });
-
-  return ranked.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    const da = a.mod.dateModified ? Date.parse(a.mod.dateModified) : 0;
-    const db = b.mod.dateModified ? Date.parse(b.mod.dateModified) : 0;
-    return db - da || (b.mod.downloadCount ?? 0) - (a.mod.downloadCount ?? 0);
-  });
+  // Offload ranking computation to a worker thread for better responsiveness
+  logger.deepDebug(`[CurseForgeAPI] Found ${items.length} raw candidates for "${name}": ${items.slice(0, 10).map((m:any) => `${m.name}#${m.id}`).join(', ')}`);
+  const ranked = await rankCandidatesInWorker(items, name);
+  logger.deepDebug(`[CurseForgeAPI] Ranked candidates for "${name}": ${ranked.slice(0, 5).map(formatCandidate).join('; ')}`);
+  searchCache.set(name, ranked);
+  return ranked;
 }
 
 
 export async function getLatestFileForMod(modId: number): Promise<CfFile | null> {
+  const cached = latestFileCache.get(modId);
+  if (cached !== undefined) return cached;
   /**
    * https://docs.curseforge.com/#get-mod-files
    * We'll request a reasonable page size and pick most recent by fileDate
@@ -203,7 +169,13 @@ export async function getLatestFileForMod(modId: number): Promise<CfFile | null>
   const files = resp.data || [];
   if (files.length === 0) return null;
   files.sort((a, b) => new Date(b.fileDate).getTime() - new Date(a.fileDate).getTime());
-  return files[0];
+  const latest = files[0];
+  if (!latest) {
+    latestFileCache.set(modId, null);
+    return null;
+  }
+  latestFileCache.set(modId, latest);
+  return latest;
 }
 
 function formatCandidate(c: RankedCandidate): string {
@@ -220,7 +192,10 @@ async function selectBestMod(query: string, strict: boolean): Promise<RankedCand
   /** 1. If we have a slug from a URL, prioritize the exact slug match. */
   if (urlSlug) {
     const exactSlugMatch = ranked.find(r => r.mod.slug.toLowerCase() === urlSlug.toLowerCase());
-    if (exactSlugMatch) return exactSlugMatch;
+    if (exactSlugMatch) {
+      logger.info(`[CurseForgeAPI] Pack match: "${effectiveQuery}" -> ${exactSlugMatch.mod.name} (#${exactSlugMatch.mod.id}) [${exactSlugMatch.matchType}, score=${Math.round(exactSlugMatch.score)}]`);
+      return exactSlugMatch;
+    }
   }
 
   /** 2. In strict mode (PackName/URL provided), only accept high-confidence matches. */
@@ -231,7 +206,12 @@ async function selectBestMod(query: string, strict: boolean): Promise<RankedCand
       (r.score >= 85 && r.matchType === 'levenshtein')
     );
     
-    if (strong.length > 0) return strong[0];
+    if (strong.length > 0) {
+      const best = strong[0]!;
+      logger.info(`[CurseForgeAPI] Pack match: "${effectiveQuery}" -> ${best.mod.name} (#${best.mod.id}) [${best.matchType}, score=${Math.round(best.score)}]`);
+      logger.debug(`[CurseForgeAPI] Strict strong candidates for "${effectiveQuery}": ${strong.slice(0, 5).map(formatCandidate).join('; ')}`);
+      return best;
+    }
 
     const top = ranked.slice(0, 3).map(formatCandidate).join('; ');
     logger.warn(`[CurseForgeAPI] No strong match for "${effectiveQuery}". Top candidates: ${top}`);
@@ -239,7 +219,10 @@ async function selectBestMod(query: string, strict: boolean): Promise<RankedCand
   }
 
   /** 3. Fallback for non-strict (FriendlyName search): just return the top candidate. */
-  return ranked[0];
+  const best = ranked[0]!;
+  logger.info(`[CurseForgeAPI] Pack match (non-strict): "${effectiveQuery}" -> ${best.mod.name} (#${best.mod.id}) [${best.matchType}, score=${Math.round(best.score)}]`);
+  logger.debug(`[CurseForgeAPI] Top candidates for "${effectiveQuery}": ${ranked.slice(0, 5).map(formatCandidate).join('; ')}`);
+  return best;
 }
 
 export function extractSlugFromUrl(s: string): string | null {
@@ -257,24 +240,24 @@ export function extractSlugFromUrl(s: string): string | null {
      */
     const modpacksIndex = parts.indexOf('modpacks');
     if (modpacksIndex !== -1 && parts.length > modpacksIndex + 1) {
-      return parts[modpacksIndex + 1];
+      return parts[modpacksIndex + 1] ?? null;
     }
 
     /** Projects fallback: /projects/slug or /projects/slug/files */
     const projectsIndex = parts.indexOf('projects');
     if (projectsIndex !== -1 && parts.length > projectsIndex + 1) {
-      return parts[projectsIndex + 1];
+      return parts[projectsIndex + 1] ?? null;
     }
 
     /** Generic fallback: last part if it doesn't match known subpages */
     const lastPart = parts[parts.length - 1];
     if (lastPart && !['files', 'screenshots', 'relations', 'install', 'download'].includes(lastPart.toLowerCase())) {
-      return lastPart;
+      return lastPart ?? null;
     }
   } catch {
     /** maybe it's not a full URL but just contains curseforge.com */
     const match = s.match(/curseforge\.com\/(?:minecraft\/modpacks|projects)\/([a-z0-9\-]+)/i);
-    if (match) return match[1];
+    if (match) return match[1] ?? null;
   }
   return null;
 }
@@ -300,4 +283,3 @@ export async function getLatestByPackNameAPI(packName: string, opts?: { strict?:
     return null;
   }
 }
-

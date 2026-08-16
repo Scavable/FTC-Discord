@@ -17,6 +17,7 @@ const {
   NODE_ENV,
   DISBOARD_CHANNEL_ID,
   DISABLED_COMMANDS,
+  LOG_LEVEL,
 } = process.env;
 
 /** Check for required environment variables */
@@ -35,7 +36,7 @@ if (
 export const config = {
   DISCORD_TOKEN,
   CLIENT_ID,
-  GUILD_IDS: (GUILD_ID || '').split(',').map(id => id.trim()).filter(id => id.length > 0),
+  GUILD_ID,
   AMP_USERNAME,
   AMP_PASS,
   AMP_API_BASE_URL,
@@ -46,4 +47,5 @@ export const config = {
   IS_PROD: (NODE_ENV || '').toLowerCase() === 'production',
   DISBOARD_CHANNEL_ID: DISBOARD_CHANNEL_ID || '',
   DISABLED_COMMANDS: (DISABLED_COMMANDS || '').split(',').map(name => name.trim()).filter(name => name.length > 0),
+  LOG_LEVEL: (LOG_LEVEL || 'log'), // 'log' | 'debug' | 'deep'
 };

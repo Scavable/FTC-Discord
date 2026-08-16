@@ -1,7 +1,5 @@
 import type {
-  ButtonInteraction,
   ChatInputCommandInteraction,
-  ModalSubmitInteraction,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
   SlashCommandSubcommandsOnlyBuilder,

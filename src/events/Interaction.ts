@@ -1,4 +1,4 @@
-import { Events, Interaction, ButtonInteraction, ModalSubmitInteraction, MessageFlags } from 'discord.js';
+import { Events, type Interaction, ButtonInteraction, ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import CustomClient from '../CustomClient.js';
 import { config } from '../Config.js';
 import logger from '../utility/Logger.js';
@@ -7,7 +7,7 @@ export default {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction) {
     /** Restrict the bot to configured guilds only */
-    if (!interaction.guildId || !config.GUILD_IDS.includes(interaction.guildId)) {
+    if (!interaction.guildId || !config.GUILD_ID.includes(interaction.guildId)) {
       if (interaction.isRepliable()) {
         try {
           await interaction.reply({
@@ -26,7 +26,6 @@ export default {
 
     /** Handle autocomplete */
     if (interaction.isAutocomplete()) {
-      const command = customClient.commands.get(interaction.commandName);
       if (interaction.commandName === 'rank' || interaction.commandName === 'whitelist') {
         const focusedValue = interaction.options.getFocused();
         const servers = guildState.servers.getAll().filter(
@@ -115,4 +114,3 @@ export default {
     }
   },
 };
-

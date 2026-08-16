@@ -18,3 +18,5 @@
 # If this is in the production enviroment, you will want to make this value "production".
 # Use "production" to disable automatic dependency updates. (production, development)
 #NODE_ENV=production
+# Logging verbosity: 'log' (success/failure), 'debug' (average), 'deep' (everything)
+#LOG_LEVEL=log

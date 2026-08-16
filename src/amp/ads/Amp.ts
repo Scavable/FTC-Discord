@@ -1,9 +1,10 @@
 import type { Instance } from "../../types/Instance.js";
 import logger from '../../utility/Logger.js';
-import Servers from '../../utility/Servers.js';
 import Core from '../core/Core.js';
 import FileManager from '../file/FileManager.js';
 import type { IAmpClient } from '../AmpModule.js';
+import { KEEP_ALIVE_INITIALIZED } from '../../utility/http.js'; // ensure keep-alive dispatcher is set
+import { ampHttpLimit } from '../../utility/limiters.js';
 
 class Amp implements IAmpClient {
   public readonly API_BASE_URL: string =
@@ -15,8 +16,9 @@ class Amp implements IAmpClient {
 
   private baseSessionId: string = '';
   private instanceSessionIds: Map<string, string> = new Map();
-  private rememberMeToken: string = '';
-  private ID: string = '';
+  private baseLoginInFlight: Promise<void> | null = null;
+  private instanceLoginInFlight: Map<string, Promise<void>> = new Map();
+  // Removed unused fields (rememberMeToken, ID) as they were never read
   private instances: Instance[] = [];
 
   // Sub-modules
@@ -29,6 +31,10 @@ class Amp implements IAmpClient {
     this.token = token;
     this.rememberMe = rememberMe;
 
+    // Touch symbol so bundlers keep the module
+    if (!KEEP_ALIVE_INITIALIZED) {
+      // no-op
+    }
     this.core = new Core(this);
     this.fileManager = new FileManager(this);
   }
@@ -45,7 +51,7 @@ class Amp implements IAmpClient {
       const id = setTimeout(() => controller.abort(), 15000); /** 15-second timeout for each request */
 
       try {
-        const res = await fetch(url, {
+        const res = await ampHttpLimit(() => fetch(url, {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -54,7 +60,7 @@ class Amp implements IAmpClient {
           },
           body: JSON.stringify(data),
           signal: controller.signal,
-        });
+        }));
         clearTimeout(id);
         return res;
       } catch (e) {
@@ -106,6 +112,31 @@ class Amp implements IAmpClient {
 
   /** Logs into the AMP container and instances. */
   public async login(instanceId?: string): Promise<void> {
+    // Single-flight guard: ensure only one concurrent login per scope (base or instance)
+    if (!instanceId) {
+      if (this.baseSessionId) return; // already logged in
+      if (this.baseLoginInFlight) return this.baseLoginInFlight;
+      this.baseLoginInFlight = this._doLogin();
+      try {
+        await this.baseLoginInFlight;
+      } finally {
+        this.baseLoginInFlight = null;
+      }
+      return;
+    } else {
+      if (this.instanceSessionIds.has(instanceId)) return;
+      const existing = this.instanceLoginInFlight.get(instanceId);
+      if (existing) return existing;
+      const p = this._doLogin(instanceId)
+        .finally(() => {
+          this.instanceLoginInFlight.delete(instanceId);
+        });
+      this.instanceLoginInFlight.set(instanceId, p);
+      return p;
+    }
+  }
+
+  private async _doLogin(instanceId?: string): Promise<void> {
     try {
       const json = {
         username: this.username,
@@ -129,9 +160,7 @@ class Amp implements IAmpClient {
           this.baseSessionId = response.sessionID; /** Cache base session ID */
         }
 
-
-        this.rememberMeToken = response.rememberMeToken;
-        this.ID = response.userInfo.ID;
+        // Note: response.rememberMeToken and response.userInfo.ID are not used currently
       } else {
         console.error('Login failed:', response);
       }
@@ -188,6 +217,7 @@ class Amp implements IAmpClient {
 
   /** Populates the server cache with the latest server info. */
   async readFile(servers: Instance[]): Promise<Instance[]> {
+
     return await this.fileManager.readPackInfoFile(servers);
   }
 
@@ -199,4 +229,3 @@ class Amp implements IAmpClient {
 }
 
 export default Amp;
-

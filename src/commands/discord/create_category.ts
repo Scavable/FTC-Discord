@@ -2,7 +2,6 @@ import {
   ChannelType,
   ChatInputCommandInteraction,
   PermissionFlagsBits,
-  Role,
   SlashCommandBuilder,
 } from 'discord.js';
 import RoleMapper from '../../utility/RoleMapper.js';
@@ -244,4 +243,3 @@ export default class CreateCategoryCommand implements BaseCommand {
     };
   }
 }
-

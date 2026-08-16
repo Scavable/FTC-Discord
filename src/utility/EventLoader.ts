@@ -1,5 +1,6 @@
 import { Client, type ClientEvents } from 'discord.js';
 import events from '../events/index.js';
+import logger from "./Logger.js";
 
 /** Define Event module interface */
 type EventModule = {
@@ -16,6 +17,7 @@ class EventLoader {
   }
 
   async loadEvents() {
+    logger.info("Loading events...");
     for (const event of events as EventModule[]) {
       const handler = (...args: any[]) => {
         try {

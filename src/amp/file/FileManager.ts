@@ -19,24 +19,36 @@ class FileManager extends AmpModule {
   async readPackInfoFile(servers: Instance[]): Promise<Instance[]> {
     await this.client.ensureAuthenticated();
 
-    await Promise.all(
-      servers.map(async (server) => {
-        if (
-          server.FriendlyName.includes(`Schedule`) ||
-          server.FriendlyName.includes(`Bot`) ||
-          server.FriendlyName.includes(`ADS`) ||
-          server.Suspended ||
-          server.Hidden
-        )
-          return;
+    // Concurrency limiter (small cap to keep responsiveness and avoid rate spikes)
+    const concurrency = 5;
+    let index = 0;
+    const tasks: Promise<void>[] = [];
 
+    const runNext = async (): Promise<void> => {
+      const i = index++;
+      if (i >= servers.length) return;
+      const server = servers[i];
+
+      // Early filters to avoid unnecessary logins and calls
+      if (
+        server.FriendlyName.includes(`Schedule`) ||
+        server.FriendlyName.includes(`Bot`) ||
+        server.FriendlyName.includes(`ADS`) ||
+        server.Suspended ||
+        server.Hidden
+      ) {
+        return runNext();
+      }
+
+      try {
         await this.client.ensureAuthenticated(server.InstanceID);
 
         const response = await this.readFileChunk(server.InstanceID, 'packInfo.json');
 
         if (response.Result !== null && response.Result !== undefined) {
           try {
-            const temp = JSON.parse(atob(response.Result));
+            const decoded = Buffer.from(response.Result, 'base64').toString('utf8');
+            const temp = JSON.parse(decoded);
             server.FTCIP = temp.IP;
             server.FTCVersion = temp.Version;
             server.Hidden = temp.Hidden;
@@ -48,13 +60,7 @@ class FileManager extends AmpModule {
             logger.error(error);
           }
         }
-        
-        // Note: This still depends on the client having a core module or a way to get config
-        // But since this is specific to this app's logic, we can keep it here or move it to a better place.
-        // For now, we'll use a direct API call or keep the dependency on the client.
-        // Actually, the original code used `this.getConfig(server)` which was in `Amp.ts`.
-        // I'll need to handle the getConfig part too.
-        
+
         const configJson = {
           SettingNode: 'Game',
           node: 'MinecraftModule.Game.Whitelist',
@@ -67,8 +73,21 @@ class FileManager extends AmpModule {
         );
 
         server.Whitelisted = configResponse?.CurrentValue ?? false;
-      }),
-    );
+      } catch (e) {
+        /** @ts-ignore */
+        logger.error(e);
+      } finally {
+        // Start another task in the pool
+        if (index < servers.length) {
+          await runNext();
+        }
+      }
+    };
+
+    for (let i = 0; i < Math.min(concurrency, servers.length); i++) {
+      tasks.push(runNext());
+    }
+    await Promise.all(tasks);
 
     return servers;
   }

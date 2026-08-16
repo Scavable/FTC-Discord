@@ -8,7 +8,11 @@ export default defineConfig((options) => {
   const releaseDir = path.join(cwd, "release");
 
   return {
-    entry: ["src/Bot.ts"],
+    entry: [
+      "src/Bot.ts",
+      // Include worker script so it is emitted to release/dist and resolvable at runtime
+      "src/workers/cf-rank-worker.js",
+    ],
     platform: "node",
     target: "node22",
     format: ["esm"],
