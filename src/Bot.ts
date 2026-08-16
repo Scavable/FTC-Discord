@@ -62,6 +62,11 @@ const appConfig = validateConfig(config);
 
   async function initializeGuild() {
     logger.info("Initializing guild state...");
+    // Ensure the client is fully ready before accessing guilds/channels
+    if (!client.isReady()) {
+      logger.info("Waiting for Discord ready before initial pack update check...");
+      await new Promise<void>((resolve) => client.once('ready', () => resolve()));
+    }
     /** Initialize state and update commands for all guilds in parallel */
     const guildId = appConfig.GUILD_ID;
     try{
@@ -83,6 +88,7 @@ const appConfig = validateConfig(config);
       );
 
       /** Also run once on startup for this guild */
+      logger.info("Triggering initial pack update check...");
       checkForPackUpdates(
         client,
         guildId,
