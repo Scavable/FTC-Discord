@@ -149,27 +149,83 @@ npm test
 
 ---
 
-## Deployment
+## Deployment & Production Updates
 
-To deploy the latest version to the production server:
+### 1. Build and Deploy from Local Machine
+To build the optimized production package and push it to the remote `production` branch:
+```bash
+npm run deploy:prod
+```
+This runs `deploy.ps1`, which builds the bundle with `tsup`, isolates production dependencies in `release/`, mirrors worker scripts, and pushes the release subtree to the `production` branch.
 
-1.  **Run the deployment script**:
-    ```bash
-    npm run deploy:prod
-    ```
-    This will build the project and push the compiled artifacts to the `production` branch.
+---
 
-### **Troubleshooting "Unrelated Histories" on Server**
+### 2. Updating the Production Server
 
-If the AMP bot instance shows the error `fatal: refusing to merge unrelated histories` during an update, and you do not have terminal access to the server, follow this **Nuclear Reset** procedure:
+When updating an existing production bot instance, choose one of the procedures below:
 
-1.  **Open the File Manager** in your AMP NodeJS instance.
-2.  **Delete all files and folders** *including* the `.git` folder, but **KEEP** your `.env` file (important for your credentials!).
-    - *Note: Deleting the `.git` folder forces AMP to perform a fresh clone, which resolves all history conflicts.*
-3.  **Click the "Update" button** in the AMP dashboard.
-4.  AMP will detect the empty directory and perform a fresh clone of the latest `production` branch.
+#### Method A: In-Place Git Update (Recommended)
+This method minimizes downtime and preserves your existing `.env` file on the server:
 
-Once this is done, future updates will work normally as the histories will be synchronized with the new deployment strategy.
+```bash
+# 1. Navigate to the bot directory
+cd /path/to/ftc-discord
+
+# 2. Stop the running bot instance (e.g. PM2 or systemd)
+pm2 stop ftc-discord
+# or: systemctl stop ftc-discord
+
+# 3. Pull the latest release from the production branch
+git fetch origin production
+git reset --hard origin/production
+
+# 4. Install production dependencies cleanly (mandatory)
+npm ci --omit=dev
+
+# 5. Verify .env is present and has required credentials
+# (DISCORD_TOKEN, CURSEFORGE_API_KEY, AMP_*, UPDATE_CHANNEL_ID)
+
+# 6. Start the bot
+pm2 start ftc-discord
+# or: npm start
+```
+
+#### Method B: Clean Directory Refresh (Nuclear Reset)
+If you prefer wiping the folder or are resolving Git history conflicts:
+
+```bash
+# 1. Back up your existing .env file
+cp /path/to/ftc-discord/.env /tmp/ftc-discord.env.bak
+
+# 2. Remove the old directory and clone the production branch
+rm -rf /path/to/ftc-discord
+git clone -b production <REPO_URL> /path/to/ftc-discord
+cd /path/to/ftc-discord
+
+# 3. Restore your .env file
+cp /tmp/ftc-discord.env.bak .env
+
+# 4. Install production dependencies
+npm ci --omit=dev
+
+# 5. Start the bot
+npm start
+```
+
+#### Method C: AMP Panel Update Procedure
+If your bot runs inside an AMP NodeJS instance:
+1. Stop the bot instance in the AMP dashboard.
+2. In the AMP File Manager, ensure your `.env` file is safely saved or backed up.
+3. If AMP reports git conflict / unrelated history errors, delete all files *except* `.env` and click **Update**.
+4. Run `npm ci --omit=dev` via the AMP console / terminal if AMP does not automatically run clean install.
+5. Start the bot instance.
+
+---
+
+### Key Operational Rules
+- **Node.js Version**: Production host must run Node.js **>= 22.0.0** (`node -v`).
+- **Clean Dependency Installs**: Always run `npm ci --omit=dev` after pulling updates.
+- **Environment Safety**: Never commit `.env` to git; keep it securely stored on the host.
 
 ---
 

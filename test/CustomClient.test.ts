@@ -2,41 +2,31 @@ import CustomClient from '../src/CustomClient';
 
 jest.mock('../src/Config', () => ({ config: { AMP_USERNAME: 'u', AMP_PASS: 'p' } }));
 
-// Avoid creating real Discord client connection; tests just exercise class logic
-
 describe('CustomClient', () => {
-  it('initializeState creates Amp and resets state', () => {
+  it('instantiates CustomClient with initial empty state', () => {
     const client = new CustomClient();
-    expect(client.amp).toBeNull();
-    client.initializeState();
-    expect(client.amp).not.toBeNull();
-    expect(client.messageCache).toBeInstanceOf(Map);
-    expect(client.updateInterval).toBeNull();
+    expect(client.getGuildState('123')).toBeUndefined();
+    expect(client.commands).toBeDefined();
+    expect(client.disboardTimer).toBeNull();
   });
 
-  it('getAmpInstance lazy-initializes when missing', () => {
+  it('cleanupGuildState clears interval and resets state', () => {
     const client = new CustomClient();
-    // amp starts as null
-    const amp = client.getAmpInstance();
-    expect(amp).toBeDefined();
-    expect(client.amp).toBe(amp);
-  });
 
-  it('cleanupState clears interval, cache, and amp', () => {
-    const client = new CustomClient();
-    client.initializeState();
+    const mockState: any = {
+      amp: {} as any,
+      servers: {} as any,
+      roleMapper: {} as any,
+      messageCache: new Map([['key', 'val']]),
+      updateInterval: setInterval(() => {}, 1000),
+    };
 
-    // simulate interval
-    const handle = setInterval(() => {}, 1000);
-    // @ts-ignore accessing private-like field
-    client.updateInterval = handle as any;
+    // @ts-ignore
+    client.singleState = mockState;
+    expect(client.getGuildState('123')).toBe(mockState);
 
-    // populate cache
-    client.messageCache.set('k', 'v');
-
-    client.cleanupState();
-    expect(client.updateInterval).toBeNull();
-    expect(client.messageCache.size).toBe(0);
-    expect(client.amp).toBeNull();
+    client.cleanupGuildState('123');
+    expect(client.getGuildState('123')).toBeUndefined();
+    expect(mockState.messageCache.size).toBe(0);
   });
 });

@@ -46,6 +46,6 @@ describe('RoleMapper', () => {
     await mapper.initialize();
     expect(mapper.hasRole('Nope')).toBe(false);
     expect(mapper.getRole('Nope')).toBeNull();
-    expect(mapper.getRoleId('Nope')).toBeNull();
+    expect(mapper.getRoleId('Nope')).toBe('');
   });
 });

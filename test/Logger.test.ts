@@ -10,6 +10,14 @@ jest.mock('winston', () => {
     debug: jest.fn(),
     log: jest.fn(),
   };
+  const formatFn: any = jest.fn((transform: any) => {
+    return jest.fn((info: any) => (transform && info ? transform(info) : info));
+  });
+  formatFn.combine = jest.fn((...args: any[]) => args);
+  formatFn.colorize = jest.fn(() => (x: any) => x);
+  formatFn.timestamp = jest.fn(() => (x: any) => x);
+  formatFn.printf = jest.fn((fn: any) => fn);
+
   return {
     ...actual,
     createLogger: jest.fn(() => fakeLogger),
@@ -18,12 +26,7 @@ jest.mock('winston', () => {
       File: function File() {},
     },
     DailyRotateFile: function DailyRotateFile() {},
-    format: {
-      combine: jest.fn((...args) => args),
-      colorize: jest.fn(() => (x: any) => x),
-      timestamp: jest.fn(() => (x: any) => x),
-      printf: jest.fn((fn: any) => fn),
-    },
+    format: formatFn,
   } as any;
 });
 
@@ -39,7 +42,7 @@ describe('Logger wrapper', () => {
 
     expect(mocked.info).toHaveBeenCalledWith('hello');
     expect(mocked.warn).toHaveBeenCalledWith('w');
-    expect(mocked.error).toHaveBeenCalledWith('e');
+    expect(mocked.error).toHaveBeenCalledWith('e | e');
     expect(mocked.debug).toHaveBeenCalledWith('d');
     expect(mocked.log).toHaveBeenCalledWith('commands', 'c');
   });

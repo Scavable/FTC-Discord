@@ -40,10 +40,10 @@ export async function checkForPackUpdates(client: CustomClient, guildId: string,
   const FRESH_TTL_MS = 30_000;
   let servers: Instance[];
 
-  if (serversCache.getAll().length > 0 && serversCache.isFresh(FRESH_TTL_MS)) {
-    logger.info(`[PackUpdate] [${guildId}] Using fresh servers cache; skipping AMP refresh.`);
-    servers = serversCache.getAll();
-  } else {
+   if (serversCache.getAll().length > 0 && serversCache.isFresh(FRESH_TTL_MS)) {
+     logger.info(`[PackUpdate] [${guildId}] Using fresh servers cache; skipping AMP refresh.`);
+     servers = serversCache.getAll();
+   } else {
     await amp.login();
     const minecraftServers = await new Instances(amp).getMinecraftInstances();
     const refreshed = await amp.readFile(minecraftServers);
@@ -71,6 +71,7 @@ export async function checkForPackUpdates(client: CustomClient, guildId: string,
           : server.PackName && server.PackName.trim().length > 0
             ? 'PackName'
             : 'FriendlyName';
+      logger.info(queryUsed);
 
       const packQuery =
         queryUsed === 'CurseForgeURL'
