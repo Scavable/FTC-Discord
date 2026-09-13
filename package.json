@@ -1,0 +1,26 @@
+{
+  "name": "ftc-discord",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Multipurpose discord bot for FTC.",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "dist/Bot.js",
+  "scripts": {
+    "start": "node dist/Bot.js",
+    "start:prod": "node dist/Bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.26.4",
+    "dotenv": "^17.4.2",
+    "latest": "^0.2.0",
+    "prismarine-nbt": "^2.7.0",
+    "winston": "^3.18.3",
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^4.4.3"
+  },
+  "author": "Scavable",
+  "license": "ISC"
+}
