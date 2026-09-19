@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2023",
+    "target": "ES2024",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2023"],
+    "lib": ["ES2024"],
     "types": ["node"],
 
     "strict": true,
     "esModuleInterop": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
+    "isolatedModules": true,
 
     "resolveJsonModule": true,
     "skipLibCheck": true,
@@ -22,8 +23,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
 
-    "noEmit": true,
-    "sourceMap": true
+    "noEmit": true
   },
   "include": ["src"]
 }

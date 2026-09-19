@@ -10,7 +10,6 @@
   "scripts": {
     "dev": "tsx watch src/Bot.ts",
     "start": "node release/dist/Bot.js",
-    "start:prod": "node release/dist/Bot.js",
     "build": "tsup --config tsup.config.ts",
     "build:prod": "cross-env NODE_ENV=production tsup --config tsup.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -22,12 +21,9 @@
   },
   "author": "Scavable",
   "license": "ISC",
-  "sideEffects": false,
   "dependencies": {
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
-    "latest": "^0.2.0",
-    "prismarine-nbt": "^2.7.0",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^4.4.3"

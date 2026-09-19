@@ -71,7 +71,6 @@ export async function checkForPackUpdates(client: CustomClient, guildId: string,
           : server.PackName && server.PackName.trim().length > 0
             ? 'PackName'
             : 'FriendlyName';
-      logger.info(queryUsed);
 
       const packQuery =
         queryUsed === 'CurseForgeURL'
@@ -97,7 +96,7 @@ export async function checkForPackUpdates(client: CustomClient, guildId: string,
           `[PackUpdate] Server=${server.FriendlyName} | ${queryUsed}="${packQuery}" | Matched=${latest.mod.name} (${latest.mod.slug || 'no-slug'}#${latest.mod.id}) | Score=${latest.matchScore}`,
         );
 
-        const latestNameRaw =
+        const latestNameRaw :string =
           latest.latestFile.displayName || latest.latestFile.fileName;
         let latestVersion = latestNameRaw;
 

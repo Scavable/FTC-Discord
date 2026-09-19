@@ -21,8 +21,6 @@ export default defineConfig((options) => {
     noExternal: [
       "discord.js",
       "dotenv",
-      "latest",
-      "prismarine-nbt",
       "winston",
       "winston-daily-rotate-file",
       "zod",
